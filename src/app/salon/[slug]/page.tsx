@@ -192,7 +192,7 @@ export default function SalonBookingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-bg-gray">
+    <div className="min-h-screen bg-bg-gray overflow-x-hidden">
       {/* Salon Header */}
       <div className="bg-white border-b border-light-gray">
         <div className="max-w-lg mx-auto px-4 py-4">
