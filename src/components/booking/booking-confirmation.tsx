@@ -12,6 +12,7 @@ interface BookingConfirmationProps {
   startTime: string;
   customerName: string;
   bookingId: string;
+  accentColor?: string;
 }
 
 export function BookingConfirmation({
@@ -20,6 +21,7 @@ export function BookingConfirmation({
   startTime,
   customerName,
   bookingId,
+  accentColor = '#4285F4',
 }: BookingConfirmationProps) {
   return (
     <div className="text-center space-y-6">
@@ -39,7 +41,7 @@ export function BookingConfirmation({
       <Card className="text-left">
         <div className="space-y-3">
           <div className="flex items-center gap-3">
-            <User className="w-5 h-5 text-primary" />
+            <User className="w-5 h-5" style={{ color: accentColor }} />
             <div>
               <p className="text-sm text-gray-text">Naam</p>
               <p className="font-medium text-navy">{customerName}</p>
@@ -47,7 +49,7 @@ export function BookingConfirmation({
           </div>
 
           <div className="flex items-center gap-3">
-            <Calendar className="w-5 h-5 text-primary" />
+            <Calendar className="w-5 h-5" style={{ color: accentColor }} />
             <div>
               <p className="text-sm text-gray-text">Datum</p>
               <p className="font-medium text-navy capitalize">
@@ -57,7 +59,7 @@ export function BookingConfirmation({
           </div>
 
           <div className="flex items-center gap-3">
-            <Clock className="w-5 h-5 text-primary" />
+            <Clock className="w-5 h-5" style={{ color: accentColor }} />
             <div>
               <p className="text-sm text-gray-text">Tijd</p>
               <p className="font-medium text-navy">
@@ -69,7 +71,7 @@ export function BookingConfirmation({
 
           {salon.address && (
             <div className="flex items-center gap-3">
-              <MapPin className="w-5 h-5 text-primary" />
+              <MapPin className="w-5 h-5" style={{ color: accentColor }} />
               <div>
                 <p className="text-sm text-gray-text">Locatie</p>
                 <p className="font-medium text-navy">

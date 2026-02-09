@@ -27,6 +27,7 @@ interface CalendarProps {
   minDate?: Date;
   maxDate?: Date;
   disabledDates?: Date[];
+  accentColor?: string;
 }
 
 export function Calendar({
@@ -35,6 +36,7 @@ export function Calendar({
   minDate,
   maxDate,
   disabledDates = [],
+  accentColor = '#4285F4',
 }: CalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(startOfMonth(selectedDate));
 
@@ -110,10 +112,17 @@ export function Calendar({
               className={cn(
                 'aspect-square flex items-center justify-center rounded-lg text-sm font-medium transition-all',
                 disabled && 'text-light-gray/50 cursor-not-allowed',
-                !disabled && !isSelected && 'hover:bg-primary/10 text-navy',
-                !disabled && isToday && !isSelected && 'border border-primary text-primary',
-                isSelected && 'bg-primary text-white shadow-sm'
+                !disabled && !isSelected && 'text-navy',
+                !disabled && isToday && !isSelected && 'border',
+                isSelected && 'text-white shadow-sm'
               )}
+              style={
+                isSelected
+                  ? { backgroundColor: accentColor }
+                  : !disabled && isToday
+                  ? { borderColor: accentColor, color: accentColor }
+                  : undefined
+              }
             >
               {format(day, 'd')}
             </button>

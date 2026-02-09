@@ -62,6 +62,8 @@ export default function SalonBookingPage() {
   const [customerName, setCustomerName] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const accentColor = salon?.primary_color || '#4285F4';
+
   useEffect(() => {
     async function fetchSalon() {
       const res = await fetch(`/api/salon/${slug}`);
@@ -132,7 +134,7 @@ export default function SalonBookingPage() {
   if (pageLoading) {
     return (
       <div className="min-h-screen bg-bg-gray flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-primary animate-spin" />
+        <Loader2 className="w-8 h-8 animate-spin" style={{ color: accentColor }} />
       </div>
     );
   }
@@ -200,12 +202,13 @@ export default function SalonBookingPage() {
                 {(['service', 'datetime', 'details'] as const).map((s, i) => (
                   <div
                     key={s}
-                    className={`h-1 flex-1 rounded-full transition-colors ${
-                      i <=
-                      ['service', 'datetime', 'details'].indexOf(step)
-                        ? 'bg-primary'
-                        : 'bg-light-gray'
-                    }`}
+                    className="h-1 flex-1 rounded-full transition-colors"
+                    style={{
+                      backgroundColor:
+                        i <= ['service', 'datetime', 'details'].indexOf(step)
+                          ? accentColor
+                          : '#CBD5E1',
+                    }}
                   />
                 ))}
               </div>
@@ -224,6 +227,7 @@ export default function SalonBookingPage() {
             services={services}
             selectedServiceId={selectedService?.id}
             onSelect={handleServiceSelect}
+            accentColor={accentColor}
           />
         )}
 
@@ -238,6 +242,7 @@ export default function SalonBookingPage() {
                 }}
                 minDate={new Date()}
                 maxDate={addDays(new Date(), salon.max_booking_days_ahead)}
+                accentColor={accentColor}
               />
             </div>
 
@@ -247,6 +252,7 @@ export default function SalonBookingPage() {
                 slots={timeSlots}
                 selectedSlot={selectedSlot || undefined}
                 onSlotSelect={handleSlotSelect}
+                accentColor={accentColor}
               />
             </div>
 
@@ -255,6 +261,7 @@ export default function SalonBookingPage() {
                 size="lg"
                 className="w-full"
                 onClick={handleContinueToDetails}
+                accentColor={accentColor}
               >
                 Verder
               </Button>
@@ -264,7 +271,7 @@ export default function SalonBookingPage() {
 
         {step === 'details' && (
           <div className="bg-white rounded-xl border border-light-gray p-4 sm:p-6">
-            <CustomerForm onSubmit={handleBookingSubmit} loading={loading} />
+            <CustomerForm onSubmit={handleBookingSubmit} loading={loading} accentColor={accentColor} />
           </div>
         )}
 
@@ -276,6 +283,7 @@ export default function SalonBookingPage() {
               startTime={selectedSlot.startTime}
               customerName={customerName}
               bookingId={bookingId}
+              accentColor={accentColor}
             />
           </div>
         )}
@@ -285,7 +293,7 @@ export default function SalonBookingPage() {
       <div className="text-center py-6">
         <p className="text-xs text-gray-text">
           Powered by{' '}
-          <a href="https://bookedwell.app" className="text-primary hover:underline font-medium">
+          <a href="https://bookedwell.app" className="hover:underline font-medium" style={{ color: accentColor }}>
             BookedWell
           </a>
         </p>

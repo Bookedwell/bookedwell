@@ -8,9 +8,10 @@ interface TimePickerProps {
   slots: TimeSlot[];
   selectedSlot?: TimeSlot;
   onSlotSelect: (slot: TimeSlot) => void;
+  accentColor?: string;
 }
 
-export function TimePicker({ slots, selectedSlot, onSlotSelect }: TimePickerProps) {
+export function TimePicker({ slots, selectedSlot, onSlotSelect, accentColor = '#4285F4' }: TimePickerProps) {
   if (slots.length === 0) {
     return (
       <div className="text-center py-8 text-gray-text">
@@ -34,11 +35,20 @@ export function TimePicker({ slots, selectedSlot, onSlotSelect }: TimePickerProp
             className={cn(
               'py-2.5 px-3 rounded-lg text-sm font-medium transition-all',
               isSelected
-                ? 'bg-primary text-white shadow-md'
+                ? 'text-white shadow-md'
                 : slot.available
-                ? 'border border-light-gray text-navy hover:border-primary hover:text-primary'
+                ? 'border border-light-gray text-navy'
                 : 'border border-light-gray/50 text-light-gray cursor-not-allowed line-through'
             )}
+            style={
+              isSelected
+                ? { backgroundColor: accentColor }
+                : slot.available
+                ? { '--hover-color': accentColor } as any
+                : undefined
+            }
+            onMouseEnter={(e) => { if (slot.available && !isSelected) { (e.target as HTMLElement).style.borderColor = accentColor; (e.target as HTMLElement).style.color = accentColor; } }}
+            onMouseLeave={(e) => { if (slot.available && !isSelected) { (e.target as HTMLElement).style.borderColor = ''; (e.target as HTMLElement).style.color = ''; } }}
           >
             {formatTime(slot.startTime)}
           </button>

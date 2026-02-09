@@ -16,9 +16,10 @@ interface CustomerFormProps {
   onSubmit: (data: CustomerFormData) => void;
   loading?: boolean;
   initialData?: Partial<CustomerFormData>;
+  accentColor?: string;
 }
 
-export function CustomerForm({ onSubmit, loading, initialData }: CustomerFormProps) {
+export function CustomerForm({ onSubmit, loading, initialData, accentColor = '#4285F4' }: CustomerFormProps) {
   const [form, setForm] = useState<CustomerFormData>({
     name: initialData?.name || '',
     email: initialData?.email || '',
@@ -111,7 +112,7 @@ export function CustomerForm({ onSubmit, loading, initialData }: CustomerFormPro
         </div>
       </div>
 
-      <Button type="submit" size="lg" className="w-full" loading={loading}>
+      <Button type="submit" size="lg" className="w-full" loading={loading} accentColor={accentColor}>
         Afspraak bevestigen
       </Button>
     </form>

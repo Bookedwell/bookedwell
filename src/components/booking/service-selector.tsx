@@ -9,9 +9,10 @@ interface ServiceSelectorProps {
   services: Service[];
   selectedServiceId?: string;
   onSelect: (service: Service) => void;
+  accentColor?: string;
 }
 
-export function ServiceSelector({ services, selectedServiceId, onSelect }: ServiceSelectorProps) {
+export function ServiceSelector({ services, selectedServiceId, onSelect, accentColor = '#4285F4' }: ServiceSelectorProps) {
   const grouped = services.reduce<Record<string, Service[]>>((acc, service) => {
     const cat = service.category || 'Overige';
     if (!acc[cat]) acc[cat] = [];
@@ -36,9 +37,14 @@ export function ServiceSelector({ services, selectedServiceId, onSelect }: Servi
                   className={cn(
                     'w-full flex items-center justify-between p-4 rounded-xl border transition-all text-left',
                     selectedServiceId === service.id
-                      ? 'border-primary bg-primary/5 ring-2 ring-primary'
-                      : 'border-light-gray hover:border-primary/50 hover:shadow-sm'
+                      ? 'ring-2'
+                      : 'border-light-gray hover:shadow-sm'
                   )}
+                  style={
+                    selectedServiceId === service.id
+                      ? { borderColor: accentColor, backgroundColor: accentColor + '10', '--tw-ring-color': accentColor } as any
+                      : undefined
+                  }
                 >
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-navy">{service.name}</p>

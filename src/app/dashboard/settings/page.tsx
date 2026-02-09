@@ -286,24 +286,27 @@ export default function SettingsPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-navy">Instellingen</h1>
-          <p className="text-gray-text mt-1">Beheer je salon gegevens en branding</p>
+      {/* Sticky header with save button */}
+      <div className="sticky top-16 z-20 bg-bg-gray -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-3 border-b border-light-gray mb-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-navy">Instellingen</h1>
+            <p className="text-gray-text mt-0.5 text-sm">Beheer je salon gegevens en branding</p>
+          </div>
+          <Button onClick={handleSave} loading={saving} accentColor={primaryColor}>
+            {saved ? (
+              <>
+                <Check className="w-4 h-4 mr-2" />
+                Opgeslagen
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4 mr-2" />
+                Opslaan
+              </>
+            )}
+          </Button>
         </div>
-        <Button onClick={handleSave} loading={saving} accentColor={primaryColor}>
-          {saved ? (
-            <>
-              <Check className="w-4 h-4 mr-2" />
-              Opgeslagen
-            </>
-          ) : (
-            <>
-              <Save className="w-4 h-4 mr-2" />
-              Opslaan
-            </>
-          )}
-        </Button>
       </div>
 
       {/* Booking link */}
