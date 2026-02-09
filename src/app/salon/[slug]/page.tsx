@@ -271,7 +271,7 @@ export default function SalonBookingPage() {
       )}
 
       {/* Content */}
-      <div className="max-w-lg mx-auto px-4 py-6 overflow-hidden">
+      <div className="max-w-lg mx-auto px-4 py-6 overflow-x-clip">
         <AnimatePresence mode="wait" custom={direction}>
           {step === 'service' && (
             <motion.div
