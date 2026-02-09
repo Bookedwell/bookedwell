@@ -1,23 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import {
   format,
-  startOfMonth,
-  endOfMonth,
-  startOfWeek,
-  endOfWeek,
-  addMonths,
-  subMonths,
-  eachDayOfInterval,
-  isSameMonth,
   isSameDay,
   isBefore,
   isAfter,
   startOfDay,
   addDays,
+  isToday as isDateToday,
 } from 'date-fns';
 import { nl } from 'date-fns/locale';
 import { getContrastText } from '@/lib/utils/color';
@@ -28,6 +21,7 @@ interface CalendarProps {
   minDate?: Date;
   maxDate?: Date;
   disabledDates?: Date[];
+  busyDates?: Date[];
   accentColor?: string;
 }
 
@@ -37,98 +31,121 @@ export function Calendar({
   minDate,
   maxDate,
   disabledDates = [],
+  busyDates = [],
   accentColor = '#4285F4',
 }: CalendarProps) {
-  const [currentMonth, setCurrentMonth] = useState(startOfMonth(selectedDate));
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const selectedRef = useRef<HTMLButtonElement>(null);
 
-  const monthStart = startOfMonth(currentMonth);
-  const monthEnd = endOfMonth(currentMonth);
-  const calStart = startOfWeek(monthStart, { weekStartsOn: 1 });
-  const calEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
-
-  const days = eachDayOfInterval({ start: calStart, end: calEnd });
-
-  const weekDays = ['Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za', 'Zo'];
+  // Generate days from minDate to maxDate
+  const start = minDate ? startOfDay(minDate) : startOfDay(new Date());
+  const end = maxDate || addDays(start, 60);
+  const days: Date[] = [];
+  let current = start;
+  while (!isAfter(current, end)) {
+    days.push(current);
+    current = addDays(current, 1);
+  }
 
   const isDisabled = (date: Date) => {
-    if (minDate && isBefore(date, startOfDay(minDate))) return true;
-    if (maxDate && isAfter(date, maxDate)) return true;
-    return disabledDates.some((d) => isSameDay(d, date));
+    if (disabledDates.some((d) => isSameDay(d, date))) return true;
+    return false;
   };
 
-  const canGoPrev = !minDate || isAfter(monthStart, startOfMonth(minDate));
-  const canGoNext = !maxDate || isBefore(monthEnd, startOfMonth(maxDate));
+  const isBusy = (date: Date) => {
+    return busyDates.some((d) => isSameDay(d, date));
+  };
+
+  // Scroll selected into view on mount
+  useEffect(() => {
+    if (selectedRef.current && scrollRef.current) {
+      const container = scrollRef.current;
+      const el = selectedRef.current;
+      const offset = el.offsetLeft - container.offsetWidth / 2 + el.offsetWidth / 2;
+      container.scrollTo({ left: offset, behavior: 'smooth' });
+    }
+  }, [selectedDate]);
+
+  const scrollBy = (dir: number) => {
+    scrollRef.current?.scrollBy({ left: dir * 280, behavior: 'smooth' });
+  };
+
+  const dayLabel = (date: Date) => {
+    if (isDateToday(date)) return 'Vandaag';
+    return format(date, 'EEEEEE', { locale: nl });
+  };
 
   return (
     <div className="w-full">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center gap-2">
         <button
-          onClick={() => canGoPrev && setCurrentMonth(subMonths(currentMonth, 1))}
-          disabled={!canGoPrev}
-          className={cn(
-            'p-1.5 rounded-lg transition-colors',
-            canGoPrev ? 'hover:bg-bg-gray text-navy' : 'text-light-gray cursor-not-allowed'
-          )}
+          onClick={() => scrollBy(-1)}
+          className="p-1.5 rounded-lg hover:bg-bg-gray text-navy flex-shrink-0"
         >
           <ChevronLeft className="w-5 h-5" />
         </button>
-        <h3 className="font-semibold text-navy capitalize">
-          {format(currentMonth, 'MMMM yyyy', { locale: nl })}
-        </h3>
+
+        <div
+          ref={scrollRef}
+          className="flex gap-2 overflow-x-auto scrollbar-hide py-1 flex-1"
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        >
+          {days.map((day) => {
+            const selected = isSameDay(day, selectedDate);
+            const disabled = isDisabled(day);
+            const busy = isBusy(day);
+            const today = isDateToday(day);
+
+            return (
+              <button
+                key={day.toISOString()}
+                ref={selected ? selectedRef : undefined}
+                onClick={() => !disabled && onDateSelect(day)}
+                disabled={disabled}
+                className={cn(
+                  'flex flex-col items-center justify-center px-3 py-2 rounded-xl min-w-[60px] transition-all flex-shrink-0',
+                  disabled && 'opacity-30 cursor-not-allowed',
+                  !disabled && !selected && 'hover:bg-bg-gray',
+                  selected && 'shadow-md',
+                  busy && !disabled && !selected && 'ring-1 ring-orange-300',
+                )}
+                style={
+                  selected
+                    ? { backgroundColor: accentColor, color: getContrastText(accentColor) }
+                    : undefined
+                }
+              >
+                <span className={cn(
+                  'text-[10px] font-semibold uppercase leading-none mb-1',
+                  selected ? '' : today ? '' : 'text-gray-text',
+                )}
+                  style={today && !selected ? { color: accentColor } : undefined}
+                >
+                  {dayLabel(day)}
+                </span>
+                <span className={cn(
+                  'text-xl font-bold leading-none',
+                  selected ? '' : 'text-navy',
+                )}>
+                  {format(day, 'd')}
+                </span>
+                <span className={cn(
+                  'text-[10px] uppercase leading-none mt-1',
+                  selected ? '' : 'text-gray-text',
+                )}>
+                  {format(day, 'MMM', { locale: nl })}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
         <button
-          onClick={() => canGoNext && setCurrentMonth(addMonths(currentMonth, 1))}
-          disabled={!canGoNext}
-          className={cn(
-            'p-1.5 rounded-lg transition-colors',
-            canGoNext ? 'hover:bg-bg-gray text-navy' : 'text-light-gray cursor-not-allowed'
-          )}
+          onClick={() => scrollBy(1)}
+          className="p-1.5 rounded-lg hover:bg-bg-gray text-navy flex-shrink-0"
         >
           <ChevronRight className="w-5 h-5" />
         </button>
-      </div>
-
-      <div className="grid grid-cols-7 gap-1 mb-2">
-        {weekDays.map((day) => (
-          <div
-            key={day}
-            className="text-center text-xs font-medium text-gray-text py-1"
-          >
-            {day}
-          </div>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-7 gap-1">
-        {days.map((day) => {
-          const isCurrentMonth = isSameMonth(day, currentMonth);
-          const isSelected = isSameDay(day, selectedDate);
-          const isToday = isSameDay(day, new Date());
-          const disabled = !isCurrentMonth || isDisabled(day);
-
-          return (
-            <button
-              key={day.toISOString()}
-              onClick={() => !disabled && onDateSelect(day)}
-              disabled={disabled}
-              className={cn(
-                'aspect-square flex items-center justify-center rounded-lg text-sm font-medium transition-all',
-                disabled && 'text-light-gray/50 cursor-not-allowed',
-                !disabled && !isSelected && 'text-navy',
-                !disabled && isToday && !isSelected && 'border',
-                isSelected && 'shadow-sm'
-              )}
-              style={
-                isSelected
-                  ? { backgroundColor: accentColor, color: getContrastText(accentColor) }
-                  : !disabled && isToday
-                  ? { borderColor: accentColor, color: accentColor }
-                  : undefined
-              }
-            >
-              {format(day, 'd')}
-            </button>
-          );
-        })}
       </div>
     </div>
   );

@@ -1,47 +1,20 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import Image from 'next/image';
 import { useParams } from 'next/navigation';
 import { ArrowLeft, MapPin, Loader2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { ServiceSelector } from '@/components/booking/service-selector';
 import { Calendar } from '@/components/booking/calendar';
 import { TimePicker } from '@/components/booking/time-picker';
 import { CustomerForm } from '@/components/booking/customer-form';
 import { BookingConfirmation } from '@/components/booking/booking-confirmation';
 import { Button } from '@/components/ui/button';
-import { addDays } from 'date-fns';
+import { addDays, format } from 'date-fns';
+import { nl } from 'date-fns/locale';
 import type { Service, Salon, TimeSlot } from '@/types';
 
-function generateTimeSlots(date: Date, durationMinutes: number): TimeSlot[] {
-  const slots: TimeSlot[] = [];
-  const day = date.getDay();
-
-  if (day === 0) return [];
-
-  const startHour = 9;
-  const endHour = day === 6 ? 17 : 18;
-
-  for (let hour = startHour; hour < endHour; hour++) {
-    for (let min = 0; min < 60; min += 30) {
-      if (hour + durationMinutes / 60 > endHour) break;
-      const startTime = new Date(date);
-      startTime.setHours(hour, min, 0, 0);
-      const endTime = new Date(startTime);
-      endTime.setMinutes(endTime.getMinutes() + durationMinutes);
-
-      // Skip past times
-      if (startTime < new Date()) continue;
-
-      slots.push({
-        startTime: startTime.toISOString(),
-        endTime: endTime.toISOString(),
-        available: true,
-      });
-    }
-  }
-  return slots;
-}
 
 type BookingStep = 'service' | 'datetime' | 'details' | 'confirmed';
 
@@ -54,8 +27,15 @@ export default function SalonBookingPage() {
   const [pageLoading, setPageLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
-  const [step, setStep] = useState<BookingStep>('service');
-  const [selectedService, setSelectedService] = useState<Service | null>(null);
+  const [step, _setStep] = useState<BookingStep>('service');
+  const [direction, setDirection] = useState(1); // 1 = forward, -1 = back
+
+  const setStep = (newStep: BookingStep) => {
+    const order: BookingStep[] = ['service', 'datetime', 'details', 'confirmed'];
+    setDirection(order.indexOf(newStep) > order.indexOf(step) ? 1 : -1);
+    _setStep(newStep);
+  };
+  const [selectedServices, setSelectedServices] = useState<Service[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
   const [bookingId, setBookingId] = useState<string | null>(null);
@@ -80,10 +60,32 @@ export default function SalonBookingPage() {
     fetchSalon();
   }, [slug]);
 
-  const timeSlots = useMemo(() => {
-    if (!selectedService) return [];
-    return generateTimeSlots(selectedDate, selectedService.duration_minutes);
-  }, [selectedDate, selectedService]);
+  const totalDuration = useMemo(() => 
+    selectedServices.reduce((sum, s) => sum + s.duration_minutes, 0)
+  , [selectedServices]);
+
+  const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
+  const [slotsLoading, setSlotsLoading] = useState(false);
+
+  // Fetch real availability from API
+  useEffect(() => {
+    if (selectedServices.length === 0 || !salon) {
+      setTimeSlots([]);
+      return;
+    }
+    setSlotsLoading(true);
+    const dateStr = format(selectedDate, 'yyyy-MM-dd');
+    fetch(`/api/salon/${slug}/availability?date=${dateStr}&duration=${totalDuration}`)
+      .then(res => res.json())
+      .then(data => {
+        setTimeSlots(data.slots || []);
+        setSlotsLoading(false);
+      })
+      .catch(() => {
+        setTimeSlots([]);
+        setSlotsLoading(false);
+      });
+  }, [selectedDate, selectedServices, totalDuration, salon, slug]);
 
   const stepTitles: Record<BookingStep, string> = {
     service: 'Kies een dienst',
@@ -92,10 +94,17 @@ export default function SalonBookingPage() {
     confirmed: 'Bevestigd',
   };
 
-  const handleServiceSelect = (service: Service) => {
-    setSelectedService(service);
+  const handleServiceToggle = (service: Service) => {
+    setSelectedServices(prev => {
+      const exists = prev.find(s => s.id === service.id);
+      if (exists) return prev.filter(s => s.id !== service.id);
+      return [...prev, service];
+    });
     setSelectedSlot(null);
-    setStep('datetime');
+  };
+
+  const handleServicesContinue = () => {
+    if (selectedServices.length > 0) setStep('datetime');
   };
 
   const handleSlotSelect = (slot: TimeSlot) => {
@@ -114,7 +123,7 @@ export default function SalonBookingPage() {
     phone: string;
     notes: string;
   }) => {
-    if (!salon || !selectedService || !selectedSlot) return;
+    if (!salon || selectedServices.length === 0 || !selectedSlot) return;
     setLoading(true);
     setCustomerName(data.name);
 
@@ -124,7 +133,8 @@ export default function SalonBookingPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           salon_id: salon.id,
-          service_id: selectedService.id,
+          service_id: selectedServices[0].id,
+          service_ids: selectedServices.map(s => s.id),
           start_time: selectedSlot.startTime,
           customer_name: data.name,
           customer_email: data.email || null,
@@ -222,102 +232,169 @@ export default function SalonBookingPage() {
           <div className="max-w-lg mx-auto px-4 py-3">
             <div className="flex items-center gap-2">
               {step !== 'service' && (
-                <button
+                <motion.button
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -10 }}
                   onClick={handleBack}
                   className="p-1 rounded-lg hover:bg-bg-gray transition-colors mr-1"
                 >
                   <ArrowLeft className="w-5 h-5 text-navy" />
-                </button>
+                </motion.button>
               )}
               <div className="flex gap-1.5 flex-1">
                 {(['service', 'datetime', 'details'] as const).map((s, i) => (
-                  <div
-                    key={s}
-                    className="h-1 flex-1 rounded-full transition-colors"
-                    style={{
-                      backgroundColor:
-                        i <= ['service', 'datetime', 'details'].indexOf(step)
-                          ? accentColor
-                          : '#CBD5E1',
-                    }}
-                  />
+                  <div key={s} className="h-1 flex-1 rounded-full bg-[#CBD5E1] overflow-hidden">
+                    <motion.div
+                      className="h-full rounded-full"
+                      style={{ backgroundColor: accentColor }}
+                      initial={{ width: '0%' }}
+                      animate={{
+                        width: i <= ['service', 'datetime', 'details'].indexOf(step) ? '100%' : '0%',
+                      }}
+                      transition={{ duration: 0.4, ease: 'easeInOut' }}
+                    />
+                  </div>
                 ))}
               </div>
             </div>
-            <p className="text-sm font-medium text-navy mt-2">
+            <motion.p
+              key={step}
+              initial={{ opacity: 0, y: 5 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-sm font-medium text-navy mt-2"
+            >
               {stepTitles[step]}
-            </p>
+            </motion.p>
           </div>
         </div>
       )}
 
       {/* Content */}
-      <div className="max-w-lg mx-auto px-4 py-6">
-        {step === 'service' && (
-          <ServiceSelector
-            services={services}
-            selectedServiceId={selectedService?.id}
-            onSelect={handleServiceSelect}
-            accentColor={accentColor}
-          />
-        )}
-
-        {step === 'datetime' && (
-          <div className="space-y-6">
-            <div className="bg-white rounded-xl border border-light-gray p-4">
-              <Calendar
-                selectedDate={selectedDate}
-                onDateSelect={(date) => {
-                  setSelectedDate(date);
-                  setSelectedSlot(null);
-                }}
-                minDate={new Date()}
-                maxDate={addDays(new Date(), salon.max_booking_days_ahead)}
+      <div className="max-w-lg mx-auto px-4 py-6 overflow-hidden">
+        <AnimatePresence mode="wait" custom={direction}>
+          {step === 'service' && (
+            <motion.div
+              key="service"
+              custom={direction}
+              initial={{ opacity: 0, x: direction * 300 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: direction * -300 }}
+              transition={{ type: 'spring', stiffness: 500, damping: 40, mass: 0.8 }}
+            >
+              <ServiceSelector
+                services={services}
+                selectedServices={selectedServices}
+                onToggle={handleServiceToggle}
+                onContinue={handleServicesContinue}
                 accentColor={accentColor}
               />
-            </div>
+            </motion.div>
+          )}
 
-            <div className="bg-white rounded-xl border border-light-gray p-4">
-              <h3 className="font-medium text-navy mb-3">Beschikbare tijden</h3>
-              <TimePicker
-                slots={timeSlots}
-                selectedSlot={selectedSlot || undefined}
-                onSlotSelect={handleSlotSelect}
-                accentColor={accentColor}
-              />
-            </div>
+          {step === 'datetime' && (
+            <motion.div
+              key="datetime"
+              custom={direction}
+              initial={{ opacity: 0, x: direction * 300 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: direction * -300 }}
+              transition={{ type: 'spring', stiffness: 500, damping: 40, mass: 0.8 }}
+              className="space-y-6"
+            >
+              <div className="bg-white rounded-xl border border-light-gray p-4">
+                <Calendar
+                  selectedDate={selectedDate}
+                  onDateSelect={(date) => {
+                    setSelectedDate(date);
+                    setSelectedSlot(null);
+                  }}
+                  minDate={new Date()}
+                  maxDate={addDays(new Date(), salon.max_booking_days_ahead)}
+                  accentColor={accentColor}
+                />
+              </div>
 
-            {selectedSlot && (
-              <Button
-                size="lg"
-                className="w-full"
-                onClick={handleContinueToDetails}
-                accentColor={accentColor}
-              >
-                Verder
-              </Button>
-            )}
-          </div>
-        )}
+              <div>
+                <h3 className="font-medium text-navy mb-3 capitalize">
+                  Beschikbare tijden op {format(selectedDate, 'EEEE d MMM', { locale: nl })}
+                </h3>
+                {slotsLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="w-5 h-5 animate-spin text-gray-text" />
+                    <span className="ml-2 text-sm text-gray-text">Beschikbaarheid laden...</span>
+                  </div>
+                ) : timeSlots.length === 0 ? (
+                  <p className="text-sm text-gray-text text-center py-8">
+                    Geen beschikbare tijden op deze dag
+                  </p>
+                ) : (
+                  <TimePicker
+                    slots={timeSlots}
+                    selectedSlot={selectedSlot || undefined}
+                    onSlotSelect={handleSlotSelect}
+                    accentColor={accentColor}
+                  />
+                )}
+              </div>
 
-        {step === 'details' && (
-          <div className="bg-white rounded-xl border border-light-gray p-4 sm:p-6">
-            <CustomerForm onSubmit={handleBookingSubmit} loading={loading} accentColor={accentColor} />
-          </div>
-        )}
+              <AnimatePresence>
+                {selectedSlot && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 20 }}
+                    transition={{ duration: 0.25 }}
+                  >
+                    <Button
+                      size="lg"
+                      className="w-full"
+                      onClick={handleContinueToDetails}
+                      accentColor={accentColor}
+                    >
+                      Verder
+                    </Button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
+          )}
 
-        {step === 'confirmed' && selectedService && selectedSlot && bookingId && (
-          <div className="bg-white rounded-xl border border-light-gray p-4 sm:p-6">
-            <BookingConfirmation
-              salon={salon}
-              service={selectedService}
-              startTime={selectedSlot.startTime}
-              customerName={customerName}
-              bookingId={bookingId}
-              accentColor={accentColor}
-            />
-          </div>
-        )}
+          {step === 'details' && (
+            <motion.div
+              key="details"
+              custom={direction}
+              initial={{ opacity: 0, x: direction * 300 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: direction * -300 }}
+              transition={{ type: 'spring', stiffness: 500, damping: 40, mass: 0.8 }}
+            >
+              <div className="bg-white rounded-xl border border-light-gray p-4 sm:p-6">
+                <CustomerForm onSubmit={handleBookingSubmit} loading={loading} accentColor={accentColor} />
+              </div>
+            </motion.div>
+          )}
+
+          {step === 'confirmed' && selectedServices.length > 0 && selectedSlot && bookingId && (
+            <motion.div
+              key="confirmed"
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+            >
+              <div className="bg-white rounded-xl border border-light-gray p-4 sm:p-6">
+                <BookingConfirmation
+                  salon={salon}
+                  service={selectedServices[0]}
+                  startTime={selectedSlot.startTime}
+                  customerName={customerName}
+                  bookingId={bookingId}
+                  accentColor={accentColor}
+                />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Powered by */}

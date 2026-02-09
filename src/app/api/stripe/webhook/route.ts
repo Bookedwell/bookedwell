@@ -159,7 +159,7 @@ export async function POST(request: Request) {
         
         // Only handle booking payments (has our metadata)
         if (session.metadata?.salon_id && session.metadata?.service_id) {
-          const { salon_id, service_id, customer_id, booking_id, start_time } = session.metadata;
+          const { salon_id, service_id, booking_id, customer_name, customer_phone, start_time } = session.metadata;
 
           // Confirm existing booking (created before checkout)
           if (booking_id) {
@@ -182,12 +182,6 @@ export async function POST(request: Request) {
 
           // Send confirmation SMS + email
           try {
-            const { data: customer } = await supabase
-              .from('customers')
-              .select('name, phone, email')
-              .eq('id', customer_id)
-              .single();
-
             const { data: salon } = await supabase
               .from('salons')
               .select('name')
@@ -200,11 +194,11 @@ export async function POST(request: Request) {
               .eq('id', service_id)
               .single();
 
-            if (customer && salon && service) {
+            if (salon && service && customer_name && customer_phone) {
               await sendBookingConfirmation({
-                customerName: customer.name,
-                customerPhone: customer.phone,
-                customerEmail: customer.email,
+                customerName: customer_name,
+                customerPhone: customer_phone,
+                customerEmail: session.customer_email || null,
                 salonName: salon.name,
                 serviceName: service.name,
                 startTime: start_time,

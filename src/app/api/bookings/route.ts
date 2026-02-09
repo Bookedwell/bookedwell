@@ -65,44 +65,19 @@ export async function POST(request: Request) {
     const startDate = new Date(start_time);
     const endDate = new Date(startDate.getTime() + service.duration_minutes * 60 * 1000);
 
-    // Find or create customer
-    let { data: customer } = await supabase
-      .from('customers')
-      .select('id')
-      .eq('salon_id', salon_id)
-      .eq('phone', customer_phone)
-      .single();
-
-    if (!customer) {
-      const { data: newCustomer, error: customerError } = await supabase
-        .from('customers')
-        .insert({
-          salon_id,
-          name: customer_name,
-          email: customer_email || null,
-          phone: customer_phone,
-        })
-        .select('id')
-        .single();
-
-      if (customerError) {
-        console.error('Error creating customer:', customerError);
-        return NextResponse.json({ error: 'Failed to create customer' }, { status: 500 });
-      }
-      customer = newCustomer;
-    }
-
     // Always create booking first (status: pending)
     const { data: booking, error: bookingError } = await supabase
       .from('bookings')
       .insert({
         salon_id,
-        customer_id: customer.id,
         service_id,
         start_time: startDate.toISOString(),
         end_time: endDate.toISOString(),
+        customer_name,
+        customer_email: customer_email || '',
+        customer_phone,
+        customer_notes: notes || null,
         status: 'pending',
-        notes: notes || null,
         deposit_paid: false,
       })
       .select('id')
@@ -172,8 +147,9 @@ export async function POST(request: Request) {
       metadata: {
         salon_id,
         service_id,
-        customer_id: customer.id,
         booking_id: booking.id,
+        customer_name,
+        customer_phone,
         start_time: startDate.toISOString(),
         end_time: endDate.toISOString(),
         notes: notes || '',

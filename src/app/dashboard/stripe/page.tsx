@@ -30,34 +30,47 @@ export default function StripePage() {
   const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [checking, setChecking] = useState(false);
   const setupComplete = searchParams.get('setup') === 'complete';
 
   const fetchStatus = async () => {
-    const res = await fetch('/api/stripe/connect');
+    const res = await fetch('/api/stripe/connect', { cache: 'no-store' });
     if (res.ok) {
       const data = await res.json();
       setStatus(data);
+      return data;
     }
     setLoading(false);
+    return null;
   };
 
   useEffect(() => {
     if (setupComplete) {
-      // Refresh status from Stripe after returning from onboarding
-      refreshStatus();
+      // After Stripe onboarding redirect: sync from Stripe then poll aggressively
+      setChecking(true);
+      refreshStatus().then(() => setChecking(false));
+
+      // Poll every 2s for 30s to catch delayed Stripe updates
+      const fastPoll = setInterval(async () => {
+        const data = await fetchStatus();
+        if (data?.charges_enabled) {
+          clearInterval(fastPoll);
+        }
+      }, 2000);
+      const timeout = setTimeout(() => clearInterval(fastPoll), 30000);
+      return () => { clearInterval(fastPoll); clearTimeout(timeout); };
     } else {
-      fetchStatus();
+      fetchStatus().then(() => setLoading(false));
+
+      // Normal poll every 10s
+      const interval = setInterval(() => {
+        fetch('/api/stripe/connect', { cache: 'no-store' })
+          .then((res) => res.ok ? res.json() : null)
+          .then((data) => { if (data) setStatus(data); })
+          .catch(() => {});
+      }, 10000);
+      return () => clearInterval(interval);
     }
-
-    // Poll every 5 seconds for real-time updates
-    const interval = setInterval(() => {
-      fetch('/api/stripe/connect')
-        .then((res) => res.ok ? res.json() : null)
-        .then((data) => { if (data) setStatus(data); })
-        .catch(() => {});
-    }, 5000);
-
-    return () => clearInterval(interval);
   }, []);
 
   const handleConnect = async () => {
@@ -74,19 +87,25 @@ export default function StripePage() {
 
   const refreshStatus = async () => {
     setRefreshing(true);
-    const res = await fetch('/api/stripe/connect', { method: 'PATCH' });
-    if (res.ok) {
-      const data = await res.json();
-      setStatus((prev) => prev ? { ...prev, ...data } : null);
+    try {
+      const res = await fetch('/api/stripe/connect', { method: 'PATCH', cache: 'no-store' });
+      if (res.ok) {
+        const patchData = await res.json();
+        setStatus((prev) => prev ? { ...prev, ...patchData } : patchData);
+      }
+      const freshData = await fetchStatus();
+      if (freshData) setLoading(false);
+    } catch (e) {
+      console.error('refreshStatus error', e);
     }
-    await fetchStatus();
     setRefreshing(false);
   };
 
-  if (loading) {
+  if (loading || checking) {
     return (
-      <div className="flex items-center justify-center py-20">
+      <div className="flex flex-col items-center justify-center py-20 gap-3">
         <div className="w-6 h-6 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: accentColor, borderTopColor: 'transparent' }} />
+        {checking && <p className="text-sm text-gray-text">Stripe status controleren...</p>}
       </div>
     );
   }

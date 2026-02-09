@@ -48,6 +48,8 @@ export async function GET() {
     charges_enabled: account?.charges_enabled || false,
     payouts_enabled: account?.payouts_enabled || false,
     details_submitted: account?.details_submitted || false,
+  }, {
+    headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate', 'Pragma': 'no-cache' },
   });
 }
 
@@ -134,5 +136,7 @@ export async function PATCH() {
     charges_enabled: account.charges_enabled,
     payouts_enabled: account.payouts_enabled,
     details_submitted: account.details_submitted,
+  }, {
+    headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate', 'Pragma': 'no-cache' },
   });
 }
