@@ -23,7 +23,7 @@ const PRESET_COLORS = [
 
 export default function SettingsPage() {
   const router = useRouter();
-  const { updateBranding } = useBranding();
+  const { updateBranding, primaryColor: contextColor, logoUrl: contextLogo, salonName: contextName } = useBranding();
   const [salon, setSalon] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -31,9 +31,10 @@ export default function SettingsPage() {
   const [copied, setCopied] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [initialFetchDone, setInitialFetchDone] = useState(false);
 
-  // Form state
-  const [name, _setName] = useState('');
+  // Form state - initialize with context values
+  const [name, _setName] = useState(contextName || '');
   const setName = useCallback((n: string) => {
     _setName(n);
     updateBranding({ salonName: n });
@@ -44,8 +45,8 @@ export default function SettingsPage() {
   const [city, setCity] = useState('');
   const [postalCode, setPostalCode] = useState('');
   const [description, setDescription] = useState('');
-  const [primaryColor, _setPrimaryColor] = useState('#4285F4');
-  const [logoUrl, _setLogoUrl] = useState<string | null>(null);
+  const [primaryColor, _setPrimaryColor] = useState(contextColor || '#4285F4');
+  const [logoUrl, _setLogoUrl] = useState<string | null>(contextLogo);
 
   // Wrappers that also push to branding context for realtime sidebar updates
   const setPrimaryColor = useCallback((color: string) => {
@@ -75,28 +76,36 @@ export default function SettingsPage() {
       const data = await res.json();
 
       setSalon(data);
-      _setName(data.name);
-      setSlug(data.slug);
-      setPhone(data.phone);
-      setAddress(data.address || '');
-      setCity(data.city || '');
-      setPostalCode(data.postal_code || '');
-      setDescription(data.description || '');
-      _setPrimaryColor(data.primary_color || '#4285F4');
-      _setLogoUrl(data.logo_url || null);
-      updateBranding({
-        primaryColor: data.primary_color || '#4285F4',
-        logoUrl: data.logo_url || null,
-        salonName: data.name,
-      });
-      setBookingBuffer(String(data.booking_buffer_minutes));
-      setMinNotice(String(data.min_booking_notice_hours));
-      setMaxDaysAhead(String(data.max_booking_days_ahead));
-      setCancellationHours(String(data.cancellation_hours_before));
+      
+      // Only set form values from DB on initial load, preserve context values if they differ (unsaved changes)
+      if (!initialFetchDone) {
+        // Use context values if they exist and differ from DB (means user made unsaved changes)
+        const useContextColor = contextColor && contextColor !== '#4285F4' && contextColor !== data.primary_color;
+        const useContextLogo = contextLogo !== undefined && contextLogo !== data.logo_url;
+        const useContextName = contextName && contextName !== data.name;
+        
+        _setName(useContextName ? contextName : data.name);
+        _setPrimaryColor(useContextColor ? contextColor : (data.primary_color || '#4285F4'));
+        _setLogoUrl(useContextLogo ? contextLogo : (data.logo_url || null));
+        
+        setSlug(data.slug);
+        setPhone(data.phone);
+        setAddress(data.address || '');
+        setCity(data.city || '');
+        setPostalCode(data.postal_code || '');
+        setDescription(data.description || '');
+        setBookingBuffer(String(data.booking_buffer_minutes));
+        setMinNotice(String(data.min_booking_notice_hours));
+        setMaxDaysAhead(String(data.max_booking_days_ahead));
+        setCancellationHours(String(data.cancellation_hours_before));
+        
+        setInitialFetchDone(true);
+      }
+      
       setLoading(false);
     }
     fetchSalon();
-  }, []);
+  }, [initialFetchDone, contextColor, contextLogo, contextName]);
 
   const handleSave = async () => {
     if (!salon) return;
