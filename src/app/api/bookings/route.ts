@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/server';
 import Stripe from 'stripe';
+import { sendBookingConfirmation } from '@/lib/notifications/booking-notifications';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -34,8 +35,20 @@ export async function POST(request: Request) {
       .single();
 
     if (salonError || !salon) {
+      console.error('Salon fetch error:', salonError);
       return NextResponse.json({ error: 'Salon not found' }, { status: 404 });
     }
+
+    // Optionally get redirect URL (column may not exist yet)
+    let bookingRedirectUrl: string | null = null;
+    try {
+      const { data: salonExtra } = await supabase
+        .from('salons')
+        .select('booking_redirect_url')
+        .eq('id', salon_id)
+        .single();
+      bookingRedirectUrl = salonExtra?.booking_redirect_url || null;
+    } catch { /* column may not exist yet */ }
 
     // Get service
     const { data: service, error: serviceError } = await supabase
@@ -79,27 +92,50 @@ export async function POST(request: Request) {
       customer = newCustomer;
     }
 
+    // Always create booking first (status: pending)
+    const { data: booking, error: bookingError } = await supabase
+      .from('bookings')
+      .insert({
+        salon_id,
+        customer_id: customer.id,
+        service_id,
+        start_time: startDate.toISOString(),
+        end_time: endDate.toISOString(),
+        status: 'pending',
+        notes: notes || null,
+        deposit_paid: false,
+      })
+      .select('id')
+      .single();
+
+    if (bookingError) {
+      console.error('Error creating booking:', bookingError);
+      return NextResponse.json({ error: 'Failed to create booking' }, { status: 500 });
+    }
+
+    console.log(`Booking ${booking.id} created for salon ${salon.name}`);
+
     // Check if salon has Stripe Connect
     if (!salon.stripe_account_id || !salon.stripe_onboarded) {
-      // No Stripe - create booking directly without payment
-      const { data: booking, error: bookingError } = await supabase
+      // No Stripe - confirm booking directly
+      await supabase
         .from('bookings')
-        .insert({
-          salon_id,
-          customer_id: customer.id,
-          service_id,
-          start_time: startDate.toISOString(),
-          end_time: endDate.toISOString(),
-          status: 'pending',
-          notes: notes || null,
-          deposit_paid: false,
-        })
-        .select('id')
-        .single();
+        .update({ status: 'confirmed' })
+        .eq('id', booking.id);
 
-      if (bookingError) {
-        console.error('Error creating booking:', bookingError);
-        return NextResponse.json({ error: 'Failed to create booking' }, { status: 500 });
+      // Send confirmation SMS + email
+      try {
+        await sendBookingConfirmation({
+          customerName: customer_name,
+          customerPhone: customer_phone,
+          customerEmail: customer_email || null,
+          salonName: salon.name,
+          serviceName: service.name,
+          startTime: startDate.toISOString(),
+          priceCents: service.price_cents,
+        });
+      } catch (notifError) {
+        console.error('Notification error:', notifError);
       }
 
       return NextResponse.json({
@@ -137,16 +173,20 @@ export async function POST(request: Request) {
         salon_id,
         service_id,
         customer_id: customer.id,
+        booking_id: booking.id,
         start_time: startDate.toISOString(),
         end_time: endDate.toISOString(),
         notes: notes || '',
       },
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/salon/${salon.slug}/success?session_id={CHECKOUT_SESSION_ID}`,
+      success_url: bookingRedirectUrl
+        ? bookingRedirectUrl
+        : `${process.env.NEXT_PUBLIC_APP_URL}/salon/${salon.slug}/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/salon/${salon.slug}`,
     });
 
     return NextResponse.json({
       success: true,
+      booking_id: booking.id,
       checkout_url: session.url,
       requires_payment: true,
     });

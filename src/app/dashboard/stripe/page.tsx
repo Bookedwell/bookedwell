@@ -48,6 +48,16 @@ export default function StripePage() {
     } else {
       fetchStatus();
     }
+
+    // Poll every 5 seconds for real-time updates
+    const interval = setInterval(() => {
+      fetch('/api/stripe/connect')
+        .then((res) => res.ok ? res.json() : null)
+        .then((data) => { if (data) setStatus(data); })
+        .catch(() => {});
+    }, 5000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const handleConnect = async () => {

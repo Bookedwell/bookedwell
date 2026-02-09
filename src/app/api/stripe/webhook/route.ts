@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/server';
 import Stripe from 'stripe';
+import { sendBookingConfirmation } from '@/lib/notifications/booking-notifications';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -158,30 +159,60 @@ export async function POST(request: Request) {
         
         // Only handle booking payments (has our metadata)
         if (session.metadata?.salon_id && session.metadata?.service_id) {
-          const { salon_id, service_id, customer_id, start_time, end_time, notes } = session.metadata;
+          const { salon_id, service_id, customer_id, booking_id, start_time } = session.metadata;
 
-          // Create the booking
-          const { data: booking, error: bookingError } = await supabase
-            .from('bookings')
-            .insert({
-              salon_id,
-              customer_id,
-              service_id,
-              start_time,
-              end_time,
-              status: 'confirmed',
-              notes: notes || null,
-              deposit_paid: true,
-              deposit_amount_cents: session.amount_total,
-              stripe_payment_intent_id: session.payment_intent as string,
-            })
-            .select('id')
-            .single();
+          // Confirm existing booking (created before checkout)
+          if (booking_id) {
+            const { error: updateError } = await supabase
+              .from('bookings')
+              .update({
+                status: 'confirmed',
+                deposit_paid: true,
+                deposit_amount_cents: session.amount_total,
+                stripe_payment_intent_id: session.payment_intent as string,
+              })
+              .eq('id', booking_id);
 
-          if (bookingError) {
-            console.error('Error creating booking from checkout:', bookingError);
-          } else {
-            console.log(`Booking ${booking.id} created from checkout session ${session.id}`);
+            if (updateError) {
+              console.error('Error confirming booking:', updateError);
+            } else {
+              console.log(`Booking ${booking_id} confirmed from checkout ${session.id}`);
+            }
+          }
+
+          // Send confirmation SMS + email
+          try {
+            const { data: customer } = await supabase
+              .from('customers')
+              .select('name, phone, email')
+              .eq('id', customer_id)
+              .single();
+
+            const { data: salon } = await supabase
+              .from('salons')
+              .select('name')
+              .eq('id', salon_id)
+              .single();
+
+            const { data: service } = await supabase
+              .from('services')
+              .select('name, price_cents')
+              .eq('id', service_id)
+              .single();
+
+            if (customer && salon && service) {
+              await sendBookingConfirmation({
+                customerName: customer.name,
+                customerPhone: customer.phone,
+                customerEmail: customer.email,
+                salonName: salon.name,
+                serviceName: service.name,
+                startTime: start_time,
+                priceCents: service.price_cents,
+              });
+            }
+          } catch (notifError) {
+            console.error('Notification error:', notifError);
           }
         }
         break;

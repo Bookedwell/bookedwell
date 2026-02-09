@@ -50,6 +50,7 @@ export default function SettingsPage() {
   const [minNotice, setMinNotice] = useState('2');
   const [maxDaysAhead, setMaxDaysAhead] = useState('60');
   const [cancellationHours, setCancellationHours] = useState('24');
+  const [bookingRedirectUrl, setBookingRedirectUrl] = useState('');
   const [eyedropperSupported, setEyedropperSupported] = useState(false);
   const [logoColors, setLogoColors] = useState<string[]>([]);
 
@@ -82,6 +83,7 @@ export default function SettingsPage() {
       setMinNotice(String(data.min_booking_notice_hours));
       setMaxDaysAhead(String(data.max_booking_days_ahead));
       setCancellationHours(String(data.cancellation_hours_before));
+      setBookingRedirectUrl(data.booking_redirect_url || '');
       setLoading(false);
     }
     fetchSalon();
@@ -109,6 +111,7 @@ export default function SettingsPage() {
         min_booking_notice_hours: parseInt(minNotice),
         max_booking_days_ahead: parseInt(maxDaysAhead),
         cancellation_hours_before: parseInt(cancellationHours),
+        booking_redirect_url: bookingRedirectUrl || null,
       }),
     });
 
@@ -588,6 +591,21 @@ export default function SettingsPage() {
               />
               <p className="text-xs text-gray-text mt-1">Uren van tevoren gratis annuleren</p>
             </div>
+          </div>
+
+          {/* Redirect URL */}
+          <div className="mt-4 pt-4 border-t border-light-gray">
+            <label className="block text-sm font-medium text-navy mb-1">Redirect na boeking (optioneel)</label>
+            <input
+              type="url"
+              value={bookingRedirectUrl}
+              onChange={(e) => setBookingRedirectUrl(e.target.value)}
+              placeholder="https://www.jouwwebsite.nl/bedankt"
+              className="w-full px-3 py-2 border border-light-gray rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            />
+            <p className="text-xs text-gray-text mt-1">
+              Na succesvolle betaling wordt de klant hierheen gestuurd. Laat leeg voor de standaard BookedWell bedanktpagina.
+            </p>
           </div>
         </div>
       </div>

@@ -36,6 +36,7 @@ export interface Salon {
   plan: 'free' | 'starter' | 'pro';
   plan_expires_at: string | null;
   active: boolean;
+  booking_redirect_url: string | null;
 }
 
 export interface Staff {

@@ -35,7 +35,7 @@ export async function GET() {
 // PATCH: Update salon settings
 const ALLOWED_FIELDS = [
   'name', 'slug', 'phone', 'address', 'city', 'postal_code', 'description',
-  'primary_color', 'logo_url',
+  'primary_color', 'logo_url', 'booking_redirect_url',
   'booking_buffer_minutes', 'min_booking_notice_hours', 'max_booking_days_ahead',
   'cancellation_hours_before',
 ];
