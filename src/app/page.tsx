@@ -1,0 +1,249 @@
+import Image from 'next/image';
+import Link from 'next/link';
+import { Header } from '@/components/shared/header';
+import { Footer } from '@/components/shared/footer';
+import { PWARegister } from '@/components/shared/pwa-register';
+import {
+  Calendar,
+  MessageSquare,
+  Shield,
+  TrendingUp,
+  Clock,
+  Users,
+  ArrowRight,
+  Check,
+} from 'lucide-react';
+
+export default function LandingPage() {
+  return (
+    <div className="min-h-screen flex flex-col">
+      <PWARegister />
+      <Header />
+
+      {/* Hero */}
+      <section className="bg-gradient-to-br from-bg-gray to-white py-16 sm:py-24">
+        <div className="max-w-container mx-auto px-4 sm:px-6">
+          <div className="max-w-3xl mx-auto text-center">
+            <h1 className="text-4xl sm:text-5xl font-bold text-navy leading-tight">
+              Minder no-shows,{' '}
+              <span className="text-primary">vollere agenda</span>
+            </h1>
+            <p className="mt-6 text-lg text-gray-text max-w-2xl mx-auto">
+              Professionele boekingspagina met automatische WhatsApp reminders en
+              optionele aanbetaling. Zodat je minder no-shows hebt en je agenda
+              voller blijft.
+            </p>
+            <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
+              <Link
+                href="/signup"
+                className="inline-flex items-center justify-center px-6 py-3 text-base font-medium rounded-lg bg-primary text-white hover:bg-primary-dark transition-colors shadow-md"
+              >
+                Gratis starten
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Link>
+              <Link
+                href="#features"
+                className="inline-flex items-center justify-center px-6 py-3 text-base font-medium rounded-lg border-2 border-primary text-primary hover:bg-primary-light transition-colors"
+              >
+                Bekijk features
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Features */}
+      <section id="features" className="py-16 sm:py-24">
+        <div className="max-w-container mx-auto px-4 sm:px-6">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-navy">
+              Alles wat je nodig hebt
+            </h2>
+            <p className="mt-3 text-gray-text max-w-xl mx-auto">
+              Van online boeken tot automatische herinneringen. BookedWell regelt het.
+            </p>
+          </div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[
+              {
+                icon: Calendar,
+                title: 'Online boeken',
+                desc: 'Klanten boeken 24/7 via jouw eigen pagina. Geen heen-en-weer appen meer.',
+              },
+              {
+                icon: MessageSquare,
+                title: 'WhatsApp reminders',
+                desc: 'Automatische herinneringen 24 uur en 2 uur voor de afspraak.',
+              },
+              {
+                icon: Shield,
+                title: 'No-show preventie',
+                desc: 'Optionele aanbetaling of kaartvalidatie. Bescherm je omzet.',
+              },
+              {
+                icon: TrendingUp,
+                title: 'Inzichten & analytics',
+                desc: 'Zie je no-show rate, populaire diensten en piekuren in real-time.',
+              },
+              {
+                icon: Clock,
+                title: 'Slimme planning',
+                desc: 'Automatische beschikbaarheid op basis van werktijden en bestaande afspraken.',
+              },
+              {
+                icon: Users,
+                title: 'Klantbeheer',
+                desc: 'Betrouwbaarheidsscores en geschiedenis per klant. Weet wie er komt.',
+              },
+            ].map((feature) => (
+              <div
+                key={feature.title}
+                className="p-6 rounded-xl border border-light-gray hover:border-primary/30 hover:shadow-md transition-all"
+              >
+                <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
+                  <feature.icon className="w-5 h-5 text-primary" />
+                </div>
+                <h3 className="font-semibold text-navy mb-2">{feature.title}</h3>
+                <p className="text-sm text-gray-text">{feature.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing */}
+      <section className="py-16 sm:py-24 bg-bg-gray">
+        <div className="max-w-container mx-auto px-4 sm:px-6">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-navy">
+              Simpele, eerlijke prijzen
+            </h2>
+            <p className="mt-3 text-gray-text">
+              Transparante prijzen. Transactiekosten Stripe apart.*
+            </p>
+          </div>
+
+          <div className="grid sm:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            {[
+              {
+                name: 'Booked 100',
+                price: '9,95',
+                perBooking: '+ €0,25 per boeking',
+                desc: 'Voor starters',
+                features: [
+                  'Tot 100 bookings per maand',
+                  'Onbeperkt team members (fair use)',
+                  '1 locatie',
+                  'E-mail reminders inbegrepen',
+                  'WhatsApp reminders: €0,12/bericht',
+                ],
+                cta: 'Start met Booked 100',
+                highlight: false,
+              },
+              {
+                name: 'Booked 500',
+                price: '29,95',
+                perBooking: '+ €0,25 per boeking',
+                desc: 'Meest gekozen',
+                features: [
+                  'Tot 500 bookings per maand',
+                  'Onbeperkt team members (fair use)',
+                  '1 locatie',
+                  'E-mail reminders inbegrepen',
+                  'WhatsApp reminders: €0,12/bericht',
+                ],
+                cta: 'Start met Booked 500',
+                highlight: true,
+              },
+              {
+                name: 'Booked Unlimited',
+                price: '99,95',
+                perBooking: '+ €0,20 per boeking',
+                desc: 'Voor drukke bedrijven',
+                features: [
+                  'Unlimited bookings (fair use)',
+                  'Onbeperkt team members (fair use)',
+                  '1 locatie',
+                  'E-mail reminders inbegrepen',
+                  'WhatsApp reminders: €0,10/bericht',
+                ],
+                cta: 'Start met Unlimited',
+                highlight: false,
+              },
+            ].map((plan) => (
+              <div
+                key={plan.name}
+                className={`p-6 rounded-xl border ${
+                  plan.highlight
+                    ? 'border-primary ring-2 ring-primary bg-white shadow-lg'
+                    : 'border-light-gray bg-white'
+                }`}
+              >
+                {plan.highlight && (
+                  <span className="inline-block px-3 py-1 text-xs font-semibold bg-primary/10 text-primary rounded-full mb-4">
+                    Meest gekozen
+                  </span>
+                )}
+                <h3 className="text-lg font-bold text-navy">{plan.name}</h3>
+                <p className="text-sm text-gray-text">{plan.desc}</p>
+                <div className="mt-4 mb-2">
+                  <span className="text-4xl font-bold text-navy">
+                    &euro;{plan.price}
+                  </span>
+                  <span className="text-gray-text">/maand</span>
+                </div>
+                <p className="text-sm font-medium text-primary mb-4">
+                  {plan.perBooking}
+                </p>
+                <ul className="space-y-2 mb-6">
+                  {plan.features.map((f) => (
+                    <li key={f} className="flex items-center gap-2 text-sm text-slate">
+                      <Check className="w-4 h-4 text-primary flex-shrink-0" />
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+                <Link
+                  href="/signup"
+                  className={`block text-center py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                    plan.highlight
+                      ? 'bg-primary text-white hover:bg-primary-dark'
+                      : 'border-2 border-primary text-primary hover:bg-primary-light'
+                  }`}
+                >
+                  {plan.cta}
+                </Link>
+              </div>
+            ))}
+          </div>
+
+          <p className="text-center text-xs text-gray-text mt-8">
+            * Stripe transactiekosten: 1,5% + €0,25 per transactie (iDEAL/kaart). Prijzen excl. BTW.
+          </p>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="py-16 sm:py-24">
+        <div className="max-w-container mx-auto px-4 sm:px-6 text-center">
+          <h2 className="text-3xl font-bold text-navy">
+            Klaar om je no-shows te halveren?
+          </h2>
+          <p className="mt-3 text-gray-text max-w-xl mx-auto">
+            In 5 minuten live. Geen technische kennis nodig.
+          </p>
+          <Link
+            href="/signup"
+            className="inline-flex items-center justify-center mt-8 px-8 py-3.5 text-base font-medium rounded-lg bg-primary text-white hover:bg-primary-dark transition-colors shadow-md"
+          >
+            Gratis starten
+            <ArrowRight className="w-4 h-4 ml-2" />
+          </Link>
+        </div>
+      </section>
+
+      <Footer />
+    </div>
+  );
+}

@@ -1,0 +1,230 @@
+'use client';
+
+import { useState } from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
+import { useBranding } from '@/context/branding-context';
+import {
+  LayoutDashboard,
+  Calendar,
+  Scissors,
+  Users,
+  Settings,
+  LogOut,
+  Menu,
+  X,
+  BarChart3,
+  Globe,
+  CreditCard,
+} from 'lucide-react';
+import type { Salon } from '@/types';
+
+interface DashboardShellProps {
+  salon: Salon;
+  staff: any;
+  user: any;
+  children: React.ReactNode;
+}
+
+const navItems = [
+  { href: '/dashboard', label: 'Overzicht', icon: LayoutDashboard },
+  { href: '/dashboard/bookings', label: 'Boekingen', icon: Calendar },
+  { href: '/dashboard/services', label: 'Diensten', icon: Scissors },
+  { href: '/dashboard/customers', label: 'Klanten', icon: Users },
+  { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart3 },
+  { href: '/dashboard/settings', label: 'Instellingen', icon: Settings },
+  { href: '/dashboard/stripe', label: 'Betalingen', icon: CreditCard },
+];
+
+export function DashboardShell({ salon, staff, user, children }: DashboardShellProps) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const supabase = createClient();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const branding = useBranding();
+
+  const accentColor = branding.primaryColor;
+  const currentLogoUrl = branding.logoUrl;
+  const currentName = branding.salonName;
+
+  // Calculate hue rotation for default logo colorization (base logo is blue #4285F4 = hue 217)
+  const getLogoFilter = () => {
+    const hex = accentColor.replace('#', '');
+    const r = parseInt(hex.slice(0, 2), 16) / 255;
+    const g = parseInt(hex.slice(2, 4), 16) / 255;
+    const b = parseInt(hex.slice(4, 6), 16) / 255;
+    const max = Math.max(r, g, b), min = Math.min(r, g, b);
+    let h = 0;
+    if (max !== min) {
+      const d = max - min;
+      if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+      else if (max === g) h = ((b - r) / d + 2) / 6;
+      else h = ((r - g) / d + 4) / 6;
+    }
+    const targetHue = h * 360;
+    const baseHue = 217; // Blue logo hue
+    const rotation = targetHue - baseHue;
+    const saturation = max === 0 ? 0 : ((max - min) / max) * 100;
+    return `hue-rotate(${rotation}deg) saturate(${Math.max(80, saturation)}%)`;
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push('/login');
+    router.refresh();
+  };
+
+  const bookingUrl = `${salon.slug}.bookedwell.app`;
+
+  return (
+    <div
+      className="min-h-screen bg-bg-gray"
+      style={{
+        '--accent': accentColor,
+        '--accent-light': accentColor + '15',
+        '--accent-medium': accentColor + '30',
+      } as React.CSSProperties}
+    >
+      {/* Mobile overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside
+        className={`fixed top-0 left-0 h-full w-64 bg-white border-r border-light-gray z-50 transform transition-transform duration-200 lg:translate-x-0 ${
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        <div className="flex flex-col h-full">
+          {/* Salon branding */}
+          <div className="h-16 flex items-center px-4 border-b border-light-gray">
+            <Link href="/dashboard" className="flex items-center gap-2.5 min-w-0">
+              {currentLogoUrl ? (
+                <img
+                  src={currentLogoUrl}
+                  alt={currentName}
+                  className="h-8 w-auto flex-shrink-0"
+                />
+              ) : (
+                <Image
+                  src="/logo.png"
+                  alt="BookedWell"
+                  width={140}
+                  height={35}
+                  className="h-7 w-auto flex-shrink-0"
+                  style={{ filter: getLogoFilter() }}
+                />
+              )}
+            </Link>
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="ml-auto p-1 lg:hidden"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Salon info + booking link */}
+          <div className="px-4 py-2.5 border-b border-light-gray">
+            <p className="text-sm font-semibold text-navy truncate">{currentName}</p>
+            <a
+              href={`https://${bookingUrl}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 text-xs hover:underline mt-0.5"
+              style={{ color: accentColor }}
+            >
+              <Globe className="w-3 h-3" />
+              {bookingUrl}
+            </a>
+          </div>
+
+          {/* Navigation */}
+          <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+            {navItems.map((item) => {
+              const isActive =
+                item.href === '/dashboard'
+                  ? pathname === '/dashboard'
+                  : pathname.startsWith(item.href);
+
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setSidebarOpen(false)}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                    isActive
+                      ? 'text-white'
+                      : 'text-gray-text hover:bg-bg-gray hover:text-navy'
+                  }`}
+                  style={isActive ? { backgroundColor: accentColor, color: 'white' } : undefined}
+                >
+                  <item.icon className="w-5 h-5 flex-shrink-0" />
+                  {item.label}
+                </Link>
+              );
+            })}
+          </nav>
+
+          {/* User + Logout */}
+          <div className="p-3 border-t border-light-gray">
+            <div className="flex items-center gap-3 px-3 py-2">
+              <div
+                className="w-8 h-8 rounded-full flex items-center justify-center font-semibold text-sm"
+                style={{ backgroundColor: accentColor + '20', color: accentColor }}
+              >
+                {(staff?.name || user.email)?.[0]?.toUpperCase()}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-navy truncate">
+                  {staff?.name || user.email}
+                </p>
+                <p className="text-xs text-gray-text truncate">{staff?.role || 'owner'}</p>
+              </div>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium text-gray-text hover:bg-bg-gray hover:text-red-600 transition-colors mt-1"
+            >
+              <LogOut className="w-5 h-5" />
+              Uitloggen
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      {/* Main content */}
+      <div className="lg:pl-64">
+        {/* Top bar */}
+        <header className="h-16 bg-white border-b border-light-gray flex items-center px-4 sm:px-6 sticky top-0 z-30">
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="p-2 -ml-2 lg:hidden"
+          >
+            <Menu className="w-5 h-5 text-navy" />
+          </button>
+
+          <div className="ml-auto flex items-center gap-3">
+            <Link
+              href={`/salon/${salon.slug}`}
+              target="_blank"
+              className="text-xs px-3 py-1.5 border rounded-lg transition-colors font-medium"
+              style={{ borderColor: accentColor, color: accentColor }}
+            >
+              Bekijk boekingspagina
+            </Link>
+          </div>
+        </header>
+
+        {/* Page content */}
+        <main className="p-4 sm:p-6 lg:p-8">{children}</main>
+      </div>
+    </div>
+  );
+}
