@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { getUserSalon } from '@/lib/supabase/get-session';
 import { DashboardShell } from '@/components/dashboard/dashboard-shell';
 import { BrandingProvider } from '@/context/branding-context';
+import { HeaderActionsProvider } from '@/context/header-actions-context';
 
 export default async function DashboardLayout({
   children,
@@ -24,9 +25,11 @@ export default async function DashboardLayout({
       initialPrimaryColor={salon.primary_color || '#4285F4'}
       initialSalonName={salon.name}
     >
-      <DashboardShell salon={salon} staff={staff} user={user}>
-        {children}
-      </DashboardShell>
+      <HeaderActionsProvider>
+        <DashboardShell salon={salon} staff={staff} user={user}>
+          {children}
+        </DashboardShell>
+      </HeaderActionsProvider>
     </BrandingProvider>
   );
 }

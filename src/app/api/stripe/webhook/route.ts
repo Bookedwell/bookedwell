@@ -150,6 +150,43 @@ export async function POST(request: Request) {
         break;
       }
 
+      // ==========================================
+      // Checkout session completed (booking payment)
+      // ==========================================
+      case 'checkout.session.completed': {
+        const session = event.data.object as Stripe.Checkout.Session;
+        
+        // Only handle booking payments (has our metadata)
+        if (session.metadata?.salon_id && session.metadata?.service_id) {
+          const { salon_id, service_id, customer_id, start_time, end_time, notes } = session.metadata;
+
+          // Create the booking
+          const { data: booking, error: bookingError } = await supabase
+            .from('bookings')
+            .insert({
+              salon_id,
+              customer_id,
+              service_id,
+              start_time,
+              end_time,
+              status: 'confirmed',
+              notes: notes || null,
+              deposit_paid: true,
+              deposit_amount_cents: session.amount_total,
+              stripe_payment_intent_id: session.payment_intent as string,
+            })
+            .select('id')
+            .single();
+
+          if (bookingError) {
+            console.error('Error creating booking from checkout:', bookingError);
+          } else {
+            console.log(`Booking ${booking.id} created from checkout session ${session.id}`);
+          }
+        }
+        break;
+      }
+
       default:
         console.log(`Unhandled event type: ${event.type}`);
     }

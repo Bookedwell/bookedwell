@@ -20,6 +20,7 @@ import {
   addDays,
 } from 'date-fns';
 import { nl } from 'date-fns/locale';
+import { getContrastText } from '@/lib/utils/color';
 
 interface CalendarProps {
   selectedDate: Date;
@@ -114,11 +115,11 @@ export function Calendar({
                 disabled && 'text-light-gray/50 cursor-not-allowed',
                 !disabled && !isSelected && 'text-navy',
                 !disabled && isToday && !isSelected && 'border',
-                isSelected && 'text-white shadow-sm'
+                isSelected && 'shadow-sm'
               )}
               style={
                 isSelected
-                  ? { backgroundColor: accentColor }
+                  ? { backgroundColor: accentColor, color: getContrastText(accentColor) }
                   : !disabled && isToday
                   ? { borderColor: accentColor, color: accentColor }
                   : undefined

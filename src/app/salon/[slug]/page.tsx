@@ -118,12 +118,43 @@ export default function SalonBookingPage() {
     setLoading(true);
     setCustomerName(data.name);
 
-    // TODO: Create real booking via API
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    try {
+      const res = await fetch('/api/bookings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          salon_id: salon.id,
+          service_id: selectedService.id,
+          start_time: selectedSlot.startTime,
+          customer_name: data.name,
+          customer_email: data.email || null,
+          customer_phone: data.phone,
+          notes: data.notes || null,
+        }),
+      });
 
-    setBookingId('bk-' + Math.random().toString(36).slice(2, 10));
-    setLoading(false);
-    setStep('confirmed');
+      const result = await res.json();
+
+      if (!res.ok) {
+        alert('Boeking mislukt: ' + (result.error || 'Onbekende fout'));
+        setLoading(false);
+        return;
+      }
+
+      if (result.requires_payment && result.checkout_url) {
+        // Redirect to Stripe Checkout
+        window.location.href = result.checkout_url;
+      } else {
+        // No payment required - show confirmation
+        setBookingId(result.booking_id);
+        setLoading(false);
+        setStep('confirmed');
+      }
+    } catch (error) {
+      console.error('Booking error:', error);
+      alert('Er ging iets mis bij het boeken. Probeer opnieuw.');
+      setLoading(false);
+    }
   };
 
   const handleBack = () => {

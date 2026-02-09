@@ -3,27 +3,15 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Save, Globe, Copy, Check, Upload, Trash2, Palette, ImageIcon, Pipette } from 'lucide-react';
+import { Save, Globe, Copy, Check, Upload, Trash2, ImageIcon, Pipette, Palette } from 'lucide-react';
 import { useBranding } from '@/context/branding-context';
+import { useHeaderActions } from '@/context/header-actions-context';
 
-const PRESET_COLORS = [
-  { name: 'Blauw', value: '#4285F4' },
-  { name: 'Indigo', value: '#6366F1' },
-  { name: 'Paars', value: '#8B5CF6' },
-  { name: 'Roze', value: '#EC4899' },
-  { name: 'Rood', value: '#EF4444' },
-  { name: 'Oranje', value: '#F97316' },
-  { name: 'Geel', value: '#EAB308' },
-  { name: 'Groen', value: '#22C55E' },
-  { name: 'Teal', value: '#14B8A6' },
-  { name: 'Cyaan', value: '#06B6D4' },
-  { name: 'Zwart', value: '#1E293B' },
-  { name: 'Grijs', value: '#6B7280' },
-];
 
 export default function SettingsPage() {
   const router = useRouter();
   const { updateBranding, primaryColor: contextColor, logoUrl: contextLogo, salonName: contextName } = useBranding();
+  const { setHeaderActions } = useHeaderActions();
   const [salon, setSalon] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -71,43 +59,36 @@ export default function SettingsPage() {
 
   useEffect(() => {
     async function fetchSalon() {
-      const res = await fetch('/api/settings');
+      const res = await fetch('/api/settings', { cache: 'no-store' });
       if (!res.ok) return;
       const data = await res.json();
 
       setSalon(data);
-      
-      // Only set form values from DB on initial load, preserve context values if they differ (unsaved changes)
-      if (!initialFetchDone) {
-        // Use context values if they exist and differ from DB (means user made unsaved changes)
-        const useContextColor = contextColor && contextColor !== '#4285F4' && contextColor !== data.primary_color;
-        const useContextLogo = contextLogo !== undefined && contextLogo !== data.logo_url;
-        const useContextName = contextName && contextName !== data.name;
-        
-        _setName(useContextName ? contextName : data.name);
-        _setPrimaryColor(useContextColor ? contextColor : (data.primary_color || '#4285F4'));
-        _setLogoUrl(useContextLogo ? contextLogo : (data.logo_url || null));
-        
-        setSlug(data.slug);
-        setPhone(data.phone);
-        setAddress(data.address || '');
-        setCity(data.city || '');
-        setPostalCode(data.postal_code || '');
-        setDescription(data.description || '');
-        setBookingBuffer(String(data.booking_buffer_minutes));
-        setMinNotice(String(data.min_booking_notice_hours));
-        setMaxDaysAhead(String(data.max_booking_days_ahead));
-        setCancellationHours(String(data.cancellation_hours_before));
-        
-        setInitialFetchDone(true);
-      }
-      
+      _setName(data.name);
+      setSlug(data.slug);
+      setPhone(data.phone);
+      setAddress(data.address || '');
+      setCity(data.city || '');
+      setPostalCode(data.postal_code || '');
+      setDescription(data.description || '');
+      _setPrimaryColor(data.primary_color || '#4285F4');
+      _setLogoUrl(data.logo_url || null);
+      updateBranding({
+        primaryColor: data.primary_color || '#4285F4',
+        logoUrl: data.logo_url || null,
+        salonName: data.name,
+      });
+      setBookingBuffer(String(data.booking_buffer_minutes));
+      setMinNotice(String(data.min_booking_notice_hours));
+      setMaxDaysAhead(String(data.max_booking_days_ahead));
+      setCancellationHours(String(data.cancellation_hours_before));
       setLoading(false);
     }
     fetchSalon();
-  }, [initialFetchDone, contextColor, contextLogo, contextName]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
     if (!salon) return;
     setSaving(true);
 
@@ -136,11 +117,30 @@ export default function SettingsPage() {
       alert('Opslaan mislukt: ' + (err.error || 'Onbekende fout'));
     } else {
       setSaved(true);
-      router.refresh(); // Update sidebar with new data
       setTimeout(() => setSaved(false), 2000);
     }
     setSaving(false);
-  };
+  }, [salon, name, slug, phone, address, city, postalCode, description, primaryColor, logoUrl, bookingBuffer, minNotice, maxDaysAhead, cancellationHours, router]);
+
+  // Set save button in header
+  useEffect(() => {
+    setHeaderActions(
+      <Button onClick={handleSave} loading={saving} accentColor={primaryColor}>
+        {saved ? (
+          <>
+            <Check className="w-4 h-4 mr-2" />
+            Opgeslagen
+          </>
+        ) : (
+          <>
+            <Save className="w-4 h-4 mr-2" />
+            Opslaan
+          </>
+        )}
+      </Button>
+    );
+    return () => setHeaderActions(null);
+  }, [setHeaderActions, handleSave, saving, saved, primaryColor]);
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -207,18 +207,29 @@ export default function SettingsPage() {
           const b = imageData[i + 2];
           const a = imageData[i + 3];
 
+          // Skip transparent pixels
           if (a < 128) continue;
-          if (r > 230 && g > 230 && b > 230) continue;
-          if (r < 25 && g < 25 && b < 25) continue;
+          // Skip near-white
+          if (r > 240 && g > 240 && b > 240) continue;
+          // Skip near-black
+          if (r < 15 && g < 15 && b < 15) continue;
+          
+          // Calculate saturation to prefer colorful pixels
           const max = Math.max(r, g, b);
           const min = Math.min(r, g, b);
-          if (max - min < 20) continue;
+          const saturation = max === 0 ? 0 : (max - min) / max;
+          
+          // Skip very gray colors (low saturation) unless they're dark enough to be a brand color
+          if (saturation < 0.1 && max > 100) continue;
 
-          const qr = Math.round(r / 32) * 32;
-          const qg = Math.round(g / 32) * 32;
-          const qb = Math.round(b / 32) * 32;
+          // Finer quantization for better color accuracy
+          const qr = Math.round(r / 16) * 16;
+          const qg = Math.round(g / 16) * 16;
+          const qb = Math.round(b / 16) * 16;
           const key = `${qr},${qg},${qb}`;
-          colorCounts.set(key, (colorCounts.get(key) || 0) + 1);
+          // Weight by saturation to prefer vibrant colors
+          const weight = 1 + saturation * 2;
+          colorCounts.set(key, (colorCounts.get(key) || 0) + weight);
         }
 
         const sorted = Array.from(colorCounts.entries())
@@ -294,22 +305,6 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* Sticky save bar */}
-      <div className="fixed top-4 right-4 sm:right-6 lg:right-8 z-30 lg:top-4 lg:right-8" style={{ zIndex: 40 }}>
-        <Button onClick={handleSave} loading={saving} accentColor={primaryColor} className="shadow-lg">
-          {saved ? (
-            <>
-              <Check className="w-4 h-4 mr-2" />
-              Opgeslagen
-            </>
-          ) : (
-            <>
-              <Save className="w-4 h-4 mr-2" />
-              Opslaan
-            </>
-          )}
-        </Button>
-      </div>
 
       {/* Booking link */}
       <div className="rounded-xl p-4 mb-6" style={{ backgroundColor: primaryColor + '10', borderColor: primaryColor + '30', borderWidth: 1 }}>
@@ -425,30 +420,6 @@ export default function SettingsPage() {
                 </div>
               </div>
 
-              {/* Logo colors */}
-              {logoColors.length > 0 && (
-                <div className="mb-3">
-                  <p className="text-xs font-medium text-navy mb-2 flex items-center gap-1.5">
-                    <Palette className="w-3 h-3" />
-                    Kleuren uit je logo
-                  </p>
-                  <div className="flex gap-2">
-                    {logoColors.map((c) => (
-                      <button
-                        key={c}
-                        onClick={() => setPrimaryColor(c)}
-                        className={`w-10 h-10 rounded-lg border-2 transition-all ${
-                          primaryColor === c
-                            ? 'border-navy scale-110 shadow-md'
-                            : 'border-transparent hover:scale-105'
-                        }`}
-                        style={{ backgroundColor: c }}
-                        title={c}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
 
               {/* Color picker + eyedropper */}
               <div className="flex gap-2">

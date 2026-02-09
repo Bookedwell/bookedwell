@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { useBranding } from '@/context/branding-context';
+import { useHeaderActions } from '@/context/header-actions-context';
 import {
   LayoutDashboard,
   Calendar,
@@ -44,6 +45,7 @@ export function DashboardShell({ salon, staff, user, children }: DashboardShellP
   const supabase = createClient();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const branding = useBranding();
+  const { headerActions } = useHeaderActions();
 
   const accentColor = branding.primaryColor;
   const currentLogoUrl = branding.logoUrl;
@@ -211,6 +213,7 @@ export function DashboardShell({ salon, staff, user, children }: DashboardShellP
           </button>
 
           <div className="ml-auto flex items-center gap-3">
+            {headerActions}
             <Link
               href={`/salon/${salon.slug}`}
               target="_blank"
