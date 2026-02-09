@@ -286,27 +286,29 @@ export default function SettingsPage() {
 
   return (
     <div>
-      {/* Sticky header with save button */}
-      <div className="sticky top-16 z-20 bg-bg-gray -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-3 border-b border-light-gray mb-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-navy">Instellingen</h1>
-            <p className="text-gray-text mt-0.5 text-sm">Beheer je salon gegevens en branding</p>
-          </div>
-          <Button onClick={handleSave} loading={saving} accentColor={primaryColor}>
-            {saved ? (
-              <>
-                <Check className="w-4 h-4 mr-2" />
-                Opgeslagen
-              </>
-            ) : (
-              <>
-                <Save className="w-4 h-4 mr-2" />
-                Opslaan
-              </>
-            )}
-          </Button>
+      {/* Page header */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-navy">Instellingen</h1>
+          <p className="text-gray-text mt-1">Beheer je salon gegevens en branding</p>
         </div>
+      </div>
+
+      {/* Sticky save bar */}
+      <div className="fixed top-4 right-4 sm:right-6 lg:right-8 z-30 lg:top-4 lg:right-8" style={{ zIndex: 40 }}>
+        <Button onClick={handleSave} loading={saving} accentColor={primaryColor} className="shadow-lg">
+          {saved ? (
+            <>
+              <Check className="w-4 h-4 mr-2" />
+              Opgeslagen
+            </>
+          ) : (
+            <>
+              <Save className="w-4 h-4 mr-2" />
+              Opslaan
+            </>
+          )}
+        </Button>
       </div>
 
       {/* Booking link */}
@@ -448,24 +450,7 @@ export default function SettingsPage() {
                 </div>
               )}
 
-              {/* Preset colors */}
-              <div className="grid grid-cols-6 gap-1.5 mb-3">
-                {PRESET_COLORS.map((c) => (
-                  <button
-                    key={c.value}
-                    onClick={() => setPrimaryColor(c.value)}
-                    className={`w-full h-8 rounded-md border-2 transition-all ${
-                      primaryColor === c.value
-                        ? 'border-navy scale-110 shadow-md'
-                        : 'border-transparent hover:scale-105'
-                    }`}
-                    style={{ backgroundColor: c.value }}
-                    title={c.name}
-                  />
-                ))}
-              </div>
-
-              {/* Custom color + eyedropper */}
+              {/* Color picker + eyedropper */}
               <div className="flex gap-2">
                 <input
                   type="color"
