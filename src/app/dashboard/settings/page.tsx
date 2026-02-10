@@ -339,7 +339,7 @@ export default function SettingsPage() {
         <div className="bg-white rounded-xl border border-light-gray p-5">
           <div className="flex items-center gap-2 mb-4">
             <Palette className="w-5 h-5" style={{ color: primaryColor }} />
-            <h2 className="font-semibold text-navy">Branding (Private Label)</h2>
+            <h2 className="font-semibold text-navy">Branding</h2>
           </div>
           <p className="text-xs text-gray-text mb-4">
             Pas je boekingspagina aan met je eigen logo en kleur. Klanten zien jouw merk.
@@ -494,8 +494,20 @@ export default function SettingsPage() {
                   </>
                 )}
               </Button>
-              <p className="text-[10px] text-gray-text">
-                Stel hieronder een redirect URL in zodat klanten na boeking terugkeren naar jouw website.
+            </div>
+
+            {/* Redirect URL for embed */}
+            <div className="mt-4">
+              <label className="block text-sm font-medium text-navy mb-1">Redirect na boeking</label>
+              <input
+                type="url"
+                value={bookingRedirectUrl}
+                onChange={(e) => setBookingRedirectUrl(e.target.value)}
+                placeholder="https://jouwwebsite.nl/bedankt"
+                className="w-full px-3 py-2 border border-light-gray rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+              />
+              <p className="text-xs text-gray-text mt-1">
+                Na succesvolle boeking wordt de klant naar deze URL gestuurd. Laat leeg voor de standaard bedanktpagina.
               </p>
             </div>
           </div>
@@ -633,21 +645,6 @@ export default function SettingsPage() {
               />
               <p className="text-xs text-gray-text mt-1">Uren van tevoren gratis annuleren</p>
             </div>
-          </div>
-
-          {/* Redirect URL */}
-          <div className="mt-4 pt-4 border-t border-light-gray">
-            <label className="block text-sm font-medium text-navy mb-1">Redirect na boeking (optioneel)</label>
-            <input
-              type="url"
-              value={bookingRedirectUrl}
-              onChange={(e) => setBookingRedirectUrl(e.target.value)}
-              placeholder="https://www.jouwwebsite.nl/bedankt"
-              className="w-full px-3 py-2 border border-light-gray rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-            />
-            <p className="text-xs text-gray-text mt-1">
-              Na succesvolle betaling wordt de klant hierheen gestuurd. Laat leeg voor de standaard BookedWell bedanktpagina.
-            </p>
           </div>
         </div>
       </div>
