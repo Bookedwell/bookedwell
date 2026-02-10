@@ -14,6 +14,7 @@ export async function POST(request: Request) {
     const {
       salon_id,
       service_id,
+      staff_id,
       start_time,
       customer_name,
       customer_email,
@@ -71,6 +72,7 @@ export async function POST(request: Request) {
       .insert({
         salon_id,
         service_id,
+        staff_id: staff_id || null,
         start_time: startDate.toISOString(),
         end_time: endDate.toISOString(),
         customer_name,

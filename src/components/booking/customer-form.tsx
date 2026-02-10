@@ -112,7 +112,7 @@ export function CustomerForm({ onSubmit, loading, initialData, accentColor = '#4
         </div>
       </div>
 
-      <Button type="submit" size="lg" className="w-full" loading={loading}>
+      <Button type="submit" size="lg" className="w-full" loading={loading} accentColor={accentColor}>
         Afspraak bevestigen
       </Button>
     </form>

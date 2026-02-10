@@ -10,6 +10,7 @@ export async function GET(
   const url = new URL(request.url);
   const dateStr = url.searchParams.get('date'); // YYYY-MM-DD
   const durationStr = url.searchParams.get('duration'); // total duration in minutes
+  const staffId = url.searchParams.get('staff_id'); // optional staff member
 
   if (!dateStr || !durationStr) {
     return NextResponse.json({ error: 'date and duration required' }, { status: 400 });
@@ -54,13 +55,20 @@ export async function GET(
   const dayStart = new Date(dateStr + 'T00:00:00.000Z');
   const dayEnd = new Date(dateStr + 'T23:59:59.999Z');
 
-  const { data: bookings } = await supabase
+  let bookingsQuery = supabase
     .from('bookings')
     .select('start_time, end_time')
     .eq('salon_id', salon.id)
     .in('status', ['pending', 'confirmed'])
     .gte('start_time', dayStart.toISOString())
     .lte('start_time', dayEnd.toISOString());
+
+  // Filter bookings by staff member if selected
+  if (staffId) {
+    bookingsQuery = bookingsQuery.eq('staff_id', staffId);
+  }
+
+  const { data: bookings } = await bookingsQuery;
 
   const bookedSlots = (bookings || []).map(b => ({
     start: new Date(b.start_time).getTime(),

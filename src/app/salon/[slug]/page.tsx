@@ -6,6 +6,7 @@ import { useParams, useSearchParams } from 'next/navigation';
 import { ArrowLeft, MapPin, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ServiceSelector } from '@/components/booking/service-selector';
+import { StaffSelector } from '@/components/booking/staff-selector';
 import { Calendar } from '@/components/booking/calendar';
 import { TimePicker } from '@/components/booking/time-picker';
 import { CustomerForm } from '@/components/booking/customer-form';
@@ -13,10 +14,17 @@ import { BookingConfirmation } from '@/components/booking/booking-confirmation';
 import { Button } from '@/components/ui/button';
 import { addDays, format } from 'date-fns';
 import { nl } from 'date-fns/locale';
-import type { Service, Salon, TimeSlot } from '@/types';
+import type { Service, Salon, Staff, TimeSlot } from '@/types';
 
 
-type BookingStep = 'service' | 'datetime' | 'details' | 'confirmed';
+type BookingStep = 'service' | 'staff' | 'datetime' | 'details' | 'confirmed';
+
+interface StaffOption {
+  id: string;
+  name: string;
+  avatar_url: string | null;
+  role: string;
+}
 
 export default function SalonBookingPage() {
   const params = useParams();
@@ -26,6 +34,7 @@ export default function SalonBookingPage() {
 
   const [salon, setSalon] = useState<Salon | null>(null);
   const [services, setServices] = useState<Service[]>([]);
+  const [staffMembers, setStaffMembers] = useState<StaffOption[]>([]);
   const [pageLoading, setPageLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
@@ -33,11 +42,12 @@ export default function SalonBookingPage() {
   const [direction, setDirection] = useState(1); // 1 = forward, -1 = back
 
   const setStep = (newStep: BookingStep) => {
-    const order: BookingStep[] = ['service', 'datetime', 'details', 'confirmed'];
+    const order: BookingStep[] = ['service', 'staff', 'datetime', 'details', 'confirmed'];
     setDirection(order.indexOf(newStep) > order.indexOf(step) ? 1 : -1);
     _setStep(newStep);
   };
   const [selectedServices, setSelectedServices] = useState<Service[]>([]);
+  const [selectedStaffId, setSelectedStaffId] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
   const [bookingId, setBookingId] = useState<string | null>(null);
@@ -57,6 +67,7 @@ export default function SalonBookingPage() {
       const data = await res.json();
       setSalon(data.salon);
       setServices(data.services);
+      setStaffMembers(data.staff || []);
       setPageLoading(false);
     }
     fetchSalon();
@@ -77,7 +88,8 @@ export default function SalonBookingPage() {
     }
     setSlotsLoading(true);
     const dateStr = format(selectedDate, 'yyyy-MM-dd');
-    fetch(`/api/salon/${slug}/availability?date=${dateStr}&duration=${totalDuration}`)
+    const staffParam = selectedStaffId ? `&staff_id=${selectedStaffId}` : '';
+    fetch(`/api/salon/${slug}/availability?date=${dateStr}&duration=${totalDuration}${staffParam}`)
       .then(res => res.json())
       .then(data => {
         setTimeSlots(data.slots || []);
@@ -87,10 +99,11 @@ export default function SalonBookingPage() {
         setTimeSlots([]);
         setSlotsLoading(false);
       });
-  }, [selectedDate, selectedServices, totalDuration, salon, slug]);
+  }, [selectedDate, selectedServices, totalDuration, salon, slug, selectedStaffId]);
 
   const stepTitles: Record<BookingStep, string> = {
     service: 'Kies een dienst',
+    staff: 'Kies een medewerker',
     datetime: 'Kies datum & tijd',
     details: 'Jouw gegevens',
     confirmed: 'Bevestigd',
@@ -106,7 +119,18 @@ export default function SalonBookingPage() {
   };
 
   const handleServicesContinue = () => {
-    if (selectedServices.length > 0) setStep('datetime');
+    if (selectedServices.length > 0) {
+      // Skip staff step if no staff members accept bookings
+      if (staffMembers.length > 0) {
+        setStep('staff');
+      } else {
+        setStep('datetime');
+      }
+    }
+  };
+
+  const handleStaffContinue = () => {
+    setStep('datetime');
   };
 
   const handleSlotSelect = (slot: TimeSlot) => {
@@ -137,6 +161,7 @@ export default function SalonBookingPage() {
           salon_id: salon.id,
           service_id: selectedServices[0].id,
           service_ids: selectedServices.map(s => s.id),
+          staff_id: selectedStaffId || null,
           start_time: selectedSlot.startTime,
           customer_name: data.name,
           customer_email: data.email || null,
@@ -170,7 +195,11 @@ export default function SalonBookingPage() {
   };
 
   const handleBack = () => {
-    if (step === 'datetime') setStep('service');
+    if (step === 'staff') setStep('service');
+    else if (step === 'datetime') {
+      if (staffMembers.length > 0) setStep('staff');
+      else setStep('service');
+    }
     else if (step === 'details') setStep('datetime');
   };
 
@@ -245,14 +274,17 @@ export default function SalonBookingPage() {
                 </motion.button>
               )}
               <div className="flex gap-1.5 flex-1">
-                {(['service', 'datetime', 'details'] as const).map((s, i) => (
+                {(staffMembers.length > 0
+                  ? ['service', 'staff', 'datetime', 'details'] as const
+                  : ['service', 'datetime', 'details'] as const
+                ).map((s, i, arr) => (
                   <div key={s} className="h-1 flex-1 rounded-full bg-[#CBD5E1] overflow-hidden">
                     <motion.div
                       className="h-full rounded-full"
                       style={{ backgroundColor: accentColor }}
                       initial={{ width: '0%' }}
                       animate={{
-                        width: i <= ['service', 'datetime', 'details'].indexOf(step) ? '100%' : '0%',
+                        width: i <= arr.indexOf(step as any) ? '100%' : '0%',
                       }}
                       transition={{ duration: 0.4, ease: 'easeInOut' }}
                     />
@@ -298,6 +330,25 @@ export default function SalonBookingPage() {
                   accentColor={accentColor}
                 />
               )}
+            </motion.div>
+          )}
+
+          {step === 'staff' && (
+            <motion.div
+              key="staff"
+              custom={direction}
+              initial={{ opacity: 0, x: direction * 300 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: direction * -300 }}
+              transition={{ type: 'spring', stiffness: 500, damping: 40, mass: 0.8 }}
+            >
+              <StaffSelector
+                staff={staffMembers}
+                selectedStaffId={selectedStaffId}
+                onSelect={setSelectedStaffId}
+                onContinue={handleStaffContinue}
+                accentColor={accentColor}
+              />
             </motion.div>
           )}
 
