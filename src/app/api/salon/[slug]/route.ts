@@ -30,14 +30,13 @@ export async function GET(
     .order('category', { ascending: true, nullsFirst: false })
     .order('display_order', { ascending: true });
 
-  // Fetch staff members who accept bookings
+  // Fetch staff members who accept bookings (active + accepts_bookings)
   const { data: staff } = await serviceClient
     .from('staff')
     .select('id, name, avatar_url, role, accepts_bookings')
     .eq('salon_id', salon.id)
     .eq('active', true)
     .eq('accepts_bookings', true)
-    .order('role', { ascending: true })
     .order('name', { ascending: true });
 
   return NextResponse.json({

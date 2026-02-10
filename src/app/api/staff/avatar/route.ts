@@ -18,48 +18,48 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Bestand mag maximaal 2MB zijn' }, { status: 400 });
   }
 
+  // Verify staff belongs to this salon
   const supabase = createServiceClient();
+  const { data: staffRecord } = await supabase
+    .from('staff')
+    .select('id')
+    .eq('id', staffId)
+    .eq('salon_id', salon.id)
+    .single();
 
-  const ext = file.name.split('.').pop() || 'jpg';
-  const path = `${salon.id}/${staffId}.${ext}`;
+  if (!staffRecord) {
+    return NextResponse.json({ error: 'Teamlid niet gevonden' }, { status: 404 });
+  }
+
+  // Upload to salon-assets bucket (same bucket as logos)
+  const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+  const timestamp = Date.now();
+  const path = `${salon.id}/staff/${staffId}-${timestamp}.${ext}`;
 
   const { error: uploadError } = await supabase.storage
-    .from('avatars')
+    .from('salon-assets')
     .upload(path, file, { upsert: true, contentType: file.type });
 
   if (uploadError) {
-    // Try with "logos" bucket as fallback
-    const { error: fallbackError } = await supabase.storage
-      .from('logos')
-      .upload(`avatars/${path}`, file, { upsert: true, contentType: file.type });
-
-    if (fallbackError) {
-      console.error('Avatar upload error:', fallbackError);
-      return NextResponse.json({ error: 'Upload mislukt' }, { status: 500 });
-    }
-
-    const { data: { publicUrl } } = supabase.storage
-      .from('logos')
-      .getPublicUrl(`avatars/${path}`);
-
-    await supabase
-      .from('staff')
-      .update({ avatar_url: publicUrl })
-      .eq('id', staffId)
-      .eq('salon_id', salon.id);
-
-    return NextResponse.json({ avatar_url: publicUrl });
+    console.error('Avatar upload error:', uploadError);
+    return NextResponse.json({ error: 'Upload mislukt: ' + uploadError.message }, { status: 500 });
   }
 
   const { data: { publicUrl } } = supabase.storage
-    .from('avatars')
+    .from('salon-assets')
     .getPublicUrl(path);
 
-  await supabase
+  // Update staff record with avatar URL
+  const { error: updateError } = await supabase
     .from('staff')
     .update({ avatar_url: publicUrl })
     .eq('id', staffId)
     .eq('salon_id', salon.id);
+
+  if (updateError) {
+    console.error('Staff update error:', updateError);
+    return NextResponse.json({ error: 'Database update mislukt' }, { status: 500 });
+  }
 
   return NextResponse.json({ avatar_url: publicUrl });
 }
