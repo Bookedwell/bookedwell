@@ -153,25 +153,32 @@ export default function TeamPage() {
     if (!file) return;
 
     setUploading(true);
-    const formData = new FormData();
-    formData.append('avatar', file);
-    formData.append('staff_id', staffId);
+    try {
+      const formData = new FormData();
+      formData.append('avatar', file);
+      formData.append('staff_id', staffId);
 
-    const res = await fetch('/api/staff/avatar', {
-      method: 'POST',
-      body: formData,
-    });
+      const res = await fetch('/api/staff/avatar', {
+        method: 'POST',
+        body: formData,
+      });
 
-    if (res.ok) {
-      const { avatar_url } = await res.json();
-      setStaff((prev) =>
-        prev.map((s) => (s.id === staffId ? { ...s, avatar_url } : s))
-      );
-    } else {
-      alert('Upload mislukt');
+      const data = await res.json();
+
+      if (res.ok && data.avatar_url) {
+        setStaff((prev) =>
+          prev.map((s) => (s.id === staffId ? { ...s, avatar_url: data.avatar_url } : s))
+        );
+      } else {
+        alert('Upload mislukt: ' + (data.error || 'Onbekende fout'));
+      }
+    } catch (err) {
+      console.error('Avatar upload error:', err);
+      alert('Upload mislukt: netwerk fout');
     }
     setUploading(false);
-    if (fileInputRef.current) fileInputRef.current.value = '';
+    // Reset file input
+    e.target.value = '';
   };
 
   const roleLabel = (role: string) => {
