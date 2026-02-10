@@ -2,7 +2,9 @@ import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: '2024-12-18.acacia',
+});
 
 async function getAuthSalonId() {
   const supabase = await createClient();
@@ -48,8 +50,6 @@ export async function GET() {
     charges_enabled: account?.charges_enabled || false,
     payouts_enabled: account?.payouts_enabled || false,
     details_submitted: account?.details_submitted || false,
-  }, {
-    headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate', 'Pragma': 'no-cache' },
   });
 }
 
@@ -136,7 +136,5 @@ export async function PATCH() {
     charges_enabled: account.charges_enabled,
     payouts_enabled: account.payouts_enabled,
     details_submitted: account.details_submitted,
-  }, {
-    headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate', 'Pragma': 'no-cache' },
   });
 }

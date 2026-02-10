@@ -2,7 +2,6 @@
 
 import { cn } from '@/lib/utils/cn';
 import { formatTime } from '@/lib/utils/date';
-import { getContrastText } from '@/lib/utils/color';
 import type { TimeSlot } from '@/types';
 
 interface TimePickerProps {
@@ -36,20 +35,11 @@ export function TimePicker({ slots, selectedSlot, onSlotSelect, accentColor = '#
             className={cn(
               'py-2.5 px-3 rounded-lg text-sm font-medium transition-all',
               isSelected
-                ? 'shadow-md'
+                ? 'bg-primary text-white shadow-md'
                 : slot.available
-                ? 'border border-light-gray text-navy'
+                ? 'border border-light-gray text-navy hover:border-primary hover:text-primary'
                 : 'border border-light-gray/50 text-light-gray cursor-not-allowed line-through'
             )}
-            style={
-              isSelected
-                ? { backgroundColor: accentColor, color: getContrastText(accentColor) }
-                : slot.available
-                ? { '--hover-color': accentColor } as any
-                : undefined
-            }
-            onMouseEnter={(e) => { if (slot.available && !isSelected) { (e.target as HTMLElement).style.borderColor = accentColor; (e.target as HTMLElement).style.color = accentColor; } }}
-            onMouseLeave={(e) => { if (slot.available && !isSelected) { (e.target as HTMLElement).style.borderColor = ''; (e.target as HTMLElement).style.color = ''; } }}
           >
             {formatTime(slot.startTime)}
           </button>

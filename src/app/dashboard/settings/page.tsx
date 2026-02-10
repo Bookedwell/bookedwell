@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Save, Globe, Copy, Check, Upload, Trash2, ImageIcon, Pipette, Palette } from 'lucide-react';
+import { Save, Globe, Copy, Check, Upload, Trash2, ImageIcon, Pipette, Palette, Code } from 'lucide-react';
 import { useBranding } from '@/context/branding-context';
 import { useHeaderActions } from '@/context/header-actions-context';
 
@@ -17,6 +17,7 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [embedCopied, setEmbedCopied] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [initialFetchDone, setInitialFetchDone] = useState(false);
@@ -455,6 +456,47 @@ export default function SettingsPage() {
               {eyedropperSupported && (
                 <p className="text-[10px] text-gray-text mt-1.5">Tip: Gebruik de pipet om een kleur uit je logo te pikken!</p>
               )}
+            </div>
+          </div>
+
+          {/* Widget Embed Code */}
+          <div className="mt-6 pt-6 border-t border-light-gray">
+            <div className="flex items-center gap-2 mb-3">
+              <Code className="w-4 h-4" style={{ color: primaryColor }} />
+              <h3 className="font-medium text-navy text-sm">Widget embedden</h3>
+            </div>
+            <p className="text-xs text-gray-text mb-3">
+              Kopieer deze code om de boekingswidget op je eigen website te plaatsen. Klanten kunnen direct boeken zonder je site te verlaten.
+            </p>
+            <div className="bg-slate-900 rounded-lg p-3 font-mono text-xs text-green-400 overflow-x-auto">
+              <code>{`<iframe src="https://bookedwell.app/salon/${slug}?embed=true" width="100%" height="700" frameborder="0" style="border-radius: 12px; max-width: 480px;"></iframe>`}</code>
+            </div>
+            <div className="flex items-center gap-3 mt-3">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  navigator.clipboard.writeText(`<iframe src="https://bookedwell.app/salon/${slug}?embed=true" width="100%" height="700" frameborder="0" style="border-radius: 12px; max-width: 480px;"></iframe>`);
+                  setEmbedCopied(true);
+                  setTimeout(() => setEmbedCopied(false), 2000);
+                }}
+                accentColor={primaryColor}
+              >
+                {embedCopied ? (
+                  <>
+                    <Check className="w-4 h-4 mr-1" />
+                    Gekopieerd
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-4 h-4 mr-1" />
+                    Kopieer code
+                  </>
+                )}
+              </Button>
+              <p className="text-[10px] text-gray-text">
+                Stel hieronder een redirect URL in zodat klanten na boeking terugkeren naar jouw website.
+              </p>
             </div>
           </div>
         </div>

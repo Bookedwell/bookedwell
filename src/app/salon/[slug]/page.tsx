@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef } from 'react';
 import Image from 'next/image';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { ArrowLeft, MapPin, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ServiceSelector } from '@/components/booking/service-selector';
@@ -20,7 +20,9 @@ type BookingStep = 'service' | 'datetime' | 'details' | 'confirmed';
 
 export default function SalonBookingPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const slug = params.slug as string;
+  const isEmbed = searchParams.get('embed') === 'true';
 
   const [salon, setSalon] = useState<Salon | null>(null);
   const [services, setServices] = useState<Service[]>([]);
@@ -192,9 +194,9 @@ export default function SalonBookingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-bg-gray overflow-x-hidden">
+    <div className={`min-h-screen bg-bg-gray ${isEmbed ? 'overflow-hidden' : ''}`}>
       {/* Salon Header */}
-      <div className="bg-white">
+      <div className={`bg-white ${isEmbed ? '' : 'border-b border-light-gray'}`}>
         <div className="max-w-lg mx-auto px-4 py-4">
           <div className="flex items-center gap-3">
             {salon.logo_url ? (
@@ -228,7 +230,7 @@ export default function SalonBookingPage() {
 
       {/* Progress indicator */}
       {step !== 'confirmed' && (
-        <div className="bg-white">
+        <div className={`bg-white ${isEmbed ? '' : 'border-b border-light-gray'}`}>
           <div className="max-w-lg mx-auto px-4 py-3">
             <div className="flex items-center gap-2">
               {step !== 'service' && (
@@ -243,16 +245,19 @@ export default function SalonBookingPage() {
                 </motion.button>
               )}
               <div className="flex gap-1.5 flex-1">
-                {(['service', 'datetime', 'details'] as const).map((s, i) => {
-                  const active = i <= ['service', 'datetime', 'details'].indexOf(step);
-                  return (
-                    <div
-                      key={s}
-                      className="h-1 flex-1 rounded-full transition-colors duration-400"
-                      style={{ backgroundColor: active ? accentColor : '#CBD5E1' }}
+                {(['service', 'datetime', 'details'] as const).map((s, i) => (
+                  <div key={s} className="h-1 flex-1 rounded-full bg-[#CBD5E1] overflow-hidden">
+                    <motion.div
+                      className="h-full rounded-full"
+                      style={{ backgroundColor: accentColor }}
+                      initial={{ width: '0%' }}
+                      animate={{
+                        width: i <= ['service', 'datetime', 'details'].indexOf(step) ? '100%' : '0%',
+                      }}
+                      transition={{ duration: 0.4, ease: 'easeInOut' }}
                     />
-                  );
-                })}
+                  </div>
+                ))}
               </div>
             </div>
             <motion.p
@@ -268,7 +273,7 @@ export default function SalonBookingPage() {
       )}
 
       {/* Content */}
-      <div className="max-w-lg mx-auto px-4 py-6 overflow-x-clip">
+      <div className="max-w-lg mx-auto px-4 py-6 overflow-hidden">
         <AnimatePresence mode="wait" custom={direction}>
           {step === 'service' && (
             <motion.div

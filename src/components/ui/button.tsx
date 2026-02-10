@@ -1,6 +1,5 @@
 import { forwardRef } from 'react';
 import { cn } from '@/lib/utils/cn';
-import { getContrastText } from '@/lib/utils/color';
 import { Loader2 } from 'lucide-react';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -20,7 +19,6 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       if (variant === 'primary') {
         dynamicStyles.backgroundColor = accentColor;
         dynamicStyles.borderColor = accentColor;
-        dynamicStyles.color = getContrastText(accentColor);
       } else if (variant === 'outline') {
         dynamicStyles.borderColor = accentColor;
         dynamicStyles.color = accentColor;

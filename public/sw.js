@@ -1,15 +1,9 @@
-const CACHE_NAME = 'bookedwell-v1';
+const CACHE_NAME = 'bookedwell-v2';
 const OFFLINE_URL = '/offline';
-
-const PRECACHE_URLS = [
-  '/',
-  '/offline',
-  '/manifest.json',
-];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE_URLS))
+    caches.open(CACHE_NAME).then((cache) => cache.addAll([OFFLINE_URL, '/manifest.json']))
   );
   self.skipWaiting();
 });
@@ -27,25 +21,17 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
+// Network-first: always fetch fresh content, only use cache when offline
 self.addEventListener('fetch', (event) => {
   if (event.request.mode === 'navigate') {
     event.respondWith(
       fetch(event.request).catch(() =>
-        caches.match(OFFLINE_URL).then((response) => response || caches.match('/'))
+        caches.match(OFFLINE_URL).then((response) => response || new Response('Offline'))
       )
     );
     return;
   }
 
-  event.respondWith(
-    caches.match(event.request).then((cached) => {
-      return cached || fetch(event.request).then((response) => {
-        if (response.ok && event.request.url.startsWith(self.location.origin)) {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-        }
-        return response;
-      });
-    })
-  );
+  // For all other requests: network first, no caching
+  event.respondWith(fetch(event.request));
 });
