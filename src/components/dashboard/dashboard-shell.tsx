@@ -10,6 +10,7 @@ import { useHeaderActions } from '@/context/header-actions-context';
 import {
   LayoutDashboard,
   Calendar,
+  CalendarDays,
   Scissors,
   Users,
   UsersRound,
@@ -30,9 +31,23 @@ interface DashboardShellProps {
   children: React.ReactNode;
 }
 
-const navItems = [
+interface NavItem {
+  href: string;
+  label: string;
+  icon: any;
+  children?: { href: string; label: string }[];
+}
+
+const navItems: NavItem[] = [
   { href: '/dashboard', label: 'Overzicht', icon: LayoutDashboard },
-  { href: '/dashboard/bookings', label: 'Boekingen', icon: Calendar },
+  {
+    href: '/dashboard/bookings',
+    label: 'Boekingen',
+    icon: Calendar,
+    children: [
+      { href: '/dashboard/bookings/calendar', label: 'Kalender' },
+    ],
+  },
   { href: '/dashboard/services', label: 'Diensten', icon: Scissors },
   { href: '/dashboard/customers', label: 'Klanten', icon: Users },
   { href: '/dashboard/team', label: 'Team', icon: UsersRound },
@@ -152,26 +167,52 @@ export function DashboardShell({ salon, staff, user, children }: DashboardShellP
           {/* Navigation */}
           <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
             {navItems.map((item) => {
-              const isActive =
+              const isExactActive =
                 item.href === '/dashboard'
                   ? pathname === '/dashboard'
-                  : pathname.startsWith(item.href);
+                  : pathname === item.href;
+              const isParentActive = pathname.startsWith(item.href) && item.href !== '/dashboard';
+              const isActive = isExactActive || (isParentActive && !item.children);
+              const isExpanded = isParentActive && !!item.children;
 
               return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setSidebarOpen(false)}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                    isActive
-                      ? 'text-white'
-                      : 'text-gray-text hover:bg-bg-gray hover:text-navy'
-                  }`}
-                  style={isActive ? { backgroundColor: accentColor, color: 'white' } : undefined}
-                >
-                  <item.icon className="w-5 h-5 flex-shrink-0" />
-                  {item.label}
-                </Link>
+                <div key={item.href}>
+                  <Link
+                    href={item.href}
+                    onClick={() => setSidebarOpen(false)}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                      isActive || isExpanded
+                        ? 'text-white'
+                        : 'text-gray-text hover:bg-bg-gray hover:text-navy'
+                    }`}
+                    style={isActive || isExpanded ? { backgroundColor: accentColor, color: 'white' } : undefined}
+                  >
+                    <item.icon className="w-5 h-5 flex-shrink-0" />
+                    {item.label}
+                  </Link>
+                  {isExpanded && item.children && (
+                    <div className="ml-5 mt-1 space-y-0.5 border-l-2 pl-3" style={{ borderColor: accentColor + '30' }}>
+                      {item.children.map((child) => {
+                        const isChildActive = pathname === child.href;
+                        return (
+                          <Link
+                            key={child.href}
+                            href={child.href}
+                            onClick={() => setSidebarOpen(false)}
+                            className={`block px-3 py-1.5 rounded-md text-sm transition-colors ${
+                              isChildActive
+                                ? 'font-semibold'
+                                : 'text-gray-text hover:text-navy hover:bg-bg-gray'
+                            }`}
+                            style={isChildActive ? { color: accentColor } : undefined}
+                          >
+                            {child.label}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               );
             })}
           </nav>
