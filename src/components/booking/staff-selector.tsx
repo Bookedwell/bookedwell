@@ -1,6 +1,5 @@
 'use client';
 
-import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils/cn';
 import { getContrastText } from '@/lib/utils/color';
@@ -85,11 +84,9 @@ export function StaffSelector({ staff, selectedStaffId, onSelect, onContinue, ac
             }
           >
             {member.avatar_url ? (
-              <Image
+              <img
                 src={member.avatar_url}
                 alt={member.name}
-                width={48}
-                height={48}
                 className="w-12 h-12 rounded-full object-cover flex-shrink-0"
               />
             ) : (
