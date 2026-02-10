@@ -122,6 +122,68 @@ export async function POST(request: Request) {
       });
     }
 
+    // Verify connected account exists before creating checkout
+    try {
+      const connectedAccount = await stripe.accounts.retrieve(salon.stripe_account_id);
+      console.log(`Stripe account ${salon.stripe_account_id} status: charges_enabled=${connectedAccount.charges_enabled}, details_submitted=${connectedAccount.details_submitted}`);
+      
+      if (!connectedAccount.charges_enabled) {
+        // Account exists but can't accept charges - confirm without payment
+        console.warn(`Stripe account ${salon.stripe_account_id} cannot accept charges yet`);
+        await supabase
+          .from('bookings')
+          .update({ status: 'confirmed' })
+          .eq('id', booking.id);
+
+        try {
+          await sendBookingConfirmation({
+            customerName: customer_name,
+            customerPhone: customer_phone,
+            customerEmail: customer_email || null,
+            salonName: salon.name,
+            serviceName: service.name,
+            startTime: startDate.toISOString(),
+            priceCents: service.price_cents,
+          });
+        } catch (notifError) {
+          console.error('Notification error:', notifError);
+        }
+
+        return NextResponse.json({
+          success: true,
+          booking_id: booking.id,
+          requires_payment: false,
+        });
+      }
+    } catch (stripeErr: any) {
+      console.error(`Stripe account verify failed for ${salon.stripe_account_id}:`, stripeErr.message);
+      // Account doesn't exist - confirm without payment
+      await supabase
+        .from('bookings')
+        .update({ status: 'confirmed' })
+        .eq('id', booking.id);
+
+      try {
+        await sendBookingConfirmation({
+          customerName: customer_name,
+          customerPhone: customer_phone,
+          customerEmail: customer_email || null,
+          salonName: salon.name,
+          serviceName: service.name,
+          startTime: startDate.toISOString(),
+          priceCents: service.price_cents,
+        });
+      } catch (notifError) {
+        console.error('Notification error:', notifError);
+      }
+
+      return NextResponse.json({
+        success: true,
+        booking_id: booking.id,
+        requires_payment: false,
+      });
+    }
+
     // Create Stripe Checkout session with transfer to connected account
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
