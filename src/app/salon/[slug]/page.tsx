@@ -284,13 +284,20 @@ export default function SalonBookingPage() {
               exit={{ opacity: 0, x: direction * -300 }}
               transition={{ type: 'spring', stiffness: 500, damping: 40, mass: 0.8 }}
             >
-              <ServiceSelector
-                services={services}
-                selectedServices={selectedServices}
-                onToggle={handleServiceToggle}
-                onContinue={handleServicesContinue}
-                accentColor={accentColor}
-              />
+              {services.length === 0 ? (
+                <div className="bg-white rounded-xl border border-light-gray p-8 text-center">
+                  <p className="text-gray-text">Geen diensten beschikbaar op dit moment.</p>
+                  <p className="text-sm text-gray-text mt-2">Neem contact op met de salon voor meer informatie.</p>
+                </div>
+              ) : (
+                <ServiceSelector
+                  services={services}
+                  selectedServices={selectedServices}
+                  onToggle={handleServiceToggle}
+                  onContinue={handleServicesContinue}
+                  accentColor={accentColor}
+                />
+              )}
             </motion.div>
           )}
 
