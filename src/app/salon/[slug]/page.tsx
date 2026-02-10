@@ -243,19 +243,16 @@ export default function SalonBookingPage() {
                 </motion.button>
               )}
               <div className="flex gap-1.5 flex-1">
-                {(['service', 'datetime', 'details'] as const).map((s, i) => (
-                  <div key={s} className="h-1 flex-1 rounded-full bg-[#CBD5E1] overflow-hidden">
-                    <motion.div
-                      className="h-full rounded-full"
-                      style={{ backgroundColor: accentColor }}
-                      initial={{ width: '0%' }}
-                      animate={{
-                        width: i <= ['service', 'datetime', 'details'].indexOf(step) ? '100%' : '0%',
-                      }}
-                      transition={{ duration: 0.4, ease: 'easeInOut' }}
+                {(['service', 'datetime', 'details'] as const).map((s, i) => {
+                  const active = i <= ['service', 'datetime', 'details'].indexOf(step);
+                  return (
+                    <div
+                      key={s}
+                      className="h-1 flex-1 rounded-full transition-colors duration-400"
+                      style={{ backgroundColor: active ? accentColor : '#CBD5E1' }}
                     />
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
             <motion.p
