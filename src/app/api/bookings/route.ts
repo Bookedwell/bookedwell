@@ -27,6 +27,19 @@ const TIER_BOOKING_LIMITS: Record<string, number | null> = {
   booked_unlimited: null,
 };
 
+// Auto-upgrade path: booked_100 -> booked_500 -> booked_unlimited
+const TIER_UPGRADE_PATH: Record<string, string | null> = {
+  booked_100: 'booked_500',
+  booked_500: 'booked_unlimited',
+  booked_unlimited: null,
+};
+
+const TIER_NAMES: Record<string, string> = {
+  booked_100: 'Booked 100',
+  booked_500: 'Booked 500',
+  booked_unlimited: 'Booked Unlimited',
+};
+
 function calculatePlatformFee(paymentAmountCents: number, tier: string): number {
   const stripeFee = Math.ceil(paymentAmountCents * STRIPE_PERCENTAGE) + STRIPE_FIXED_CENTS;
   const platformMargin = TIER_PER_BOOKING[tier] ?? 25;
@@ -66,17 +79,41 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Salon not found' }, { status: 404 });
     }
 
-    // Check booking limit for tier
-    const tier = salon.subscription_tier || 'booked_100';
-    const bookingLimit = TIER_BOOKING_LIMITS[tier];
+    // Check booking limit for tier - auto-upgrade if reached
+    let tier = salon.subscription_tier || 'booked_100';
     const currentCount = salon.bookings_this_period || 0;
+    let bookingLimit = TIER_BOOKING_LIMITS[tier];
 
     if (bookingLimit !== null && currentCount >= bookingLimit) {
-      console.warn(`Salon ${salon.name} has reached booking limit (${currentCount}/${bookingLimit}) for tier ${tier}`);
-      return NextResponse.json(
-        { error: `Boekingslimiet bereikt (${bookingLimit} per maand). Upgrade je abonnement voor meer boekingen.` },
-        { status: 403 }
-      );
+      const nextTier = TIER_UPGRADE_PATH[tier];
+      if (nextTier) {
+        console.log(`Auto-upgrading salon ${salon.name} from ${tier} to ${nextTier} (${currentCount}/${bookingLimit} bookings reached)`);
+        
+        // Upgrade tier in database
+        await supabase
+          .from('salons')
+          .update({ 
+            subscription_tier: nextTier,
+            tier_upgraded_at: new Date().toISOString(),
+          })
+          .eq('id', salon_id);
+
+        // Log the upgrade
+        try {
+          await supabase
+            .from('tier_upgrade_logs')
+            .insert({
+              salon_id,
+              from_tier: tier,
+              to_tier: nextTier,
+              bookings_at_upgrade: currentCount,
+              processed: false,
+            });
+        } catch { /* table may not exist yet */ }
+
+        tier = nextTier;
+        bookingLimit = TIER_BOOKING_LIMITS[tier];
+      }
     }
 
     // Optionally get redirect URL (column may not exist yet)

@@ -23,6 +23,7 @@ import {
   CreditCard,
 } from 'lucide-react';
 import type { Salon } from '@/types';
+import { BookingUsageBanner } from './booking-usage-banner';
 
 interface DashboardShellProps {
   salon: Salon;
@@ -269,7 +270,10 @@ export function DashboardShell({ salon, staff, user, children }: DashboardShellP
         </header>
 
         {/* Page content */}
-        <main className="p-4 sm:p-6 lg:p-8">{children}</main>
+        <main className="p-4 sm:p-6 lg:p-8">
+          <BookingUsageBanner />
+          {children}
+        </main>
       </div>
     </div>
   );
