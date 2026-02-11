@@ -5,8 +5,21 @@ import { sendBookingConfirmation } from '@/lib/notifications/booking-notificatio
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
-// Platform fee in cents (€0.25)
-const PLATFORM_FEE_CENTS = 25;
+// Fee calculation:
+// - Stripe fees: 1.4% + €0.25 (EU cards) - we use 1.5% to be safe
+// - Twilio WhatsApp: ~€0.08 x 2 messages (confirmation + reminder) = €0.16
+// - Platform margin: €0.10
+// Total: 1.5% + €0.51 fixed
+const STRIPE_PERCENTAGE = 0.015; // 1.5%
+const STRIPE_FIXED_CENTS = 25; // €0.25
+const TWILIO_COSTS_CENTS = 16; // €0.16 (2 WhatsApp messages)
+const PLATFORM_MARGIN_CENTS = 10; // €0.10 platform margin
+
+function calculatePlatformFee(paymentAmountCents: number): number {
+  const stripeFee = Math.ceil(paymentAmountCents * STRIPE_PERCENTAGE) + STRIPE_FIXED_CENTS;
+  const totalFee = stripeFee + TWILIO_COSTS_CENTS + PLATFORM_MARGIN_CENTS;
+  return totalFee;
+}
 
 export async function POST(request: Request) {
   try {
@@ -209,7 +222,7 @@ export async function POST(request: Request) {
         },
       ],
       payment_intent_data: {
-        application_fee_amount: PLATFORM_FEE_CENTS,
+        application_fee_amount: calculatePlatformFee(paymentAmount),
         transfer_data: {
           destination: salon.stripe_account_id,
         },
