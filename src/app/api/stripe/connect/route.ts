@@ -55,55 +55,66 @@ export async function GET() {
 
 // POST: Create Stripe Connect account + onboarding link
 export async function POST(request: Request) {
-  const salonId = await getAuthSalonId();
-  if (!salonId) return NextResponse.json({ error: 'Niet ingelogd' }, { status: 401 });
+  try {
+    const salonId = await getAuthSalonId();
+    if (!salonId) return NextResponse.json({ error: 'Niet ingelogd' }, { status: 401 });
 
-  const serviceClient = createServiceClient();
-  const { data: salon } = await serviceClient
-    .from('salons')
-    .select('*')
-    .eq('id', salonId)
-    .single();
+    const serviceClient = createServiceClient();
+    const { data: salon, error: salonError } = await serviceClient
+      .from('salons')
+      .select('*')
+      .eq('id', salonId)
+      .single();
 
-  if (!salon) return NextResponse.json({ error: 'Salon niet gevonden' }, { status: 404 });
+    if (salonError || !salon) {
+      console.error('Salon fetch error:', salonError);
+      return NextResponse.json({ error: 'Salon niet gevonden' }, { status: 404 });
+    }
 
-  let accountId = salon.stripe_account_id;
+    let accountId = salon.stripe_account_id;
 
-  // Create Stripe Connect account if doesn't exist
-  if (!accountId) {
-    const account = await stripe.accounts.create({
-      type: 'express',
-      country: 'NL',
-      email: salon.email || undefined,
-      business_type: 'individual',
-      capabilities: {
-        card_payments: { requested: true },
-        transfers: { requested: true },
-      },
-      business_profile: {
-        name: salon.name,
-        url: `https://${salon.slug}.bookedwell.app`,
-      },
+    // Create Stripe Connect account if doesn't exist
+    if (!accountId) {
+      console.log('Creating Stripe account for salon:', salon.name);
+      const account = await stripe.accounts.create({
+        type: 'express',
+        country: 'NL',
+        email: salon.email || undefined,
+        business_type: 'individual',
+        capabilities: {
+          card_payments: { requested: true },
+          transfers: { requested: true },
+        },
+        business_profile: {
+          name: salon.name,
+          url: `https://${salon.slug}.bookedwell.app`,
+        },
+      });
+
+      accountId = account.id;
+      console.log('Created Stripe account:', accountId);
+
+      await serviceClient
+        .from('salons')
+        .update({ stripe_account_id: accountId })
+        .eq('id', salonId);
+    }
+
+    // Create onboarding link
+    const { origin } = new URL(request.url);
+    console.log('Creating onboarding link for account:', accountId);
+    const accountLink = await stripe.accountLinks.create({
+      account: accountId,
+      refresh_url: `${origin}/dashboard/stripe`,
+      return_url: `${origin}/dashboard/stripe?setup=complete`,
+      type: 'account_onboarding',
     });
 
-    accountId = account.id;
-
-    await serviceClient
-      .from('salons')
-      .update({ stripe_account_id: accountId })
-      .eq('id', salonId);
+    return NextResponse.json({ url: accountLink.url });
+  } catch (err: any) {
+    console.error('Stripe connect error:', err);
+    return NextResponse.json({ error: err.message || 'Stripe error' }, { status: 500 });
   }
-
-  // Create onboarding link
-  const { origin } = new URL(request.url);
-  const accountLink = await stripe.accountLinks.create({
-    account: accountId,
-    refresh_url: `${origin}/dashboard/stripe`,
-    return_url: `${origin}/dashboard/stripe?setup=complete`,
-    type: 'account_onboarding',
-  });
-
-  return NextResponse.json({ url: accountLink.url });
 }
 
 // PATCH: Refresh status from Stripe

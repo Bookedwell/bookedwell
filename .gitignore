@@ -37,3 +37,7 @@ twilio_2FA_recovery_code.txt
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Secret files
+*.txt
+*.zip
