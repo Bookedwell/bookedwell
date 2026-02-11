@@ -28,10 +28,10 @@ export async function POST(request: Request) {
 
     const supabase = createServiceClient();
 
-    // Get salon with Stripe info
+    // Get salon with Stripe info and deposit settings
     const { data: salon, error: salonError } = await supabase
       .from('salons')
-      .select('id, name, slug, stripe_account_id, stripe_onboarded')
+      .select('id, name, slug, stripe_account_id, stripe_onboarded, require_deposit, deposit_percentage')
       .eq('id', salon_id)
       .single();
 
@@ -92,9 +92,9 @@ export async function POST(request: Request) {
 
     console.log(`Booking ${booking.id} created for salon ${salon.name}`);
 
-    // Check if salon has Stripe Connect
-    if (!salon.stripe_account_id || !salon.stripe_onboarded) {
-      // No Stripe - confirm booking directly
+    // Check if salon has Stripe Connect and requires deposit
+    if (!salon.stripe_account_id || !salon.stripe_onboarded || salon.require_deposit === false) {
+      // No Stripe or deposit not required - confirm booking directly
       await supabase
         .from('bookings')
         .update({ status: 'confirmed' })
@@ -184,6 +184,11 @@ export async function POST(request: Request) {
       });
     }
 
+    // Calculate payment amount based on deposit settings
+    const depositPercentage = salon.deposit_percentage ?? 100;
+    const paymentAmount = Math.round(service.price_cents * (depositPercentage / 100));
+    const isDeposit = depositPercentage < 100;
+    
     // Create Stripe Checkout session with transfer to connected account
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
@@ -193,10 +198,12 @@ export async function POST(request: Request) {
           price_data: {
             currency: 'eur',
             product_data: {
-              name: service.name,
-              description: `Afspraak bij ${salon.name}`,
+              name: isDeposit ? `Aanbetaling: ${service.name}` : service.name,
+              description: isDeposit 
+                ? `${depositPercentage}% aanbetaling voor afspraak bij ${salon.name}` 
+                : `Afspraak bij ${salon.name}`,
             },
-            unit_amount: service.price_cents,
+            unit_amount: paymentAmount,
           },
           quantity: 1,
         },
@@ -217,6 +224,9 @@ export async function POST(request: Request) {
         start_time: startDate.toISOString(),
         end_time: endDate.toISOString(),
         notes: notes || '',
+        deposit_percentage: String(depositPercentage),
+        deposit_amount_cents: String(paymentAmount),
+        full_price_cents: String(service.price_cents),
       },
       success_url: bookingRedirectUrl
         ? bookingRedirectUrl

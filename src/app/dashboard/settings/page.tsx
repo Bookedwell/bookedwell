@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Save, Globe, Copy, Check, Upload, Trash2, ImageIcon, Pipette, Palette, Code } from 'lucide-react';
+import { Save, Globe, Copy, Check, Upload, Trash2, ImageIcon, Pipette, Palette, Code, CreditCard } from 'lucide-react';
 import { useBranding } from '@/context/branding-context';
 import { useHeaderActions } from '@/context/header-actions-context';
 
@@ -52,6 +52,8 @@ export default function SettingsPage() {
   const [maxDaysAhead, setMaxDaysAhead] = useState('60');
   const [cancellationHours, setCancellationHours] = useState('24');
   const [bookingRedirectUrl, setBookingRedirectUrl] = useState('');
+  const [requireDeposit, setRequireDeposit] = useState(true);
+  const [depositPercentage, setDepositPercentage] = useState('100');
   const [eyedropperSupported, setEyedropperSupported] = useState(false);
   const [logoColors, setLogoColors] = useState<string[]>([]);
 
@@ -85,6 +87,8 @@ export default function SettingsPage() {
       setMaxDaysAhead(String(data.max_booking_days_ahead));
       setCancellationHours(String(data.cancellation_hours_before));
       setBookingRedirectUrl(data.booking_redirect_url || '');
+      setRequireDeposit(data.require_deposit ?? true);
+      setDepositPercentage(String(data.deposit_percentage ?? 100));
       setLoading(false);
     }
     fetchSalon();
@@ -113,6 +117,8 @@ export default function SettingsPage() {
         max_booking_days_ahead: parseInt(maxDaysAhead),
         cancellation_hours_before: parseInt(cancellationHours),
         booking_redirect_url: bookingRedirectUrl || null,
+        require_deposit: requireDeposit,
+        deposit_percentage: parseInt(depositPercentage),
       }),
     });
 
@@ -124,7 +130,7 @@ export default function SettingsPage() {
       setTimeout(() => setSaved(false), 2000);
     }
     setSaving(false);
-  }, [salon, name, slug, phone, address, city, postalCode, description, primaryColor, logoUrl, bookingBuffer, minNotice, maxDaysAhead, cancellationHours, router]);
+  }, [salon, name, slug, phone, address, city, postalCode, description, primaryColor, logoUrl, bookingBuffer, minNotice, maxDaysAhead, cancellationHours, bookingRedirectUrl, requireDeposit, depositPercentage]);
 
   // Set save button in header
   useEffect(() => {
@@ -645,6 +651,77 @@ export default function SettingsPage() {
               />
               <p className="text-xs text-gray-text mt-1">Uren van tevoren gratis annuleren</p>
             </div>
+          </div>
+        </div>
+
+        {/* Payment settings */}
+        <div className="bg-white rounded-xl border border-light-gray p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <CreditCard className="w-5 h-5" style={{ color: primaryColor }} />
+            <h2 className="font-semibold text-navy">Betalingsinstellingen</h2>
+          </div>
+          <p className="text-xs text-gray-text mb-4">
+            Bepaal of klanten een aanbetaling of het volledige bedrag betalen bij het boeken.
+          </p>
+
+          <div className="space-y-4">
+            {/* Deposit toggle */}
+            <div className="flex items-center justify-between p-4 bg-bg-gray rounded-lg">
+              <div>
+                <p className="text-sm font-medium text-navy">Betaling vereisen bij boeking</p>
+                <p className="text-xs text-gray-text mt-0.5">Klanten betalen (deels) vooruit om no-shows te voorkomen</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setRequireDeposit(!requireDeposit)}
+                className={`relative w-12 h-6 rounded-full transition-colors ${requireDeposit ? '' : 'bg-gray-300'}`}
+                style={{ backgroundColor: requireDeposit ? primaryColor : undefined }}
+              >
+                <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${requireDeposit ? 'left-6' : 'left-0.5'}`} />
+              </button>
+            </div>
+
+            {/* Deposit percentage */}
+            {requireDeposit && (
+              <div className="p-4 border border-light-gray rounded-lg">
+                <label className="block text-sm font-medium text-navy mb-3">Hoeveel procent vooruit?</label>
+                <div className="flex gap-2 mb-3">
+                  {[25, 50, 100].map((pct) => (
+                    <button
+                      key={pct}
+                      type="button"
+                      onClick={() => setDepositPercentage(String(pct))}
+                      className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors border ${
+                        depositPercentage === String(pct)
+                          ? 'text-white border-transparent'
+                          : 'text-navy border-light-gray hover:bg-bg-gray'
+                      }`}
+                      style={{ backgroundColor: depositPercentage === String(pct) ? primaryColor : undefined }}
+                    >
+                      {pct === 100 ? 'Volledig' : `${pct}%`}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="range"
+                    min="10"
+                    max="100"
+                    step="5"
+                    value={depositPercentage}
+                    onChange={(e) => setDepositPercentage(e.target.value)}
+                    className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                    style={{ accentColor: primaryColor }}
+                  />
+                  <span className="text-sm font-bold w-12 text-right" style={{ color: primaryColor }}>{depositPercentage}%</span>
+                </div>
+                <p className="text-xs text-gray-text mt-2">
+                  {depositPercentage === '100' 
+                    ? 'Klanten betalen het volledige bedrag vooruit.' 
+                    : `Klanten betalen ${depositPercentage}% aanbetaling bij het boeken.`}
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </div>
