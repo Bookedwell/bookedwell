@@ -342,181 +342,198 @@ export default function SettingsPage() {
       </div>
 
       <div className="space-y-6">
-        {/* Private Label / Branding */}
-        <div className="bg-white rounded-xl border border-light-gray p-5">
-          <div className="flex items-center gap-2 mb-4">
+        {/* Branding header */}
+        <div>
+          <div className="flex items-center gap-2 mb-1">
             <Palette className="w-5 h-5" style={{ color: primaryColor }} />
-            <h2 className="font-semibold text-navy">Branding</h2>
+            <h2 className="text-lg font-bold text-navy">Branding</h2>
           </div>
-          <p className="text-xs text-gray-text mb-4">
-            Pas je boekingspagina aan met je eigen logo en kleur. Klanten zien jouw merk.
+          <p className="text-sm text-gray-text mb-4">
+            Pas je boekingspagina aan met je eigen logo en kleur.
           </p>
+        </div>
 
-          <div className="grid sm:grid-cols-2 gap-6">
-            {/* Logo */}
-            <div>
-              <label className="block text-sm font-medium text-navy mb-2">Logo</label>
-              <div className="flex items-start gap-4">
-                <div className="w-20 h-20 rounded-xl border-2 border-dashed border-light-gray flex items-center justify-center overflow-hidden bg-bg-gray flex-shrink-0">
-                  {logoUrl ? (
-                    <img
-                      src={logoUrl}
-                      alt="Logo"
-                      className="w-full h-full object-contain"
-                    />
-                  ) : (
-                    <ImageIcon className="w-8 h-8 text-light-gray" />
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/png,image/jpeg,image/svg+xml,image/webp"
-                    onChange={handleLogoUpload}
-                    className="hidden"
-                  />
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => fileInputRef.current?.click()}
-                    loading={uploading}
+        {/* Logo & Kleur - side by side */}
+        <div className="grid md:grid-cols-2 gap-4">
+          {/* Logo card */}
+          <div className="bg-white rounded-xl border border-light-gray p-5">
+            <h3 className="text-sm font-semibold text-navy mb-4">Logo</h3>
+            <div className="flex flex-col items-center gap-4">
+              <div className="w-24 h-24 rounded-2xl border-2 border-dashed border-light-gray flex items-center justify-center overflow-hidden bg-bg-gray">
+                {logoUrl ? (
+                  <img src={logoUrl} alt="Logo" className="w-full h-full object-contain" />
+                ) : (
+                  <ImageIcon className="w-10 h-10 text-light-gray" />
+                )}
+              </div>
+              <div className="flex flex-col items-center gap-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/svg+xml,image/webp"
+                  onChange={handleLogoUpload}
+                  className="hidden"
+                />
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                  loading={uploading}
+                  accentColor={primaryColor}
+                >
+                  <Upload className="w-4 h-4 mr-1.5" />
+                  {logoUrl ? 'Logo wijzigen' : 'Upload logo'}
+                </Button>
+                {logoUrl && (
+                  <button
+                    onClick={handleLogoRemove}
+                    className="flex items-center gap-1 text-xs text-red-500 hover:text-red-700 transition-colors"
                   >
-                    <Upload className="w-4 h-4 mr-1" />
-                    {logoUrl ? 'Wijzigen' : 'Upload logo'}
-                  </Button>
-                  {logoUrl && (
+                    <Trash2 className="w-3 h-3" />
+                    Verwijderen
+                  </button>
+                )}
+              </div>
+              <p className="text-[11px] text-gray-text text-center">PNG, JPG, SVG of WebP • Max 2MB</p>
+            </div>
+          </div>
+
+          {/* Color card */}
+          <div className="bg-white rounded-xl border border-light-gray p-5">
+            <h3 className="text-sm font-semibold text-navy mb-4">Accentkleur</h3>
+            <div className="flex items-center gap-3 mb-4">
+              <input
+                type="color"
+                value={primaryColor}
+                onChange={(e) => setPrimaryColor(e.target.value)}
+                className="w-12 h-12 rounded-xl cursor-pointer border-2 border-light-gray p-0.5"
+              />
+              <div className="flex-1">
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={primaryColor}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      if (/^#[0-9A-Fa-f]{0,6}$/.test(v)) setPrimaryColor(v);
+                    }}
+                    placeholder="#4285F4"
+                    className="flex-1 px-3 py-2 border border-light-gray rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                  />
+                  {eyedropperSupported && (
                     <button
-                      onClick={handleLogoRemove}
-                      className="flex items-center gap-1 text-xs text-red-500 hover:text-red-700"
+                      onClick={handleEyedropper}
+                      className="w-10 h-10 flex items-center justify-center border border-light-gray rounded-lg hover:bg-bg-gray transition-colors"
+                      title="Kleur uit logo pikken"
                     >
-                      <Trash2 className="w-3 h-3" />
-                      Verwijderen
+                      <Pipette className="w-4 h-4 text-navy" />
                     </button>
                   )}
-                  <p className="text-xs text-gray-text">PNG, JPG, SVG of WebP. Max 2MB.</p>
                 </div>
+                {eyedropperSupported && (
+                  <p className="text-[10px] text-gray-text mt-1">Tip: Gebruik de pipet om een kleur uit je logo te pikken</p>
+                )}
               </div>
             </div>
 
-            {/* Color picker */}
-            <div>
-              <label className="block text-sm font-medium text-navy mb-2">Accentkleur</label>
+            {/* Logo colors palette */}
+            {logoColors.length > 0 && (
+              <div className="mb-4">
+                <p className="text-xs text-gray-text mb-2">Kleuren uit je logo</p>
+                <div className="flex gap-2">
+                  {logoColors.map((color) => (
+                    <button
+                      key={color}
+                      onClick={() => setPrimaryColor(color)}
+                      className={`w-8 h-8 rounded-lg border-2 transition-transform hover:scale-110 ${primaryColor === color ? 'border-navy ring-2 ring-offset-1' : 'border-light-gray'}`}
+                      style={{ backgroundColor: color, ['--tw-ring-color' as string]: color }}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
 
-              {/* Live preview - mini booking page */}
-              <div className="mb-3 rounded-xl border border-light-gray overflow-hidden">
-                <div className="p-3" style={{ backgroundColor: primaryColor + '10' }}>
+            {/* Divider */}
+            <div className="border-t border-light-gray pt-4">
+              <p className="text-xs text-gray-text mb-3">Voorbeeld boekingspagina</p>
+              <div className="rounded-xl border border-light-gray overflow-hidden shadow-sm">
+                <div className="px-4 py-3" style={{ backgroundColor: primaryColor + '10' }}>
                   <div className="flex items-center gap-2">
                     {logoUrl ? (
-                      <img src={logoUrl} alt="" className="w-8 h-8 rounded-full object-contain bg-white" />
+                      <img src={logoUrl} alt="" className="w-7 h-7 rounded-full object-contain bg-white" />
                     ) : (
-                      <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold" style={{ backgroundColor: primaryColor }}>
+                      <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold" style={{ backgroundColor: primaryColor }}>
                         {name?.charAt(0) || 'S'}
                       </div>
                     )}
-                    <span className="text-sm font-semibold text-navy">{name || 'Mijn Salon'}</span>
+                    <span className="text-xs font-semibold text-navy">{name || 'Mijn Salon'}</span>
                   </div>
                 </div>
-                <div className="p-3 bg-white space-y-2">
-                  <div className="flex items-center justify-between p-2 rounded-lg border" style={{ borderColor: primaryColor + '40' }}>
+                <div className="px-4 py-3 bg-white space-y-2">
+                  <div className="flex items-center justify-between py-1.5 px-2.5 rounded-lg border" style={{ borderColor: primaryColor + '30' }}>
                     <div>
-                      <p className="text-xs font-medium text-navy">Knippen dames</p>
-                      <p className="text-[10px] text-gray-text">60 min</p>
+                      <p className="text-[11px] font-medium text-navy">Knippen dames</p>
+                      <p className="text-[9px] text-gray-text">60 min</p>
                     </div>
-                    <span className="text-xs font-bold" style={{ color: primaryColor }}>€55,00</span>
+                    <span className="text-[11px] font-bold" style={{ color: primaryColor }}>€55,00</span>
                   </div>
-                  <button className="w-full text-xs text-white py-2 rounded-lg font-medium transition-all" style={{ backgroundColor: primaryColor }}>
+                  <button className="w-full text-[11px] text-white py-1.5 rounded-lg font-medium" style={{ backgroundColor: primaryColor }}>
                     Boek nu
                   </button>
                 </div>
               </div>
-
-
-              {/* Color picker + eyedropper */}
-              <div className="flex gap-2">
-                <input
-                  type="color"
-                  value={primaryColor}
-                  onChange={(e) => setPrimaryColor(e.target.value)}
-                  className="w-10 h-10 rounded-lg cursor-pointer border border-light-gray"
-                />
-                <input
-                  type="text"
-                  value={primaryColor}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    if (/^#[0-9A-Fa-f]{0,6}$/.test(v)) setPrimaryColor(v);
-                  }}
-                  placeholder="#4285F4"
-                  className="flex-1 px-3 py-2 border border-light-gray rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                />
-                {eyedropperSupported && (
-                  <button
-                    onClick={handleEyedropper}
-                    className="w-10 h-10 flex items-center justify-center border border-light-gray rounded-lg hover:bg-bg-gray transition-colors"
-                    title="Kleur kiezen van scherm (bijv. uit je logo)"
-                  >
-                    <Pipette className="w-4 h-4 text-navy" />
-                  </button>
-                )}
-              </div>
-              {eyedropperSupported && (
-                <p className="text-[10px] text-gray-text mt-1.5">Tip: Gebruik de pipet om een kleur uit je logo te pikken!</p>
-              )}
             </div>
           </div>
+        </div>
 
-          {/* Widget Embed Code */}
-          <div className="mt-6 pt-6 border-t border-light-gray">
-            <div className="flex items-center gap-2 mb-3">
-              <Code className="w-4 h-4" style={{ color: primaryColor }} />
-              <h3 className="font-medium text-navy text-sm">Widget embedden</h3>
-            </div>
-            <p className="text-xs text-gray-text mb-3">
-              Kopieer deze code om de boekingswidget op je eigen website te plaatsen. Klanten kunnen direct boeken zonder je site te verlaten.
+        {/* Widget Embed Code - separate card */}
+        <div className="bg-white rounded-xl border border-light-gray p-5">
+          <div className="flex items-center gap-2 mb-1">
+            <Code className="w-4 h-4" style={{ color: primaryColor }} />
+            <h3 className="text-sm font-semibold text-navy">Widget embedden</h3>
+          </div>
+          <p className="text-xs text-gray-text mb-4">
+            Plaats de boekingswidget op je eigen website. Klanten boeken direct zonder je site te verlaten.
+          </p>
+
+          <div className="bg-slate-900 rounded-xl p-4 font-mono text-xs text-green-400 overflow-x-auto mb-3">
+            <code className="break-all">{`<iframe src="https://bookedwell.app/salon/${slug}?embed=true" width="100%" height="700" frameborder="0" style="border-radius: 12px; max-width: 480px;"></iframe>`}</code>
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              navigator.clipboard.writeText(`<iframe src="https://bookedwell.app/salon/${slug}?embed=true" width="100%" height="700" frameborder="0" style="border-radius: 12px; max-width: 480px;"></iframe>`);
+              setEmbedCopied(true);
+              setTimeout(() => setEmbedCopied(false), 2000);
+            }}
+            accentColor={primaryColor}
+          >
+            {embedCopied ? (
+              <>
+                <Check className="w-4 h-4 mr-1.5" />
+                Gekopieerd!
+              </>
+            ) : (
+              <>
+                <Copy className="w-4 h-4 mr-1.5" />
+                Kopieer code
+              </>
+            )}
+          </Button>
+
+          <div className="mt-5 pt-4 border-t border-light-gray">
+            <label className="block text-sm font-medium text-navy mb-1">Redirect na boeking</label>
+            <input
+              type="url"
+              value={bookingRedirectUrl}
+              onChange={(e) => setBookingRedirectUrl(e.target.value)}
+              placeholder="https://jouwwebsite.nl/bedankt"
+              className="w-full px-3 py-2 border border-light-gray rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            />
+            <p className="text-xs text-gray-text mt-1">
+              Na succesvolle boeking wordt de klant naar deze URL gestuurd. Laat leeg voor de standaard bedanktpagina.
             </p>
-            <div className="bg-slate-900 rounded-lg p-3 font-mono text-xs text-green-400 overflow-x-auto">
-              <code>{`<iframe src="https://bookedwell.app/salon/${slug}?embed=true" width="100%" height="700" frameborder="0" style="border-radius: 12px; max-width: 480px;"></iframe>`}</code>
-            </div>
-            <div className="flex items-center gap-3 mt-3">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => {
-                  navigator.clipboard.writeText(`<iframe src="https://bookedwell.app/salon/${slug}?embed=true" width="100%" height="700" frameborder="0" style="border-radius: 12px; max-width: 480px;"></iframe>`);
-                  setEmbedCopied(true);
-                  setTimeout(() => setEmbedCopied(false), 2000);
-                }}
-                accentColor={primaryColor}
-              >
-                {embedCopied ? (
-                  <>
-                    <Check className="w-4 h-4 mr-1" />
-                    Gekopieerd
-                  </>
-                ) : (
-                  <>
-                    <Copy className="w-4 h-4 mr-1" />
-                    Kopieer code
-                  </>
-                )}
-              </Button>
-            </div>
-
-            {/* Redirect URL for embed */}
-            <div className="mt-4">
-              <label className="block text-sm font-medium text-navy mb-1">Redirect na boeking</label>
-              <input
-                type="url"
-                value={bookingRedirectUrl}
-                onChange={(e) => setBookingRedirectUrl(e.target.value)}
-                placeholder="https://jouwwebsite.nl/bedankt"
-                className="w-full px-3 py-2 border border-light-gray rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-              />
-              <p className="text-xs text-gray-text mt-1">
-                Na succesvolle boeking wordt de klant naar deze URL gestuurd. Laat leeg voor de standaard bedanktpagina.
-              </p>
-            </div>
           </div>
         </div>
 
