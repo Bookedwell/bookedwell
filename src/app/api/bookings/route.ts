@@ -8,16 +8,29 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 // Fee calculation:
 // - Stripe fees: 1.4% + €0.25 (EU cards) - we use 1.5% to be safe
 // - Twilio WhatsApp: ~€0.08 x 2 messages (confirmation + reminder) = €0.16
-// - Platform margin: €0.25
-// Total: 1.5% + €0.66 fixed
+// - Platform per-booking fee: €0.25 (booked_100/500) or €0.20 (unlimited)
 const STRIPE_PERCENTAGE = 0.015; // 1.5%
 const STRIPE_FIXED_CENTS = 25; // €0.25
 const TWILIO_COSTS_CENTS = 16; // €0.16 (2 WhatsApp messages)
-const PLATFORM_MARGIN_CENTS = 25; // €0.25 platform margin
 
-function calculatePlatformFee(paymentAmountCents: number): number {
+// Per-booking fee per tier (in cents, excl. BTW)
+const TIER_PER_BOOKING: Record<string, number> = {
+  booked_100: 25,
+  booked_500: 25,
+  booked_unlimited: 20,
+};
+
+// Booking limits per tier (null = unlimited)
+const TIER_BOOKING_LIMITS: Record<string, number | null> = {
+  booked_100: 100,
+  booked_500: 500,
+  booked_unlimited: null,
+};
+
+function calculatePlatformFee(paymentAmountCents: number, tier: string): number {
   const stripeFee = Math.ceil(paymentAmountCents * STRIPE_PERCENTAGE) + STRIPE_FIXED_CENTS;
-  const totalFee = stripeFee + TWILIO_COSTS_CENTS + PLATFORM_MARGIN_CENTS;
+  const platformMargin = TIER_PER_BOOKING[tier] ?? 25;
+  const totalFee = stripeFee + TWILIO_COSTS_CENTS + platformMargin;
   return totalFee;
 }
 
@@ -41,16 +54,29 @@ export async function POST(request: Request) {
 
     const supabase = createServiceClient();
 
-    // Get salon with Stripe info and deposit settings
+    // Get salon with Stripe info, deposit settings, and subscription tier
     const { data: salon, error: salonError } = await supabase
       .from('salons')
-      .select('id, name, slug, stripe_account_id, stripe_onboarded, require_deposit, deposit_percentage')
+      .select('id, name, slug, stripe_account_id, stripe_onboarded, require_deposit, deposit_percentage, subscription_tier, bookings_this_period')
       .eq('id', salon_id)
       .single();
 
     if (salonError || !salon) {
       console.error('Salon fetch error:', salonError);
       return NextResponse.json({ error: 'Salon not found' }, { status: 404 });
+    }
+
+    // Check booking limit for tier
+    const tier = salon.subscription_tier || 'booked_100';
+    const bookingLimit = TIER_BOOKING_LIMITS[tier];
+    const currentCount = salon.bookings_this_period || 0;
+
+    if (bookingLimit !== null && currentCount >= bookingLimit) {
+      console.warn(`Salon ${salon.name} has reached booking limit (${currentCount}/${bookingLimit}) for tier ${tier}`);
+      return NextResponse.json(
+        { error: `Boekingslimiet bereikt (${bookingLimit} per maand). Upgrade je abonnement voor meer boekingen.` },
+        { status: 403 }
+      );
     }
 
     // Optionally get redirect URL (column may not exist yet)
@@ -103,7 +129,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Failed to create booking' }, { status: 500 });
     }
 
-    console.log(`Booking ${booking.id} created for salon ${salon.name}`);
+    console.log(`Booking ${booking.id} created for salon ${salon.name} (tier: ${tier}, count: ${currentCount + 1}/${bookingLimit ?? 'unlimited'})`);
+
+    // Increment booking counter for this period
+    await supabase
+      .from('salons')
+      .update({ bookings_this_period: currentCount + 1 })
+      .eq('id', salon_id);
 
     // Check if salon has Stripe Connect and requires deposit
     if (!salon.stripe_account_id || !salon.stripe_onboarded || salon.require_deposit === false) {
@@ -222,7 +254,7 @@ export async function POST(request: Request) {
         },
       ],
       payment_intent_data: {
-        application_fee_amount: calculatePlatformFee(paymentAmount),
+        application_fee_amount: calculatePlatformFee(paymentAmount, tier),
         transfer_data: {
           destination: salon.stripe_account_id,
         },
