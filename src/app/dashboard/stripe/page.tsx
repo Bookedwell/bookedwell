@@ -113,10 +113,22 @@ export default function StripePage() {
           <h1 className="text-2xl font-bold text-navy">Betalingen</h1>
           <p className="text-gray-text mt-1">Beheer je Stripe Connect koppeling</p>
         </div>
-        <Button variant="outline" onClick={() => { setLoading(true); fetchStatus(); }} loading={refreshing} accentColor={accentColor}>
-          <RefreshCw className="w-4 h-4 mr-2" />
-          Status vernieuwen
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            onClick={async () => { 
+              setRefreshing(true); 
+              await fetch('/api/stripe/connect', { method: 'PUT' }); 
+              await fetchStatus(); 
+              setRefreshing(false); 
+            }} 
+            loading={refreshing} 
+            accentColor={accentColor}
+          >
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Synchroniseren
+          </Button>
+        </div>
       </div>
 
       {error && (

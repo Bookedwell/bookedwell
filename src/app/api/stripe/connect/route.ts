@@ -152,6 +152,91 @@ export async function POST(request: Request) {
   }
 }
 
+// PUT: Force sync - find Stripe account from customer and update database
+export async function PUT() {
+  try {
+    const salonId = await getAuthSalonId();
+    if (!salonId) return NextResponse.json({ error: 'Niet ingelogd' }, { status: 401 });
+
+    const serviceClient = createServiceClient();
+    const { data: salon } = await serviceClient
+      .from('salons')
+      .select('stripe_account_id, stripe_customer_id, name, email')
+      .eq('id', salonId)
+      .single();
+
+    if (!salon) return NextResponse.json({ error: 'Salon niet gevonden' }, { status: 404 });
+
+    console.log('[Stripe Force Sync] Current salon data:', salon);
+
+    // If already has stripe_account_id, just refresh status from Stripe
+    if (salon.stripe_account_id) {
+      try {
+        const account = await stripe.accounts.retrieve(salon.stripe_account_id);
+        const onboarded = account.charges_enabled && account.details_submitted;
+        
+        await serviceClient
+          .from('salons')
+          .update({ stripe_onboarded: onboarded })
+          .eq('id', salonId);
+
+        return NextResponse.json({
+          action: 'refreshed',
+          stripe_account_id: salon.stripe_account_id,
+          charges_enabled: account.charges_enabled,
+          payouts_enabled: account.payouts_enabled,
+          onboarded,
+        });
+      } catch (err: any) {
+        // Account doesn't exist in Stripe, clear it from database
+        console.error('[Stripe Force Sync] Account not found in Stripe:', err.message);
+        await serviceClient
+          .from('salons')
+          .update({ stripe_account_id: null, stripe_onboarded: false })
+          .eq('id', salonId);
+
+        return NextResponse.json({
+          action: 'cleared_invalid',
+          message: 'Stripe account niet gevonden, database opgeschoond',
+        });
+      }
+    }
+
+    // No stripe_account_id - try to find existing accounts by email
+    if (salon.email) {
+      const accounts = await stripe.accounts.list({ limit: 100 });
+      const matchingAccount = accounts.data.find(acc => acc.email === salon.email);
+      
+      if (matchingAccount) {
+        const onboarded = matchingAccount.charges_enabled && matchingAccount.details_submitted;
+        
+        await serviceClient
+          .from('salons')
+          .update({ 
+            stripe_account_id: matchingAccount.id,
+            stripe_onboarded: onboarded,
+          })
+          .eq('id', salonId);
+
+        return NextResponse.json({
+          action: 'found_and_linked',
+          stripe_account_id: matchingAccount.id,
+          onboarded,
+          message: 'Bestaand Stripe account gevonden en gekoppeld',
+        });
+      }
+    }
+
+    return NextResponse.json({
+      action: 'no_account',
+      message: 'Geen Stripe account gevonden. Klik op "Stripe Connect instellen" om er een aan te maken.',
+    });
+  } catch (err: any) {
+    console.error('[Stripe Force Sync] Error:', err);
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}
+
 // PATCH: Refresh status from Stripe
 export async function PATCH() {
   const salonId = await getAuthSalonId();
