@@ -199,11 +199,21 @@ export default function StripePage() {
                   <div>
                     <p className="text-sm font-medium text-yellow-800">Stripe setup niet voltooid</p>
                     <p className="text-xs text-yellow-600 mt-1">
-                      Je Stripe account is aangemaakt maar de setup is nog niet afgerond.
-                      Rond de setup af om betalingen te kunnen ontvangen.
+                      Je Stripe account is gekoppeld, maar er zijn nog extra stappen nodig voordat je betalingen kunt ontvangen.
                     </p>
                   </div>
                 </div>
+              </div>
+
+              {/* Extra instruction box */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                <p className="text-sm font-medium text-blue-800 mb-2">Wat moet je doen?</p>
+                <ol className="text-xs text-blue-700 space-y-1.5 list-decimal list-inside">
+                  <li>Log in op je <a href="https://dashboard.stripe.com" target="_blank" rel="noopener noreferrer" className="underline font-medium">Stripe Dashboard</a></li>
+                  <li>Voltooi de verificatie van je identiteit</li>
+                  <li>Voeg je bankrekening toe voor uitbetalingen</li>
+                  <li>Kom terug en klik op "Status vernieuwen"</li>
+                </ol>
               </div>
 
               {/* Status items */}
@@ -214,10 +224,21 @@ export default function StripePage() {
                 <StatusItem label="Uitbetalingen actief" done={status?.payouts_enabled || false} />
               </div>
 
-              <Button onClick={handleConnect} loading={connecting} accentColor={accentColor}>
-                <ExternalLink className="w-4 h-4 mr-2" />
-                Setup afronden bij Stripe
-              </Button>
+              <div className="flex flex-wrap gap-3">
+                <a
+                  href="https://dashboard.stripe.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 text-sm px-4 py-2 rounded-lg text-white font-medium"
+                  style={{ backgroundColor: accentColor }}
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  Stripe Dashboard openen
+                </a>
+                <Button variant="outline" onClick={handleConnect} loading={connecting} accentColor={accentColor}>
+                  Onboarding opnieuw starten
+                </Button>
+              </div>
             </div>
           ) : (
             /* Fully onboarded */
