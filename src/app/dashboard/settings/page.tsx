@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Save, Globe, Copy, Check, Upload, Trash2, ImageIcon, Pipette, Palette, Code, CreditCard } from 'lucide-react';
+import { Save, Globe, Copy, Check, Upload, Trash2, ImageIcon, Pipette, Palette, Code, CreditCard, ExternalLink } from 'lucide-react';
 import { useBranding } from '@/context/branding-context';
 import { useHeaderActions } from '@/context/header-actions-context';
 import { SubscriptionCard } from '@/components/dashboard/subscription-card';
@@ -133,25 +133,37 @@ export default function SettingsPage() {
     setSaving(false);
   }, [salon, name, slug, phone, address, city, postalCode, description, primaryColor, logoUrl, bookingBuffer, minNotice, maxDaysAhead, cancellationHours, bookingRedirectUrl, requireDeposit, depositPercentage]);
 
-  // Set save button in header
+  // Set header actions: Bekijk boekingspagina + Opslaan
   useEffect(() => {
     setHeaderActions(
-      <Button onClick={handleSave} loading={saving} accentColor={primaryColor}>
-        {saved ? (
-          <>
-            <Check className="w-4 h-4 mr-2" />
-            Opgeslagen
-          </>
-        ) : (
-          <>
-            <Save className="w-4 h-4 mr-2" />
-            Opslaan
-          </>
+      <div className="flex items-center gap-2">
+        {slug && (
+          <a
+            href={`https://${slug}.bookedwell.app`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg border border-white/20 text-white/90 hover:text-white hover:bg-white/10 transition-colors"
+          >
+            Bekijk boekingspagina
+          </a>
         )}
-      </Button>
+        <Button onClick={handleSave} loading={saving} accentColor={primaryColor}>
+          {saved ? (
+            <>
+              <Check className="w-4 h-4 mr-2" />
+              Opgeslagen
+            </>
+          ) : (
+            <>
+              <Save className="w-4 h-4 mr-2" />
+              Opslaan
+            </>
+          )}
+        </Button>
+      </div>
     );
     return () => setHeaderActions(null);
-  }, [setHeaderActions, handleSave, saving, saved, primaryColor]);
+  }, [setHeaderActions, handleSave, saving, saved, primaryColor, slug]);
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -309,35 +321,44 @@ export default function SettingsPage() {
   return (
     <div>
       {/* Page header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-navy">Instellingen</h1>
-          <p className="text-gray-text mt-1">Beheer je salon gegevens en branding</p>
-        </div>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-navy">Instellingen</h1>
+        <p className="text-gray-text mt-1">Beheer je salon gegevens en branding</p>
       </div>
-
 
       {/* Booking link */}
       <div className="rounded-xl p-4 mb-6" style={{ backgroundColor: primaryColor + '10', borderColor: primaryColor + '30', borderWidth: 1 }}>
-        <div className="flex items-center gap-3">
-          <Globe className="w-5 h-5 flex-shrink-0" style={{ color: primaryColor }} />
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-navy">Je boekingslink</p>
-            <p className="text-sm font-mono truncate" style={{ color: primaryColor }}>{bookingUrl}</p>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <Globe className="w-5 h-5 flex-shrink-0" style={{ color: primaryColor }} />
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-navy">Je boekingslink</p>
+              <p className="text-sm font-mono truncate" style={{ color: primaryColor }}>{bookingUrl}</p>
+            </div>
           </div>
-          <Button size="sm" variant="outline" onClick={copyLink} accentColor={primaryColor}>
-            {copied ? (
-              <>
-                <Check className="w-4 h-4 mr-1" />
-                Gekopieerd
-              </>
-            ) : (
-              <>
-                <Copy className="w-4 h-4 mr-1" />
-                Kopieer
-              </>
-            )}
-          </Button>
+          <div className="flex items-center gap-2">
+            <a
+              href={bookingUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg border border-light-gray bg-white hover:bg-bg-gray transition-colors text-navy"
+            >
+              Bekijk boekingspagina
+            </a>
+            <Button size="sm" variant="outline" onClick={copyLink} accentColor={primaryColor}>
+              {copied ? (
+                <>
+                  <Check className="w-4 h-4 mr-1" />
+                  Gekopieerd
+                </>
+              ) : (
+                <>
+                  <Copy className="w-4 h-4 mr-1" />
+                  Kopieer
+                </>
+              )}
+            </Button>
+          </div>
         </div>
       </div>
 
