@@ -29,7 +29,23 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  const pathname = request.nextUrl.pathname;
+
+  // Redirect logged-in users from public pages to dashboard
+  if (user && (pathname === '/' || pathname === '/login' || pathname === '/signup')) {
+    const url = request.nextUrl.clone();
+    url.pathname = '/dashboard';
+    return NextResponse.redirect(url);
+  }
+
+  // Redirect unauthenticated users from dashboard to login
+  if (!user && pathname.startsWith('/dashboard')) {
+    const url = request.nextUrl.clone();
+    url.pathname = '/login';
+    return NextResponse.redirect(url);
+  }
 
   return supabaseResponse;
 }
