@@ -8,12 +8,12 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 // Fee calculation:
 // - Stripe fees: 1.4% + €0.25 (EU cards) - we use 1.5% to be safe
 // - Twilio WhatsApp: ~€0.08 x 2 messages (confirmation + reminder) = €0.16
-// - Platform margin: €0.10
-// Total: 1.5% + €0.51 fixed
+// - Platform margin: €0.25
+// Total: 1.5% + €0.66 fixed
 const STRIPE_PERCENTAGE = 0.015; // 1.5%
 const STRIPE_FIXED_CENTS = 25; // €0.25
 const TWILIO_COSTS_CENTS = 16; // €0.16 (2 WhatsApp messages)
-const PLATFORM_MARGIN_CENTS = 10; // €0.10 platform margin
+const PLATFORM_MARGIN_CENTS = 25; // €0.25 platform margin
 
 function calculatePlatformFee(paymentAmountCents: number): number {
   const stripeFee = Math.ceil(paymentAmountCents * STRIPE_PERCENTAGE) + STRIPE_FIXED_CENTS;
