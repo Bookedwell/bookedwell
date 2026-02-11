@@ -210,8 +210,8 @@ export default function StripePage() {
                 <p className="text-sm font-medium text-blue-800 mb-2">Wat moet je doen?</p>
                 <ol className="text-xs text-blue-700 space-y-1.5 list-decimal list-inside">
                   <li>Log in op je <a href="https://dashboard.stripe.com" target="_blank" rel="noopener noreferrer" className="underline font-medium">Stripe Dashboard</a></li>
-                  <li>Voltooi de verificatie van je identiteit</li>
-                  <li>Voeg je bankrekening toe voor uitbetalingen</li>
+                  <li>Klik op "E-mail bevestigen"</li>
+                  <li>Open de bevestigingsmail en klik op de link</li>
                   <li>Kom terug en klik op "Status vernieuwen"</li>
                 </ol>
               </div>
