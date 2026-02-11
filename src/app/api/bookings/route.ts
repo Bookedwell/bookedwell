@@ -273,7 +273,7 @@ export async function POST(request: Request) {
     const serviceFee = calculatePlatformFee(paymentAmount, tier);
     
     // Create Stripe Checkout session with transfer to connected account
-    // Servicekosten shown as separate line item - salon receives full service price
+    // Customer sees only the service price - fees are deducted internally
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
       payment_method_types: ['card', 'ideal'],
@@ -288,17 +288,6 @@ export async function POST(request: Request) {
                 : `Afspraak bij ${salon.name}`,
             },
             unit_amount: paymentAmount,
-          },
-          quantity: 1,
-        },
-        {
-          price_data: {
-            currency: 'eur',
-            product_data: {
-              name: 'Servicekosten',
-              description: 'Betaalverwerking en herinneringen',
-            },
-            unit_amount: serviceFee,
           },
           quantity: 1,
         },
