@@ -32,11 +32,23 @@ export default function StripePage() {
   const [refreshing, setRefreshing] = useState(false);
   const setupComplete = searchParams.get('setup') === 'complete';
 
+  const [error, setError] = useState<string | null>(null);
+
   const fetchStatus = async () => {
-    const res = await fetch('/api/stripe/connect');
-    if (res.ok) {
-      const data = await res.json();
-      setStatus(data);
+    try {
+      const res = await fetch('/api/stripe/connect');
+      if (res.ok) {
+        const data = await res.json();
+        setStatus(data);
+        setError(null);
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        console.error('Stripe status fetch error:', errData);
+        setError(errData.error || 'Kon status niet ophalen');
+      }
+    } catch (err) {
+      console.error('Stripe fetch error:', err);
+      setError('Netwerkfout bij ophalen status');
     }
     setLoading(false);
   };
@@ -101,13 +113,27 @@ export default function StripePage() {
           <h1 className="text-2xl font-bold text-navy">Betalingen</h1>
           <p className="text-gray-text mt-1">Beheer je Stripe Connect koppeling</p>
         </div>
-        {isConnected && (
-          <Button variant="outline" onClick={refreshStatus} loading={refreshing} accentColor={accentColor}>
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Status vernieuwen
-          </Button>
-        )}
+        <Button variant="outline" onClick={() => { setLoading(true); fetchStatus(); }} loading={refreshing} accentColor={accentColor}>
+          <RefreshCw className="w-4 h-4 mr-2" />
+          Status vernieuwen
+        </Button>
       </div>
+
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 flex items-center gap-3">
+          <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
+          <div>
+            <p className="text-sm font-medium text-red-800">Fout bij ophalen status</p>
+            <p className="text-xs text-red-600">{error}</p>
+          </div>
+          <button
+            onClick={() => { setError(null); setLoading(true); fetchStatus(); }}
+            className="ml-auto text-xs text-red-700 underline"
+          >
+            Opnieuw proberen
+          </button>
+        </div>
+      )}
 
       {setupComplete && isFullyOnboarded && (
         <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-6 flex items-center gap-3">

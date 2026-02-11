@@ -23,34 +23,61 @@ async function getAuthSalonId() {
 
 // GET: Get Stripe Connect status
 export async function GET() {
-  const salonId = await getAuthSalonId();
-  if (!salonId) return NextResponse.json({ error: 'Niet ingelogd' }, { status: 401 });
-
-  const serviceClient = createServiceClient();
-  const { data: salon } = await serviceClient
-    .from('salons')
-    .select('stripe_account_id, stripe_onboarded')
-    .eq('id', salonId)
-    .single();
-
-  if (!salon) return NextResponse.json({ error: 'Salon niet gevonden' }, { status: 404 });
-
-  let account = null;
-  if (salon.stripe_account_id) {
-    try {
-      account = await stripe.accounts.retrieve(salon.stripe_account_id);
-    } catch (err) {
-      console.error('Stripe account retrieve error:', err);
+  try {
+    const salonId = await getAuthSalonId();
+    if (!salonId) {
+      console.log('[Stripe Connect] No salon ID found');
+      return NextResponse.json({ error: 'Niet ingelogd' }, { status: 401 });
     }
-  }
 
-  return NextResponse.json({
-    stripe_account_id: salon.stripe_account_id,
-    stripe_onboarded: salon.stripe_onboarded,
-    charges_enabled: account?.charges_enabled || false,
-    payouts_enabled: account?.payouts_enabled || false,
-    details_submitted: account?.details_submitted || false,
-  });
+    const serviceClient = createServiceClient();
+    const { data: salon, error: salonError } = await serviceClient
+      .from('salons')
+      .select('stripe_account_id, stripe_onboarded')
+      .eq('id', salonId)
+      .single();
+
+    if (salonError) {
+      console.error('[Stripe Connect] Salon fetch error:', salonError);
+      return NextResponse.json({ error: 'Salon niet gevonden' }, { status: 404 });
+    }
+
+    if (!salon) {
+      console.log('[Stripe Connect] No salon found for ID:', salonId);
+      return NextResponse.json({ error: 'Salon niet gevonden' }, { status: 404 });
+    }
+
+    console.log('[Stripe Connect] Salon data:', { 
+      salonId, 
+      stripe_account_id: salon.stripe_account_id, 
+      stripe_onboarded: salon.stripe_onboarded 
+    });
+
+    let account = null;
+    if (salon.stripe_account_id) {
+      try {
+        account = await stripe.accounts.retrieve(salon.stripe_account_id);
+        console.log('[Stripe Connect] Stripe account retrieved:', {
+          charges_enabled: account.charges_enabled,
+          payouts_enabled: account.payouts_enabled,
+          details_submitted: account.details_submitted,
+        });
+      } catch (err) {
+        console.error('[Stripe Connect] Stripe account retrieve error:', err);
+      }
+    }
+
+    return NextResponse.json({
+      stripe_account_id: salon.stripe_account_id,
+      stripe_onboarded: salon.stripe_onboarded,
+      charges_enabled: account?.charges_enabled || false,
+      payouts_enabled: account?.payouts_enabled || false,
+      details_submitted: account?.details_submitted || false,
+    });
+  } catch (err: any) {
+    console.error('[Stripe Connect] GET error:', err);
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
 }
 
 // POST: Create Stripe Connect account + onboarding link
