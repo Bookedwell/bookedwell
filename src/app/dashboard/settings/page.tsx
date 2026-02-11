@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Save, Globe, Copy, Check, Upload, Trash2, ImageIcon, Pipette, Palette, Code, CreditCard } from 'lucide-react';
 import { useBranding } from '@/context/branding-context';
 import { useHeaderActions } from '@/context/header-actions-context';
+import { SubscriptionCard } from '@/components/dashboard/subscription-card';
 
 
 export default function SettingsPage() {
@@ -653,6 +654,9 @@ export default function SettingsPage() {
             </div>
           </div>
         </div>
+
+        {/* Subscription */}
+        <SubscriptionCard accentColor={primaryColor} />
 
         {/* Payment settings */}
         <div className="bg-white rounded-xl border border-light-gray p-5">

@@ -84,10 +84,18 @@ export async function POST(request: Request) {
         capabilities: {
           card_payments: { requested: true },
           transfers: { requested: true },
+          ideal_payments: { requested: true },
         },
         business_profile: {
           name: salon.name,
           url: `https://${salon.slug}.bookedwell.app`,
+        },
+        settings: {
+          payouts: {
+            schedule: {
+              interval: 'daily',
+            },
+          },
         },
       });
 
