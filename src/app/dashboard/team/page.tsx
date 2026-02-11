@@ -200,12 +200,12 @@ export default function TeamPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-navy">Team</h1>
-          <p className="text-gray-text mt-1">Beheer je teamleden en medewerkers</p>
+          <p className="text-gray-text mt-1 text-sm">Beheer je teamleden en medewerkers</p>
         </div>
-        <Button onClick={openAdd} accentColor={primaryColor}>
+        <Button onClick={openAdd} accentColor={primaryColor} className="w-full sm:w-auto">
           <Plus className="w-4 h-4 mr-2" />
           Teamlid toevoegen
         </Button>

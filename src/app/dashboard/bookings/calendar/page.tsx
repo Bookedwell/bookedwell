@@ -138,49 +138,52 @@ export default function BookingsCalendarPage() {
       </div>
 
       {/* Toolbar */}
-      <div className="bg-white rounded-xl border border-light-gray p-3 mb-4 flex items-center gap-3 flex-wrap">
-        <div className="flex items-center gap-1">
-          <button
-            onClick={() => navigateWeek(-1)}
-            className="p-2 hover:bg-bg-gray rounded-lg transition-colors"
-          >
-            <ChevronLeft className="w-4 h-4 text-navy" />
-          </button>
-          <button
-            onClick={() => navigateWeek(1)}
-            className="p-2 hover:bg-bg-gray rounded-lg transition-colors"
-          >
-            <ChevronRight className="w-4 h-4 text-navy" />
-          </button>
+      <div className="bg-white rounded-xl border border-light-gray p-3 mb-4">
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => navigateWeek(-1)}
+                className="p-2 hover:bg-bg-gray rounded-lg transition-colors"
+              >
+                <ChevronLeft className="w-4 h-4 text-navy" />
+              </button>
+              <button
+                onClick={() => navigateWeek(1)}
+                className="p-2 hover:bg-bg-gray rounded-lg transition-colors"
+              >
+                <ChevronRight className="w-4 h-4 text-navy" />
+              </button>
+            </div>
+
+            <button
+              onClick={goToToday}
+              className="text-xs font-medium px-3 py-1.5 rounded-lg border border-light-gray hover:bg-bg-gray transition-colors text-navy"
+            >
+              Vandaag
+            </button>
+          </div>
+
+          <div className="flex gap-1 bg-bg-gray rounded-lg p-0.5">
+            <button
+              onClick={() => setView('day')}
+              className={`text-xs font-medium px-3 py-1.5 rounded-md transition-colors ${
+                view === 'day' ? 'bg-white shadow-sm text-navy' : 'text-gray-text'
+              }`}
+            >
+              Dag
+            </button>
+            <button
+              onClick={() => setView('week')}
+              className={`text-xs font-medium px-3 py-1.5 rounded-md transition-colors ${
+                view === 'week' ? 'bg-white shadow-sm text-navy' : 'text-gray-text'
+              }`}
+            >
+              Week
+            </button>
+          </div>
         </div>
-
-        <button
-          onClick={goToToday}
-          className="text-xs font-medium px-3 py-1.5 rounded-lg border border-light-gray hover:bg-bg-gray transition-colors text-navy"
-        >
-          Vandaag
-        </button>
-
-        <span className="text-sm font-semibold text-navy flex-1">{headerLabel}</span>
-
-        <div className="flex gap-1 bg-bg-gray rounded-lg p-0.5">
-          <button
-            onClick={() => setView('day')}
-            className={`text-xs font-medium px-3 py-1.5 rounded-md transition-colors ${
-              view === 'day' ? 'bg-white shadow-sm text-navy' : 'text-gray-text'
-            }`}
-          >
-            Dag
-          </button>
-          <button
-            onClick={() => setView('week')}
-            className={`text-xs font-medium px-3 py-1.5 rounded-md transition-colors ${
-              view === 'week' ? 'bg-white shadow-sm text-navy' : 'text-gray-text'
-            }`}
-          >
-            Week
-          </button>
-        </div>
+        <p className="text-sm font-semibold text-navy mt-2 sm:mt-0">{headerLabel}</p>
       </div>
 
       {/* Calendar grid */}

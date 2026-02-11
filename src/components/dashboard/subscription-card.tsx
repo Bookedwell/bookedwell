@@ -167,7 +167,7 @@ export function SubscriptionCard({ accentColor }: SubscriptionCardProps) {
         </p>
       )}
 
-      <div className="grid sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {PLANS.map((plan) => {
           const isCurrent = isActive && currentTier === plan.id;
           const isUpgrade = isActive && plan.price > (PLANS.find(p => p.id === currentTier)?.price || 0);

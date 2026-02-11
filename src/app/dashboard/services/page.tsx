@@ -169,19 +169,20 @@ export default function ServicesPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-navy">Diensten</h1>
-          <p className="text-gray-text mt-1">Beheer je diensten, prijzen en categorieën</p>
+          <p className="text-gray-text mt-1 text-sm">Beheer je diensten, prijzen en categorieën</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setShowCategoryModal(true)} accentColor={accentColor}>
-            <Tag className="w-4 h-4 mr-2" />
-            Categorieën
+          <Button variant="outline" onClick={() => setShowCategoryModal(true)} accentColor={accentColor} className="flex-1 sm:flex-none">
+            <Tag className="w-4 h-4 sm:mr-2" />
+            <span className="hidden sm:inline">Categorieën</span>
           </Button>
-          <Button onClick={() => openCreate()} accentColor={accentColor}>
-            <Plus className="w-4 h-4 mr-2" />
-            Nieuwe dienst
+          <Button onClick={() => openCreate()} accentColor={accentColor} className="flex-1 sm:flex-none">
+            <Plus className="w-4 h-4 sm:mr-2" />
+            <span className="hidden sm:inline">Nieuwe dienst</span>
+            <span className="sm:hidden">Nieuw</span>
           </Button>
         </div>
       </div>
