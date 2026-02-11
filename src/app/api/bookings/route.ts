@@ -270,8 +270,10 @@ export async function POST(request: Request) {
     const depositPercentage = salon.deposit_percentage ?? 100;
     const paymentAmount = Math.round(service.price_cents * (depositPercentage / 100));
     const isDeposit = depositPercentage < 100;
+    const serviceFee = calculatePlatformFee(paymentAmount, tier);
     
     // Create Stripe Checkout session with transfer to connected account
+    // Servicekosten shown as separate line item - salon receives full service price
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
       payment_method_types: ['card', 'ideal'],
@@ -289,9 +291,20 @@ export async function POST(request: Request) {
           },
           quantity: 1,
         },
+        {
+          price_data: {
+            currency: 'eur',
+            product_data: {
+              name: 'Servicekosten',
+              description: 'Betaalverwerking en herinneringen',
+            },
+            unit_amount: serviceFee,
+          },
+          quantity: 1,
+        },
       ],
       payment_intent_data: {
-        application_fee_amount: calculatePlatformFee(paymentAmount, tier),
+        application_fee_amount: serviceFee,
         transfer_data: {
           destination: salon.stripe_account_id,
         },
@@ -309,6 +322,7 @@ export async function POST(request: Request) {
         deposit_percentage: String(depositPercentage),
         deposit_amount_cents: String(paymentAmount),
         full_price_cents: String(service.price_cents),
+        service_fee_cents: String(serviceFee),
       },
       success_url: bookingRedirectUrl
         ? bookingRedirectUrl

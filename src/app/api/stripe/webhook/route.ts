@@ -163,6 +163,10 @@ export async function POST(request: Request) {
 
           // Confirm existing booking (created before checkout)
           if (booking_id) {
+            const serviceFee = session.metadata?.service_fee_cents 
+              ? parseInt(session.metadata.service_fee_cents) 
+              : null;
+
             const { error: updateError } = await supabase
               .from('bookings')
               .update({
@@ -170,6 +174,7 @@ export async function POST(request: Request) {
                 deposit_paid: true,
                 deposit_amount_cents: session.amount_total,
                 stripe_payment_intent_id: session.payment_intent as string,
+                service_fee_cents: serviceFee,
               })
               .eq('id', booking_id);
 
