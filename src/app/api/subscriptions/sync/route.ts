@@ -35,20 +35,50 @@ export async function POST() {
       return NextResponse.json({ error: 'Salon niet gevonden' }, { status: 404 });
     }
 
-    // If no customer ID, no subscription possible
-    if (!salon.stripe_customer_id) {
+    let customerId = salon.stripe_customer_id;
+
+    // If no customer ID, try to find customer by email
+    if (!customerId) {
+      const { data: salonWithEmail } = await serviceClient
+        .from('salons')
+        .select('email')
+        .eq('id', salonId)
+        .single();
+
+      if (salonWithEmail?.email) {
+        const customers = await stripe.customers.list({
+          email: salonWithEmail.email,
+          limit: 1,
+        });
+
+        if (customers.data.length > 0) {
+          customerId = customers.data[0].id;
+          // Save customer ID to database
+          await serviceClient
+            .from('salons')
+            .update({ stripe_customer_id: customerId })
+            .eq('id', salonId);
+          console.log('[Subscription Sync] Found and saved customer ID:', customerId);
+        }
+      }
+    }
+
+    // If still no customer ID, can't find subscription
+    if (!customerId) {
       return NextResponse.json({ 
         synced: false, 
-        message: 'Geen Stripe customer ID gevonden' 
+        message: 'Geen Stripe customer gevonden' 
       });
     }
 
     // Get subscriptions from Stripe for this customer
     const subscriptions = await stripe.subscriptions.list({
-      customer: salon.stripe_customer_id,
+      customer: customerId,
       limit: 1,
       status: 'all',
     });
+
+    console.log('[Subscription Sync] Found subscriptions:', subscriptions.data.length);
 
     if (subscriptions.data.length === 0) {
       // No subscription found - clear the database

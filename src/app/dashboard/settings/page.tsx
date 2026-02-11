@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Save, Globe, Copy, Check, Upload, Trash2, ImageIcon, Pipette, Palette, Code, CreditCard, ExternalLink } from 'lucide-react';
+import { Save, Globe, Copy, Check, Upload, Trash2, ImageIcon, Pipette, Palette, Code, CreditCard, ExternalLink, X } from 'lucide-react';
 import { useBranding } from '@/context/branding-context';
 import { useHeaderActions } from '@/context/header-actions-context';
 import { SubscriptionCard } from '@/components/dashboard/subscription-card';
@@ -11,6 +11,7 @@ import { SubscriptionCard } from '@/components/dashboard/subscription-card';
 
 export default function SettingsPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { updateBranding, primaryColor: contextColor, logoUrl: contextLogo, salonName: contextName } = useBranding();
   const { setHeaderActions } = useHeaderActions();
   const [salon, setSalon] = useState<any>(null);
@@ -22,6 +23,32 @@ export default function SettingsPage() {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [initialFetchDone, setInitialFetchDone] = useState(false);
+  const [subscriptionSuccess, setSubscriptionSuccess] = useState<string | null>(null);
+
+  // Handle subscription success - sync and show popup
+  useEffect(() => {
+    if (searchParams.get('subscription') === 'success') {
+      // Remove query param from URL
+      router.replace('/dashboard/settings', { scroll: false });
+      
+      // Sync subscription from Stripe and show success popup
+      fetch('/api/subscriptions/sync', { method: 'POST' })
+        .then(res => res.json())
+        .then(data => {
+          if (data.tier) {
+            const tierNames: Record<string, string> = {
+              'booked_100': 'Booked 100',
+              'booked_500': 'Booked 500',
+              'booked_unlimited': 'Booked Unlimited',
+            };
+            setSubscriptionSuccess(tierNames[data.tier] || data.tier);
+          } else {
+            setSubscriptionSuccess('je abonnement');
+          }
+        })
+        .catch(() => setSubscriptionSuccess('je abonnement'));
+    }
+  }, [searchParams, router]);
 
   // Form state - initialize with context values
   const [name, _setName] = useState(contextName || '');
@@ -320,6 +347,45 @@ export default function SettingsPage() {
 
   return (
     <div>
+      {/* Subscription success popup */}
+      {subscriptionSuccess && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 relative animate-in fade-in zoom-in duration-300">
+            <button
+              onClick={() => setSubscriptionSuccess(null)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            
+            <div className="text-center">
+              <div 
+                className="w-16 h-16 rounded-full mx-auto mb-6 flex items-center justify-center"
+                style={{ backgroundColor: primaryColor + '15' }}
+              >
+                <Check className="w-8 h-8" style={{ color: primaryColor }} />
+              </div>
+              
+              <h2 className="text-2xl font-bold text-navy mb-2">
+                Gefeliciteerd
+              </h2>
+              <p className="text-gray-text mb-6">
+                Vanaf nu is <span className="font-semibold text-navy">{subscriptionSuccess}</span> geactiveerd.
+                Je kunt direct aan de slag met alle functies.
+              </p>
+              
+              <button
+                onClick={() => setSubscriptionSuccess(null)}
+                className="w-full py-3 rounded-xl text-white font-medium transition-opacity hover:opacity-90"
+                style={{ backgroundColor: primaryColor }}
+              >
+                Aan de slag
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Page header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-navy">Instellingen</h1>
