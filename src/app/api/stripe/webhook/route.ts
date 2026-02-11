@@ -59,7 +59,7 @@ export async function POST(request: Request) {
         const updateData: Record<string, any> = {
           stripe_subscription_id: subscription.id,
           subscription_tier: tier,
-          subscription_status: subscription.status === 'active' ? 'active' : 'inactive',
+          subscription_status: subscription.status === 'active' ? 'active' : subscription.status === 'trialing' ? 'trialing' : 'inactive',
         };
 
         // Handle period dates (property names vary by Stripe API version)

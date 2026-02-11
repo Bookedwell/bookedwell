@@ -124,7 +124,7 @@ export default function LandingPage() {
               Simpele, eerlijke prijzen
             </h2>
             <p className="mt-3 text-gray-text">
-              Transparante prijzen. Transactiekosten Stripe apart.*
+              14 dagen gratis proberen. Geen betaling nodig. Transactiekosten Stripe apart.*
             </p>
           </div>
 
@@ -142,7 +142,7 @@ export default function LandingPage() {
                   'E-mail reminders inbegrepen',
                   'WhatsApp reminders inbegrepen',
                 ],
-                cta: 'Start met Booked 100',
+                cta: '14 dagen gratis proberen',
                 highlight: false,
               },
               {
@@ -157,7 +157,7 @@ export default function LandingPage() {
                   'E-mail reminders inbegrepen',
                   'WhatsApp reminders inbegrepen',
                 ],
-                cta: 'Start met Booked 500',
+                cta: '14 dagen gratis proberen',
                 highlight: true,
               },
               {
@@ -172,7 +172,7 @@ export default function LandingPage() {
                   'E-mail reminders inbegrepen',
                   'WhatsApp reminders inbegrepen',
                 ],
-                cta: 'Start met Unlimited',
+                cta: '14 dagen gratis proberen',
                 highlight: false,
               },
             ].map((plan) => (
@@ -223,7 +223,7 @@ export default function LandingPage() {
           </div>
 
           <p className="text-center text-xs text-gray-text mt-8">
-            * Stripe transactiekosten: 1,5% + €0,25 per transactie (iDEAL/kaart). Prijzen excl. BTW.
+            14 dagen gratis proefperiode bij elk pakket. * Stripe transactiekosten: 1,5% + €0,25 per transactie (iDEAL/kaart). Prijzen excl. BTW.
           </p>
         </div>
       </section>

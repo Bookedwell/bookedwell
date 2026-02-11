@@ -119,7 +119,8 @@ export function SubscriptionCard({ accentColor }: SubscriptionCardProps) {
     );
   }
 
-  const isActive = subscription?.has_subscription && subscription?.status === 'active';
+  const isActive = subscription?.has_subscription && (subscription?.status === 'active' || subscription?.status === 'trialing');
+  const isTrial = subscription?.status === 'trialing';
   const currentTier = subscription?.tier || 'booked_100';
 
   return (
@@ -130,8 +131,8 @@ export function SubscriptionCard({ accentColor }: SubscriptionCardProps) {
           <h2 className="font-semibold text-navy">Abonnement</h2>
         </div>
         {isActive && (
-          <span className="px-2.5 py-1 text-xs font-medium rounded-full bg-green-50 text-green-700 border border-green-200">
-            Actief
+          <span className={`px-2.5 py-1 text-xs font-medium rounded-full border ${isTrial ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-green-50 text-green-700 border-green-200'}`}>
+            {isTrial ? '14 dagen proefperiode' : 'Actief'}
           </span>
         )}
       </div>
@@ -163,7 +164,7 @@ export function SubscriptionCard({ accentColor }: SubscriptionCardProps) {
 
       {!isActive && (
         <p className="text-xs text-gray-text mb-4">
-          Kies een abonnement om BookedWell te gebruiken. Je kunt altijd upgraden of downgraden.
+          Start 14 dagen gratis. Geen betaling nodig tijdens je proefperiode.
         </p>
       )}
 
@@ -237,7 +238,7 @@ export function SubscriptionCard({ accentColor }: SubscriptionCardProps) {
                 ) : isActive ? (
                   'Overstappen'
                 ) : (
-                  'Kiezen'
+                  '14 dagen gratis proberen'
                 )}
               </button>
             </div>
@@ -246,7 +247,7 @@ export function SubscriptionCard({ accentColor }: SubscriptionCardProps) {
       </div>
 
       <p className="text-center text-[10px] text-gray-text mt-3">
-        Prijzen excl. BTW. Stripe transactiekosten (1,5% + &euro;0,25) worden automatisch verrekend.
+        14 dagen gratis proefperiode. Geen betaling tijdens trial. Prijzen excl. BTW.
       </p>
     </div>
   );

@@ -129,13 +129,14 @@ export async function POST(request: Request) {
     // Get or create price for tier
     const priceId = await getOrCreatePrice(tier);
 
-    // Create checkout session for subscription
+    // Create checkout session for subscription with 14-day free trial
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       customer: customerId,
       payment_method_types: ['card', 'ideal'],
       line_items: [{ price: priceId, quantity: 1 }],
       subscription_data: {
+        trial_period_days: 14,
         metadata: { 
           tier,
           salon_id: salonId,
