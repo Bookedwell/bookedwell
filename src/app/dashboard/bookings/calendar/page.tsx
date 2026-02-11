@@ -2,8 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useBranding } from '@/context/branding-context';
-import { ChevronLeft, ChevronRight, Clock, User } from 'lucide-react';
-import { getContrastText } from '@/lib/utils/color';
+import { ChevronLeft, ChevronRight, ChevronDown, User } from 'lucide-react';
 
 interface CalendarBooking {
   id: string;
@@ -16,20 +15,32 @@ interface CalendarBooking {
   staff: { name: string } | null;
 }
 
-const DAY_LABELS = ['Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za', 'Zo'];
-const MONTH_LABELS = [
-  'Januari', 'Februari', 'Maart', 'April', 'Mei', 'Juni',
-  'Juli', 'Augustus', 'September', 'Oktober', 'November', 'December',
-];
+const DAY_LABELS_SHORT = ['Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za', 'Zo'];
+const DAY_LABELS_FULL = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const MONTH_LABELS_SHORT = ['jan', 'feb', 'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'];
 
-const HOURS = Array.from({ length: 12 }, (_, i) => i + 8); // 08:00 - 19:00
+const HOURS = Array.from({ length: 13 }, (_, i) => i + 8); // 08:00 - 20:00
 
 export default function BookingsCalendarPage() {
   const { primaryColor } = useBranding();
   const [bookings, setBookings] = useState<CalendarBooking[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
   const [view, setView] = useState<'week' | 'day'>('week');
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [showViewDropdown, setShowViewDropdown] = useState(false);
+
+  // Detect mobile and set default view
+  useEffect(() => {
+    const checkMobile = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      if (mobile) setView('day');
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Get Monday of the current week
   const weekStart = useMemo(() => {
@@ -124,8 +135,8 @@ export default function BookingsCalendarPage() {
   };
 
   const headerLabel = view === 'week'
-    ? `${weekDays[0].getDate()} ${MONTH_LABELS[weekDays[0].getMonth()]} – ${weekDays[6].getDate()} ${MONTH_LABELS[weekDays[6].getMonth()]} ${weekDays[6].getFullYear()}`
-    : `${currentDate.getDate()} ${MONTH_LABELS[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
+    ? `${weekDays[0].getDate()} ${MONTH_LABELS_SHORT[weekDays[0].getMonth()]} – ${weekDays[6].getDate()} ${MONTH_LABELS_SHORT[weekDays[6].getMonth()]} ${weekDays[6].getFullYear()}`
+    : `${currentDate.getDate()} ${MONTH_LABELS_SHORT[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
 
   return (
     <div>
@@ -137,53 +148,63 @@ export default function BookingsCalendarPage() {
         </div>
       </div>
 
-      {/* Toolbar */}
-      <div className="bg-white rounded-xl border border-light-gray p-3 mb-4">
-        <div className="flex items-center justify-between gap-2 flex-wrap">
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => navigateWeek(-1)}
-                className="p-2 hover:bg-bg-gray rounded-lg transition-colors"
-              >
-                <ChevronLeft className="w-4 h-4 text-navy" />
-              </button>
-              <button
-                onClick={() => navigateWeek(1)}
-                className="p-2 hover:bg-bg-gray rounded-lg transition-colors"
-              >
-                <ChevronRight className="w-4 h-4 text-navy" />
-              </button>
-            </div>
+      {/* Toolbar - Salonized style */}
+      <div className="bg-white rounded-xl border border-light-gray p-2 sm:p-3 mb-4">
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Today button */}
+          <button
+            onClick={goToToday}
+            className="text-xs font-medium px-3 py-2 rounded-lg border border-light-gray hover:bg-bg-gray transition-colors text-navy"
+          >
+            Vandaag
+          </button>
 
+          {/* View dropdown */}
+          <div className="relative">
             <button
-              onClick={goToToday}
-              className="text-xs font-medium px-3 py-1.5 rounded-lg border border-light-gray hover:bg-bg-gray transition-colors text-navy"
+              onClick={() => setShowViewDropdown(!showViewDropdown)}
+              className="flex items-center gap-1 text-xs font-medium px-3 py-2 rounded-lg border border-light-gray hover:bg-bg-gray transition-colors text-navy"
             >
-              Vandaag
+              {view === 'week' ? 'Week' : 'Dag'}
+              <ChevronDown className="w-3 h-3" />
             </button>
+            {showViewDropdown && (
+              <div className="absolute top-full left-0 mt-1 bg-white border border-light-gray rounded-lg shadow-lg z-20 min-w-[100px]">
+                <button
+                  onClick={() => { setView('day'); setShowViewDropdown(false); }}
+                  className={`w-full text-left px-3 py-2 text-xs hover:bg-bg-gray transition-colors ${view === 'day' ? 'font-semibold text-navy' : 'text-gray-text'}`}
+                >
+                  Dag
+                </button>
+                <button
+                  onClick={() => { setView('week'); setShowViewDropdown(false); }}
+                  className={`w-full text-left px-3 py-2 text-xs hover:bg-bg-gray transition-colors ${view === 'week' ? 'font-semibold text-navy' : 'text-gray-text'}`}
+                >
+                  Week
+                </button>
+              </div>
+            )}
           </div>
 
-          <div className="flex gap-1 bg-bg-gray rounded-lg p-0.5">
+          {/* Navigation arrows + date */}
+          <div className="flex items-center gap-1 border border-light-gray rounded-lg">
             <button
-              onClick={() => setView('day')}
-              className={`text-xs font-medium px-3 py-1.5 rounded-md transition-colors ${
-                view === 'day' ? 'bg-white shadow-sm text-navy' : 'text-gray-text'
-              }`}
+              onClick={() => navigateWeek(-1)}
+              className="p-2 hover:bg-bg-gray rounded-l-lg transition-colors border-r border-light-gray"
             >
-              Dag
+              <ChevronLeft className="w-4 h-4 text-navy" />
             </button>
+            <span className="px-2 sm:px-3 py-1.5 text-xs sm:text-sm font-medium text-navy min-w-[120px] sm:min-w-[180px] text-center">
+              {headerLabel}
+            </span>
             <button
-              onClick={() => setView('week')}
-              className={`text-xs font-medium px-3 py-1.5 rounded-md transition-colors ${
-                view === 'week' ? 'bg-white shadow-sm text-navy' : 'text-gray-text'
-              }`}
+              onClick={() => navigateWeek(1)}
+              className="p-2 hover:bg-bg-gray rounded-r-lg transition-colors border-l border-light-gray"
             >
-              Week
+              <ChevronRight className="w-4 h-4 text-navy" />
             </button>
           </div>
         </div>
-        <p className="text-sm font-semibold text-navy mt-2 sm:mt-0">{headerLabel}</p>
       </div>
 
       {/* Calendar grid */}
@@ -209,7 +230,7 @@ export default function BookingsCalendarPage() {
                   }`}
                   style={isToday(day) ? { backgroundColor: primaryColor + '10' } : undefined}
                 >
-                  <p className="text-xs text-gray-text">{DAY_LABELS[i]}</p>
+                  <p className="text-xs text-gray-text">{DAY_LABELS_SHORT[i]}</p>
                   <p
                     className={`text-sm font-semibold mt-0.5 ${
                       isToday(day) ? '' : 'text-navy'

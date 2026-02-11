@@ -535,20 +535,21 @@ export default function SettingsPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-navy mb-1">Slug (URL)</label>
-              <div className="flex">
-                <span className="inline-flex items-center px-3 text-xs text-gray-text bg-bg-gray border border-r-0 border-light-gray rounded-l-lg">
+              <div className="flex flex-wrap sm:flex-nowrap">
+                <span className="hidden sm:inline-flex items-center px-3 text-xs text-gray-text bg-bg-gray border border-r-0 border-light-gray rounded-l-lg">
                   https://
                 </span>
                 <input
                   type="text"
                   value={slug}
                   onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
-                  className="flex-1 px-3 py-2 border border-light-gray text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                  className="flex-1 min-w-0 px-3 py-2 border border-light-gray text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary rounded-lg sm:rounded-none"
                 />
-                <span className="inline-flex items-center px-3 text-xs text-gray-text bg-bg-gray border border-l-0 border-light-gray rounded-r-lg">
-                  .bookedwell.app
+                <span className="hidden sm:inline-flex items-center px-2 text-xs text-gray-text bg-bg-gray border border-l-0 border-light-gray rounded-r-lg whitespace-nowrap">
+                  .bookedwell
                 </span>
               </div>
+              <p className="text-xs text-gray-text mt-1 sm:hidden">{slug}.bookedwell.app</p>
             </div>
             <div>
               <label className="block text-sm font-medium text-navy mb-1">Telefoonnummer</label>

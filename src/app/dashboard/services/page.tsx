@@ -251,51 +251,53 @@ export default function ServicesPage() {
                 {groupServices.map((service) => (
                   <div
                     key={service.id}
-                    className={`bg-white rounded-xl border p-4 flex items-center gap-4 transition-colors ${
+                    className={`bg-white rounded-xl border p-4 transition-colors ${
                       service.available
                         ? 'border-light-gray'
                         : 'border-light-gray bg-bg-gray/50 opacity-60'
                     }`}
                   >
-                    <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: accentColor + '15' }}>
-                      <Scissors className="w-5 h-5" style={{ color: accentColor }} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="font-medium text-navy">{service.name}</p>
-                        {!service.available && (
-                          <span className="text-xs bg-red-50 text-red-600 px-2 py-0.5 rounded-full">
-                            Niet actief
-                          </span>
-                        )}
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: accentColor + '15' }}>
+                        <Scissors className="w-5 h-5" style={{ color: accentColor }} />
                       </div>
-                      {service.description && (
-                        <p className="text-xs text-gray-text mt-0.5 truncate">{service.description}</p>
-                      )}
-                      <p className="text-xs text-gray-text mt-0.5">
-                        {service.duration_minutes} min &middot; €{(service.price_cents / 100).toFixed(2)}
-                      </p>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="font-medium text-navy">{service.name}</p>
+                          {!service.available && (
+                            <span className="text-xs bg-red-50 text-red-600 px-2 py-0.5 rounded-full">
+                              Niet actief
+                            </span>
+                          )}
+                        </div>
+                        {service.description && (
+                          <p className="text-xs text-gray-text mt-0.5 line-clamp-2">{service.description}</p>
+                        )}
+                        <p className="text-sm font-medium text-navy mt-1">
+                          €{(service.price_cents / 100).toFixed(2)} <span className="text-xs text-gray-text font-normal">• {service.duration_minutes} min</span>
+                        </p>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-2 mt-3 pt-3 border-t border-light-gray">
                       <button
                         onClick={() => toggleAvailable(service)}
-                        className="p-2 text-gray-text rounded-lg transition-colors"
-                        style={{ ['--hover-color' as string]: accentColor }}
-                        title={service.available ? 'Deactiveren' : 'Activeren'}
+                        className="flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-lg bg-bg-gray hover:bg-light-gray transition-colors text-gray-text"
                       >
-                        {service.available ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                        {service.available ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                        <span className="hidden sm:inline">{service.available ? 'Verbergen' : 'Tonen'}</span>
                       </button>
                       <button
                         onClick={() => openEdit(service)}
-                        className="p-2 text-gray-text rounded-lg transition-colors"
+                        className="flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-lg bg-bg-gray hover:bg-light-gray transition-colors text-navy"
                       >
-                        <Pencil className="w-4 h-4" />
+                        <Pencil className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">Bewerken</span>
                       </button>
                       <button
                         onClick={() => handleDelete(service.id)}
-                        className="p-2 text-gray-text hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        className="flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-lg hover:bg-red-50 hover:text-red-600 transition-colors text-gray-text ml-auto"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   </div>
