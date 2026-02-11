@@ -54,20 +54,32 @@ export function SubscriptionCard({ accentColor }: SubscriptionCardProps) {
   const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
   const [loading, setLoading] = useState(true);
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
+  const [syncing, setSyncing] = useState(false);
+
+  const fetchSubscription = async () => {
+    try {
+      const res = await fetch('/api/subscriptions/checkout', { cache: 'no-store' });
+      if (res.ok) {
+        const data = await res.json();
+        setSubscription(data);
+      }
+    } catch { /* silent */ }
+  };
 
   useEffect(() => {
-    async function fetchSubscription() {
-      try {
-        const res = await fetch('/api/subscriptions/checkout', { cache: 'no-store' });
-        if (res.ok) {
-          const data = await res.json();
-          setSubscription(data);
-        }
-      } catch { /* silent */ }
-      setLoading(false);
-    }
-    fetchSubscription();
+    fetchSubscription().then(() => setLoading(false));
   }, []);
+
+  const handleSync = async () => {
+    setSyncing(true);
+    try {
+      const res = await fetch('/api/subscriptions/sync', { method: 'POST' });
+      if (res.ok) {
+        await fetchSubscription();
+      }
+    } catch { /* silent */ }
+    setSyncing(false);
+  };
 
   const handleSubscribe = async (tier: string) => {
     setCheckoutLoading(tier);
@@ -263,6 +275,17 @@ export function SubscriptionCard({ accentColor }: SubscriptionCardProps) {
             </div>
           </div>
         )}
+
+        {/* Sync link */}
+        <div className="mt-4 pt-3 border-t border-light-gray">
+          <button
+            onClick={handleSync}
+            disabled={syncing}
+            className="text-[10px] text-gray-text hover:text-navy underline"
+          >
+            {syncing ? 'Synchroniseren met Stripe...' : 'Abonnement synchroniseren'}
+          </button>
+        </div>
       </div>
     );
   }
@@ -331,9 +354,18 @@ export function SubscriptionCard({ accentColor }: SubscriptionCardProps) {
         ))}
       </div>
 
-      <p className="text-center text-[10px] text-gray-text mt-3">
-        14 dagen gratis proefperiode. Geen betaling tijdens trial. Prijzen excl. BTW.
-      </p>
+      <div className="flex items-center justify-center gap-2 mt-3">
+        <p className="text-[10px] text-gray-text">
+          14 dagen gratis proefperiode. Geen betaling tijdens trial. Prijzen excl. BTW.
+        </p>
+        <button
+          onClick={handleSync}
+          disabled={syncing}
+          className="text-[10px] text-gray-text hover:text-navy underline"
+        >
+          {syncing ? 'Synchroniseren...' : 'Sync'}
+        </button>
+      </div>
     </div>
   );
 }
