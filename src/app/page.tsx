@@ -12,6 +12,10 @@ import {
   Users,
   ArrowRight,
   Check,
+  X,
+  CreditCard,
+  Smartphone,
+  UserPlus,
 } from 'lucide-react';
 
 export default function LandingPage() {
@@ -136,7 +140,7 @@ export default function LandingPage() {
                   'Onbeperkt team members (fair use)',
                   '1 locatie',
                   'E-mail reminders inbegrepen',
-                  'WhatsApp reminders: €0,12/bericht',
+                  'WhatsApp reminders inbegrepen',
                 ],
                 cta: 'Start met Booked 100',
                 highlight: false,
@@ -151,7 +155,7 @@ export default function LandingPage() {
                   'Onbeperkt team members (fair use)',
                   '1 locatie',
                   'E-mail reminders inbegrepen',
-                  'WhatsApp reminders: €0,12/bericht',
+                  'WhatsApp reminders inbegrepen',
                 ],
                 cta: 'Start met Booked 500',
                 highlight: true,
@@ -166,7 +170,7 @@ export default function LandingPage() {
                   'Onbeperkt team members (fair use)',
                   '1 locatie',
                   'E-mail reminders inbegrepen',
-                  'WhatsApp reminders: €0,10/bericht',
+                  'WhatsApp reminders inbegrepen',
                 ],
                 cta: 'Start met Unlimited',
                 highlight: false,
@@ -221,6 +225,64 @@ export default function LandingPage() {
           <p className="text-center text-xs text-gray-text mt-8">
             * Stripe transactiekosten: 1,5% + €0,25 per transactie (iDEAL/kaart). Prijzen excl. BTW.
           </p>
+        </div>
+      </section>
+
+      {/* Waarom Bookedwell */}
+      <section className="py-16 sm:py-24">
+        <div className="max-w-container mx-auto px-4 sm:px-6">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-navy">
+              Waarom Bookedwell?
+            </h2>
+            <p className="mt-3 text-gray-text max-w-xl mx-auto">
+              Vergelijk ons met traditionele salonsoftware en ontdek het verschil.
+            </p>
+          </div>
+
+          <div className="max-w-3xl mx-auto">
+            {/* Comparison table */}
+            <div className="bg-white rounded-xl border border-light-gray overflow-hidden">
+              <div className="grid grid-cols-3 text-center text-sm font-semibold">
+                <div className="p-4 bg-bg-gray" />
+                <div className="p-4 bg-primary/5 text-primary border-x border-light-gray">Bookedwell</div>
+                <div className="p-4 bg-bg-gray text-gray-text">Traditionele platforms</div>
+              </div>
+              {[
+                { label: 'Vanaf', ours: '€9,95/mnd', theirs: '€21+/mnd', icon: CreditCard },
+                { label: 'Online betalingen', ours: true, theirs: false, icon: Shield },
+                { label: 'WhatsApp reminders', ours: true, theirs: false, icon: Smartphone },
+                { label: 'Teamleden', ours: 'Onbeperkt gratis', theirs: 'Per medewerker betalen', icon: UserPlus },
+                { label: 'No-show bescherming', ours: true, theirs: false, icon: Shield },
+                { label: 'Eigen boekingspagina', ours: true, theirs: true, icon: Calendar },
+              ].map((row, i) => (
+                <div key={row.label} className={`grid grid-cols-3 text-sm ${i % 2 === 0 ? 'bg-white' : 'bg-bg-gray/50'}`}>
+                  <div className="p-4 flex items-center gap-2 font-medium text-navy">
+                    <row.icon className="w-4 h-4 text-gray-text flex-shrink-0" />
+                    {row.label}
+                  </div>
+                  <div className="p-4 flex items-center justify-center border-x border-light-gray">
+                    {typeof row.ours === 'boolean' ? (
+                      row.ours ? <Check className="w-5 h-5 text-green-500" /> : <X className="w-5 h-5 text-red-400" />
+                    ) : (
+                      <span className="font-semibold text-navy">{row.ours}</span>
+                    )}
+                  </div>
+                  <div className="p-4 flex items-center justify-center">
+                    {typeof row.theirs === 'boolean' ? (
+                      row.theirs ? <Check className="w-5 h-5 text-green-500" /> : <X className="w-5 h-5 text-red-400" />
+                    ) : (
+                      <span className="text-gray-text">{row.theirs}</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <p className="text-center text-xs text-gray-text mt-4">
+              Vergelijking op basis van standaard functies. Prijzen kunnen variëren per aanbieder.
+            </p>
+          </div>
         </div>
       </section>
 
