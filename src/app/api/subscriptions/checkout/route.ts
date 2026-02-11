@@ -130,16 +130,24 @@ export async function POST(request: Request) {
     const priceId = await getOrCreatePrice(tier);
 
     // Create checkout session for subscription with 14-day free trial
+    const config = TIER_CONFIG[tier];
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       customer: customerId,
+      locale: 'nl',
       payment_method_types: ['card', 'ideal'],
       line_items: [{ price: priceId, quantity: 1 }],
       subscription_data: {
         trial_period_days: 14,
+        description: `${config.name} abonnement – 14 dagen gratis proefperiode. Er wordt €0,01 afgeschreven ter verificatie van je betaalmethode. Na de proefperiode wordt €${(config.monthly / 100).toFixed(2).replace('.', ',')} per maand afgeschreven.`,
         metadata: { 
           tier,
           salon_id: salonId,
+        },
+      },
+      custom_text: {
+        submit: {
+          message: `Je start een gratis proefperiode van 14 dagen. Er wordt €0,01 afgeschreven ter verificatie. Pas na 14 dagen begint de maandelijkse afschrijving van €${(config.monthly / 100).toFixed(2).replace('.', ',')}/maand.`,
         },
       },
       metadata: {
