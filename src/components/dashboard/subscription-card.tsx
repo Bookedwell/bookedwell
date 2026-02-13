@@ -173,7 +173,7 @@ export function SubscriptionCard({ accentColor }: SubscriptionCardProps) {
               )}
               {!isTrial && (
                 <p className="text-xs text-gray-text mt-0.5">
-                  €{currentPlan?.priceDisplay}/maand + €{currentPlan?.serviceFee} service fee per boeking
+                  €{currentPlan?.priceDisplay}/maand + €{currentPlan?.serviceFee} platform fee + betaalkosten
                 </p>
               )}
             </div>
@@ -332,7 +332,7 @@ export function SubscriptionCard({ accentColor }: SubscriptionCardProps) {
               <span className="text-xs text-gray-text">/mnd</span>
             </div>
             <p className="text-xs mt-1" style={{ color: accentColor }}>
-              + €{plan.serviceFee} service fee per boeking
+              + €{plan.serviceFee} platform fee + betaalkosten
             </p>
             <ul className="mt-3 space-y-1.5">
               {plan.features.map((f) => (

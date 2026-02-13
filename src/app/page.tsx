@@ -124,7 +124,7 @@ export default function LandingPage() {
               Simpele, eerlijke prijzen
             </h2>
             <p className="mt-3 text-gray-text">
-              14 dagen gratis proberen. Geen betaling nodig. Transactiekosten Stripe apart.*
+              14 dagen gratis proberen. Geen betaling nodig. Prijzen excl. BTW.
             </p>
           </div>
 
@@ -133,7 +133,7 @@ export default function LandingPage() {
               {
                 name: 'Solo',
                 price: '19,95',
-                serviceFee: '€1,25 service fee per boeking',
+                serviceFee: '€1,25 platform fee + betaalkosten',
                 desc: 'De Starter',
                 features: [
                   'Tot 100 boekingen per maand',
@@ -147,7 +147,7 @@ export default function LandingPage() {
               {
                 name: 'Growth',
                 price: '49',
-                serviceFee: '€1,20 service fee per boeking',
+                serviceFee: '€1,20 platform fee + betaalkosten',
                 desc: 'De Medium Salon',
                 features: [
                   'Tot 500 boekingen per maand',
@@ -161,7 +161,7 @@ export default function LandingPage() {
               {
                 name: 'Unlimited',
                 price: '89',
-                serviceFee: '€1,10 service fee per boeking',
+                serviceFee: '€1,10 platform fee + betaalkosten',
                 desc: 'De Grote Salon',
                 features: [
                   'Onbeperkt boekingen',
@@ -220,7 +220,7 @@ export default function LandingPage() {
           </div>
 
           <p className="text-center text-xs text-gray-text mt-8">
-            14 dagen gratis proefperiode bij elk pakket. * Stripe transactiekosten: 1,5% + €0,25 per transactie (iDEAL/kaart). Prijzen excl. BTW.
+            14 dagen gratis proefperiode bij elk pakket. Betaalkosten: iDEAL €0,29 / kaart 1,4% + €0,25 per transactie. Prijzen excl. BTW.
           </p>
         </div>
       </section>
