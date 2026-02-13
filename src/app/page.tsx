@@ -131,46 +131,43 @@ export default function LandingPage() {
           <div className="grid sm:grid-cols-3 gap-8 max-w-5xl mx-auto">
             {[
               {
-                name: 'Booked 100',
-                price: '9,95',
-                perBooking: '+ €0,25 per boeking',
-                desc: 'Voor starters',
+                name: 'Solo',
+                price: '19,95',
+                serviceFee: '€1,25 service fee per boeking',
+                desc: 'De Starter',
                 features: [
-                  'Tot 100 bookings per maand',
-                  'Onbeperkt team members (fair use)',
-                  '1 locatie',
+                  'Tot 100 boekingen per maand',
+                  'Onbeperkt teamleden',
                   'E-mail reminders inbegrepen',
-                  'WhatsApp reminders inbegrepen',
+                  'WhatsApp inbegrepen',
                 ],
                 cta: '14 dagen gratis proberen',
                 highlight: false,
               },
               {
-                name: 'Booked 500',
-                price: '29,95',
-                perBooking: '+ €0,25 per boeking',
-                desc: 'Meest gekozen',
+                name: 'Growth',
+                price: '49',
+                serviceFee: '€1,20 service fee per boeking',
+                desc: 'De Medium Salon',
                 features: [
-                  'Tot 500 bookings per maand',
-                  'Onbeperkt team members (fair use)',
-                  '1 locatie',
+                  'Tot 500 boekingen per maand',
+                  'Onbeperkt teamleden',
                   'E-mail reminders inbegrepen',
-                  'WhatsApp reminders inbegrepen',
+                  'WhatsApp inbegrepen',
                 ],
                 cta: '14 dagen gratis proberen',
                 highlight: true,
               },
               {
-                name: 'Booked Unlimited',
-                price: '99,95',
-                perBooking: '+ €0,20 per boeking',
-                desc: 'Voor drukke bedrijven',
+                name: 'Unlimited',
+                price: '89',
+                serviceFee: '€1,10 service fee per boeking',
+                desc: 'De Grote Salon',
                 features: [
-                  'Unlimited bookings (fair use)',
-                  'Onbeperkt team members (fair use)',
-                  '1 locatie',
+                  'Onbeperkt boekingen',
+                  'Onbeperkt teamleden',
                   'E-mail reminders inbegrepen',
-                  'WhatsApp reminders inbegrepen',
+                  'WhatsApp inbegrepen',
                 ],
                 cta: '14 dagen gratis proberen',
                 highlight: false,
@@ -198,7 +195,7 @@ export default function LandingPage() {
                   <span className="text-gray-text">/maand</span>
                 </div>
                 <p className="text-sm font-medium text-primary mb-4">
-                  {plan.perBooking}
+                  {plan.serviceFee}
                 </p>
                 <ul className="space-y-2 mb-6">
                   {plan.features.map((f) => (

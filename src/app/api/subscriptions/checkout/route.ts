@@ -6,10 +6,11 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 // Stripe Price IDs - create these in Stripe Dashboard or via API
 // We'll create them on-the-fly if they don't exist
-const TIER_CONFIG: Record<string, { name: string; monthly: number; perBooking: number }> = {
-  booked_100: { name: 'Booked 100', monthly: 995, perBooking: 25 },
-  booked_500: { name: 'Booked 500', monthly: 2995, perBooking: 25 },
-  booked_unlimited: { name: 'Booked Unlimited', monthly: 9995, perBooking: 20 },
+// Service fee = our platform fee per booking (in cents), Stripe fees (1.9% + €0.30) are added on top
+const TIER_CONFIG: Record<string, { name: string; monthly: number; serviceFee: number; limit: number }> = {
+  solo: { name: 'Solo', monthly: 1995, serviceFee: 125, limit: 100 },
+  growth: { name: 'Growth', monthly: 4900, serviceFee: 120, limit: 500 },
+  unlimited: { name: 'Unlimited', monthly: 8900, serviceFee: 110, limit: -1 },
 };
 
 async function getOrCreatePrice(tier: string): Promise<string> {
@@ -197,14 +198,15 @@ export async function GET() {
       return NextResponse.json({ error: 'Salon niet gevonden' }, { status: 404 });
     }
 
-    const tier = salon.subscription_tier || 'booked_100';
-    const config = TIER_CONFIG[tier];
+    const tier = salon.subscription_tier || 'solo';
+    const config = TIER_CONFIG[tier] || TIER_CONFIG['solo'];
 
     return NextResponse.json({
       tier,
-      tier_name: config?.name || 'Booked 100',
-      monthly_price: config?.monthly || 995,
-      per_booking: config?.perBooking || 25,
+      tier_name: config.name,
+      monthly_price: config.monthly,
+      service_fee: config.serviceFee,
+      limit: config.limit,
       status: salon.subscription_status || 'inactive',
       bookings_this_period: salon.bookings_this_period || 0,
       has_subscription: !!salon.stripe_subscription_id,

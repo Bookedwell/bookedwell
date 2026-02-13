@@ -100,7 +100,7 @@ export async function POST() {
 
     // Get the most recent subscription
     const subscription = subscriptions.data[0];
-    const tier = (subscription.metadata?.tier || 'booked_100') as string;
+    const tier = (subscription.metadata?.tier || 'solo') as string;
 
     // Determine status
     let dbStatus = 'inactive';

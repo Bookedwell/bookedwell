@@ -7,7 +7,8 @@ interface SubscriptionData {
   tier: string;
   tier_name: string;
   monthly_price: number;
-  per_booking: number;
+  service_fee: number;
+  limit: number;
   status: string;
   bookings_this_period: number;
   has_subscription: boolean;
@@ -17,32 +18,35 @@ interface SubscriptionData {
 
 const PLANS = [
   {
-    id: 'booked_100',
-    name: 'Booked 100',
-    price: 995,
-    priceDisplay: '9,95',
-    perBooking: '0,25',
+    id: 'solo',
+    name: 'Solo',
+    subtitle: 'De Starter',
+    price: 1995,
+    priceDisplay: '19,95',
+    serviceFee: '1,25',
     limit: 100,
-    features: ['Tot 100 boekingen/maand', 'Onbeperkt teamleden', 'WhatsApp reminders inbegrepen', 'E-mail reminders inbegrepen'],
+    features: ['Tot 100 boekingen/maand', 'Onbeperkt teamleden', 'WhatsApp inbegrepen', 'E-mail reminders'],
   },
   {
-    id: 'booked_500',
-    name: 'Booked 500',
-    price: 2995,
-    priceDisplay: '29,95',
-    perBooking: '0,25',
+    id: 'growth',
+    name: 'Growth',
+    subtitle: 'De Medium Salon',
+    price: 4900,
+    priceDisplay: '49',
+    serviceFee: '1,20',
     limit: 500,
     highlight: true,
-    features: ['Tot 500 boekingen/maand', 'Onbeperkt teamleden', 'WhatsApp reminders inbegrepen', 'E-mail reminders inbegrepen'],
+    features: ['Tot 500 boekingen/maand', 'Onbeperkt teamleden', 'WhatsApp inbegrepen', 'E-mail reminders'],
   },
   {
-    id: 'booked_unlimited',
-    name: 'Booked Unlimited',
-    price: 9995,
-    priceDisplay: '99,95',
-    perBooking: '0,20',
+    id: 'unlimited',
+    name: 'Unlimited',
+    subtitle: 'De Grote Salon',
+    price: 8900,
+    priceDisplay: '89',
+    serviceFee: '1,10',
     limit: -1,
-    features: ['Onbeperkt boekingen', 'Onbeperkt teamleden', 'WhatsApp reminders inbegrepen', 'E-mail reminders inbegrepen'],
+    features: ['Onbeperkt boekingen', 'Onbeperkt teamleden', 'WhatsApp inbegrepen', 'E-mail reminders'],
   },
 ];
 
@@ -169,7 +173,7 @@ export function SubscriptionCard({ accentColor }: SubscriptionCardProps) {
               )}
               {!isTrial && (
                 <p className="text-xs text-gray-text mt-0.5">
-                  €{currentPlan?.priceDisplay}/maand + €{currentPlan?.perBooking} per boeking
+                  €{currentPlan?.priceDisplay}/maand + €{currentPlan?.serviceFee} service fee per boeking
                 </p>
               )}
             </div>
@@ -247,11 +251,11 @@ export function SubscriptionCard({ accentColor }: SubscriptionCardProps) {
                     <span className="text-sm font-bold text-navy">€{plan.priceDisplay}<span className="text-xs font-normal text-gray-text">/mnd</span></span>
                   </div>
                   <p className="text-xs text-gray-text mb-1">
-                    {plan.limit === -1 ? 'Onbeperkt boekingen' : `Tot ${plan.limit} boekingen/maand`} • €{plan.perBooking}/boeking
+                    {plan.limit === -1 ? 'Onbeperkt boekingen' : `Tot ${plan.limit} boekingen/maand`} • €{plan.serviceFee} service fee
                   </p>
 
                   {/* Bonus bookings for upgrade from 100 to 500 */}
-                  {currentTier === 'booked_100' && plan.id === 'booked_500' && (
+                  {currentTier === 'solo' && plan.id === 'growth' && (
                     <div className="flex items-center gap-1.5 mt-2 mb-2 px-2 py-1.5 bg-amber-50 border border-amber-200 rounded-lg">
                       <Gift className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
                       <span className="text-[11px] font-medium text-amber-700">+100 bonus boekingen cadeau bij upgrade!</span>
@@ -328,7 +332,7 @@ export function SubscriptionCard({ accentColor }: SubscriptionCardProps) {
               <span className="text-xs text-gray-text">/mnd</span>
             </div>
             <p className="text-xs mt-1" style={{ color: accentColor }}>
-              + &euro;{plan.perBooking} per boeking
+              + €{plan.serviceFee} service fee per boeking
             </p>
             <ul className="mt-3 space-y-1.5">
               {plan.features.map((f) => (

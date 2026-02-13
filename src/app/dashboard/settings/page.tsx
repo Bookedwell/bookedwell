@@ -37,9 +37,9 @@ export default function SettingsPage() {
         .then(data => {
           if (data.tier) {
             const tierNames: Record<string, string> = {
-              'booked_100': 'Booked 100',
-              'booked_500': 'Booked 500',
-              'booked_unlimited': 'Booked Unlimited',
+              'solo': 'Solo',
+              'growth': 'Growth',
+              'unlimited': 'Unlimited',
             };
             setSubscriptionSuccess(tierNames[data.tier] || data.tier);
           } else {

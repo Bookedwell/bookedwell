@@ -6,45 +6,46 @@ import { sendBookingConfirmation } from '@/lib/notifications/booking-notificatio
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 // Fee calculation:
-// - Stripe fees: 1.4% + €0.25 (EU cards) - we use 1.5% to be safe
-// - Twilio WhatsApp: ~€0.08 x 2 messages (confirmation + reminder) = €0.16
-// - Platform per-booking fee: €0.25 (booked_100/500) or €0.20 (unlimited)
-const STRIPE_PERCENTAGE = 0.015; // 1.5%
-const STRIPE_FIXED_CENTS = 25; // €0.25
-const TWILIO_COSTS_CENTS = 16; // €0.16 (2 WhatsApp messages)
+// - Stripe fees: 1.9% + €0.30 (passed through)
+// - Platform service fee: €1.25 (Solo), €1.20 (Growth), €1.10 (Unlimited)
+// Service fee = our platform fee, Stripe fees are separate and added on top
+const STRIPE_PERCENTAGE = 0.019; // 1.9%
+const STRIPE_FIXED_CENTS = 30; // €0.30
 
-// Per-booking fee per tier (in cents, excl. BTW)
-const TIER_PER_BOOKING: Record<string, number> = {
-  booked_100: 25,
-  booked_500: 25,
-  booked_unlimited: 20,
+// Service fee per tier (in cents) - this is what we keep
+const TIER_SERVICE_FEE: Record<string, number> = {
+  solo: 125,      // €1.25
+  growth: 120,    // €1.20
+  unlimited: 110, // €1.10
 };
 
 // Booking limits per tier (null = unlimited)
 const TIER_BOOKING_LIMITS: Record<string, number | null> = {
-  booked_100: 100,
-  booked_500: 500,
-  booked_unlimited: null,
+  solo: 100,
+  growth: 500,
+  unlimited: null,
 };
 
-// Auto-upgrade path: booked_100 -> booked_500 -> booked_unlimited
+// Auto-upgrade path: solo -> growth -> unlimited
 const TIER_UPGRADE_PATH: Record<string, string | null> = {
-  booked_100: 'booked_500',
-  booked_500: 'booked_unlimited',
-  booked_unlimited: null,
+  solo: 'growth',
+  growth: 'unlimited',
+  unlimited: null,
 };
 
 const TIER_NAMES: Record<string, string> = {
-  booked_100: 'Booked 100',
-  booked_500: 'Booked 500',
-  booked_unlimited: 'Booked Unlimited',
+  solo: 'Solo',
+  growth: 'Growth',
+  unlimited: 'Unlimited',
 };
 
 function calculatePlatformFee(paymentAmountCents: number, tier: string): number {
+  // Stripe fees (passed to Stripe)
   const stripeFee = Math.ceil(paymentAmountCents * STRIPE_PERCENTAGE) + STRIPE_FIXED_CENTS;
-  const platformMargin = TIER_PER_BOOKING[tier] ?? 25;
-  const totalFee = stripeFee + TWILIO_COSTS_CENTS + platformMargin;
-  return totalFee;
+  // Our service fee (what we keep)
+  const serviceFee = TIER_SERVICE_FEE[tier] ?? 125;
+  // Total platform fee = Stripe fees + our service fee
+  return stripeFee + serviceFee;
 }
 
 export async function POST(request: Request) {
