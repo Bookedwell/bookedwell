@@ -23,7 +23,7 @@ const PLANS = [
     subtitle: 'De Starter',
     price: 1995,
     priceDisplay: '19,95',
-    serviceFee: '1,25',
+    serviceFee: '1,49',
     limit: 100,
     features: ['Tot 100 boekingen/maand', 'Onbeperkt teamleden', 'WhatsApp inbegrepen', 'E-mail reminders'],
   },
@@ -33,7 +33,7 @@ const PLANS = [
     subtitle: 'De Medium Salon',
     price: 4900,
     priceDisplay: '49',
-    serviceFee: '1,20',
+    serviceFee: '1,29',
     limit: 500,
     highlight: true,
     features: ['Tot 500 boekingen/maand', 'Onbeperkt teamleden', 'WhatsApp inbegrepen', 'E-mail reminders'],
@@ -44,7 +44,7 @@ const PLANS = [
     subtitle: 'De Grote Salon',
     price: 8900,
     priceDisplay: '89',
-    serviceFee: '1,10',
+    serviceFee: '0,99',
     limit: -1,
     features: ['Onbeperkt boekingen', 'Onbeperkt teamleden', 'WhatsApp inbegrepen', 'E-mail reminders'],
   },
@@ -173,7 +173,7 @@ export function SubscriptionCard({ accentColor }: SubscriptionCardProps) {
               )}
               {!isTrial && (
                 <p className="text-xs text-gray-text mt-0.5">
-                  €{currentPlan?.priceDisplay}/maand + €{currentPlan?.serviceFee} platform fee + betaalkosten
+                  €{currentPlan?.priceDisplay}/maand + 1,9% + €{currentPlan?.serviceFee} per boeking
                 </p>
               )}
             </div>
@@ -332,7 +332,7 @@ export function SubscriptionCard({ accentColor }: SubscriptionCardProps) {
               <span className="text-xs text-gray-text">/mnd</span>
             </div>
             <p className="text-xs mt-1" style={{ color: accentColor }}>
-              + €{plan.serviceFee} platform fee + betaalkosten
+              1,9% + €{plan.serviceFee} per boeking
             </p>
             <ul className="mt-3 space-y-1.5">
               {plan.features.map((f) => (

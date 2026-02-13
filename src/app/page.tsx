@@ -133,7 +133,7 @@ export default function LandingPage() {
               {
                 name: 'Solo',
                 price: '19,95',
-                serviceFee: '€1,25 platform fee<br/>+ betaalkosten',
+                serviceFee: '1,9% + €1,49 per boeking',
                 desc: 'De Starter',
                 features: [
                   'Tot 100 boekingen per maand',
@@ -147,7 +147,7 @@ export default function LandingPage() {
               {
                 name: 'Growth',
                 price: '49',
-                serviceFee: '€1,20 platform fee<br/>+ betaalkosten',
+                serviceFee: '1,9% + €1,29 per boeking',
                 desc: 'De Medium Salon',
                 features: [
                   'Tot 500 boekingen per maand',
@@ -161,7 +161,7 @@ export default function LandingPage() {
               {
                 name: 'Unlimited',
                 price: '89',
-                serviceFee: '€1,10 platform fee<br/>+ betaalkosten',
+                serviceFee: '1,9% + €0,99 per boeking',
                 desc: 'De Grote Salon',
                 features: [
                   'Onbeperkt boekingen',
