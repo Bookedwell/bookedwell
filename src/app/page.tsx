@@ -237,7 +237,7 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="max-w-3xl mx-auto">
+          <div className="max-w-4xl mx-auto">
             {/* Comparison table */}
             <div className="bg-white rounded-xl border border-light-gray overflow-hidden">
               <div className="grid grid-cols-3 text-center text-sm font-semibold">
@@ -246,11 +246,13 @@ export default function LandingPage() {
                 <div className="p-4 bg-bg-gray text-gray-text">Traditionele platforms</div>
               </div>
               {[
-                { label: 'Vanaf', ours: '€9,95/mnd', theirs: '€21+/mnd', icon: CreditCard },
+                { label: 'Vanaf', ours: '€19,95/mnd', theirs: '€30+/mnd', icon: CreditCard },
                 { label: 'Online betalingen', ours: true, theirs: false, icon: Shield },
-                { label: 'WhatsApp reminders', ours: true, theirs: false, icon: Smartphone },
-                { label: 'Teamleden', ours: 'Onbeperkt gratis', theirs: 'Per medewerker betalen', icon: UserPlus },
+                { label: 'WhatsApp reminders', ours: 'Inbegrepen', theirs: 'Niet beschikbaar', icon: Smartphone },
+                { label: 'SMS credits', ours: 'Niet nodig', theirs: '€0,07-0,15 per SMS', icon: Smartphone },
+                { label: 'Teamleden', ours: 'Onbeperkt gratis', theirs: '€5-15 per medewerker', icon: UserPlus },
                 { label: 'No-show bescherming', ours: true, theirs: false, icon: Shield },
+                { label: 'Volume korting', ours: 'Ja, lagere fee bij meer boekingen', theirs: false, icon: CreditCard },
                 { label: 'Eigen boekingspagina', ours: true, theirs: true, icon: Calendar },
               ].map((row, i) => (
                 <div key={row.label} className={`grid grid-cols-3 text-sm ${i % 2 === 0 ? 'bg-white' : 'bg-bg-gray/50'}`}>
@@ -274,6 +276,34 @@ export default function LandingPage() {
                   </div>
                 </div>
               ))}
+            </div>
+
+            {/* Savings example */}
+            <div className="mt-8 p-6 bg-primary/5 rounded-xl border border-primary/20">
+              <h3 className="text-lg font-bold text-navy mb-4 text-center">Rekenvoorbeeld: Salon met 4 medewerkers en 200 boekingen/maand</h3>
+              <div className="grid sm:grid-cols-2 gap-6">
+                <div className="bg-white rounded-lg p-4 border border-light-gray">
+                  <p className="text-sm font-semibold text-gray-text mb-3">Traditioneel platform</p>
+                  <ul className="space-y-2 text-sm text-slate">
+                    <li className="flex justify-between"><span>Basissoftware</span><span className="font-medium">€30/mnd</span></li>
+                    <li className="flex justify-between"><span>4 extra teamleden (á €10)</span><span className="font-medium">€40/mnd</span></li>
+                    <li className="flex justify-between"><span>200 SMS reminders (á €0,10)</span><span className="font-medium">€20/mnd</span></li>
+                    <li className="flex justify-between border-t pt-2 mt-2 font-bold text-navy"><span>Totaal</span><span>€90/mnd</span></li>
+                  </ul>
+                </div>
+                <div className="bg-white rounded-lg p-4 border-2 border-primary">
+                  <p className="text-sm font-semibold text-primary mb-3">Bookedwell Growth</p>
+                  <ul className="space-y-2 text-sm text-slate">
+                    <li className="flex justify-between"><span>Growth pakket (500 boekingen)</span><span className="font-medium">€49/mnd</span></li>
+                    <li className="flex justify-between"><span>Onbeperkt teamleden</span><span className="font-medium text-green-600">€0</span></li>
+                    <li className="flex justify-between"><span>WhatsApp reminders</span><span className="font-medium text-green-600">Inbegrepen</span></li>
+                    <li className="flex justify-between border-t pt-2 mt-2 font-bold text-navy"><span>Totaal</span><span>€49/mnd</span></li>
+                  </ul>
+                </div>
+              </div>
+              <p className="text-center mt-4 text-lg font-bold text-primary">
+                Bespaar €41/maand = €492/jaar
+              </p>
             </div>
 
             <p className="text-center text-xs text-gray-text mt-4">
