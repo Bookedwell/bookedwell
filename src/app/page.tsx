@@ -133,7 +133,7 @@ export default function LandingPage() {
               {
                 name: 'Solo',
                 price: '19,95',
-                serviceFee: '€1,25 platform fee + betaalkosten',
+                serviceFee: '€1,25 platform fee<br/>+ betaalkosten',
                 desc: 'De Starter',
                 features: [
                   'Tot 100 boekingen per maand',
@@ -147,7 +147,7 @@ export default function LandingPage() {
               {
                 name: 'Growth',
                 price: '49',
-                serviceFee: '€1,20 platform fee + betaalkosten',
+                serviceFee: '€1,20 platform fee<br/>+ betaalkosten',
                 desc: 'De Medium Salon',
                 features: [
                   'Tot 500 boekingen per maand',
@@ -161,7 +161,7 @@ export default function LandingPage() {
               {
                 name: 'Unlimited',
                 price: '89',
-                serviceFee: '€1,10 platform fee + betaalkosten',
+                serviceFee: '€1,10 platform fee<br/>+ betaalkosten',
                 desc: 'De Grote Salon',
                 features: [
                   'Onbeperkt boekingen',
@@ -194,9 +194,7 @@ export default function LandingPage() {
                   </span>
                   <span className="text-gray-text">/maand</span>
                 </div>
-                <p className="text-sm font-medium text-primary mb-4">
-                  {plan.serviceFee}
-                </p>
+                <p className="text-sm font-medium text-primary mb-4" dangerouslySetInnerHTML={{ __html: plan.serviceFee }} />
                 <ul className="space-y-2 mb-6">
                   {plan.features.map((f) => (
                     <li key={f} className="flex items-center gap-2 text-sm text-slate">
@@ -220,7 +218,7 @@ export default function LandingPage() {
           </div>
 
           <p className="text-center text-xs text-gray-text mt-8">
-            14 dagen gratis proefperiode bij elk pakket. Betaalkosten: iDEAL €0,29 / kaart 1,4% + €0,25 per transactie. Prijzen excl. BTW.
+            14 dagen gratis proefperiode bij elk pakket. Prijzen excl. BTW.
           </p>
         </div>
       </section>
