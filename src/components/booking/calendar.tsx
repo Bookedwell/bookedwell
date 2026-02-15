@@ -59,13 +59,15 @@ export function Calendar({
     return busyDates.some((d) => isSameDay(d, date));
   };
 
-  // Scroll selected into view on mount
+  // Scroll selected into view only on initial mount
+  const hasScrolledRef = useRef(false);
   useEffect(() => {
-    if (selectedRef.current && scrollRef.current) {
+    if (!hasScrolledRef.current && selectedRef.current && scrollRef.current) {
       const container = scrollRef.current;
       const el = selectedRef.current;
       const offset = el.offsetLeft - container.offsetWidth / 2 + el.offsetWidth / 2;
       container.scrollTo({ left: offset, behavior: 'smooth' });
+      hasScrolledRef.current = true;
     }
   }, [selectedDate]);
 
@@ -106,8 +108,8 @@ export function Calendar({
                 onClick={() => !disabled && onDateSelect(day)}
                 disabled={disabled}
                 className={cn(
-                  'flex flex-col items-center justify-center px-3 py-2 rounded-xl min-w-[60px] transition-all flex-shrink-0',
-                  disabled && 'opacity-30 cursor-not-allowed',
+                  'flex flex-col items-center justify-center px-3 py-2 rounded-xl min-w-[60px] transition-all flex-shrink-0 relative overflow-hidden',
+                  disabled && 'cursor-not-allowed bg-gray-100',
                   !disabled && !selected && 'hover:bg-bg-gray',
                   selected && 'shadow-md',
                   busy && !disabled && !selected && 'ring-1 ring-orange-300',
@@ -115,26 +117,30 @@ export function Calendar({
                 style={
                   selected
                     ? { backgroundColor: accentColor, color: getContrastText(accentColor) }
+                    : disabled
+                    ? {
+                        backgroundImage: 'repeating-linear-gradient(135deg, transparent, transparent 4px, rgba(0,0,0,0.08) 4px, rgba(0,0,0,0.08) 6px)',
+                      }
                     : undefined
                 }
               >
                 <span className={cn(
                   'text-[10px] font-semibold uppercase leading-none mb-1',
-                  selected ? '' : today ? '' : 'text-gray-text',
+                  selected ? '' : disabled ? 'text-gray-400' : today ? '' : 'text-gray-text',
                 )}
-                  style={today && !selected ? { color: accentColor } : undefined}
+                  style={today && !selected && !disabled ? { color: accentColor } : undefined}
                 >
                   {dayLabel(day)}
                 </span>
                 <span className={cn(
                   'text-xl font-bold leading-none',
-                  selected ? '' : 'text-navy',
+                  selected ? '' : disabled ? 'text-gray-400' : 'text-navy',
                 )}>
                   {format(day, 'd')}
                 </span>
                 <span className={cn(
                   'text-[10px] uppercase leading-none mt-1',
-                  selected ? '' : 'text-gray-text',
+                  selected ? '' : disabled ? 'text-gray-400' : 'text-gray-text',
                 )}>
                   {format(day, 'MMM', { locale: nl })}
                 </span>

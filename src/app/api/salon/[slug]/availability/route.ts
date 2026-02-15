@@ -22,7 +22,7 @@ export async function GET(
   // Get salon
   const { data: salon, error: salonError } = await supabase
     .from('salons')
-    .select('id, booking_buffer_minutes, min_booking_notice_hours')
+    .select('id, booking_buffer_minutes, min_booking_notice_hours, opening_hours, blocked_dates')
     .eq('slug', slug)
     .eq('active', true)
     .single();
@@ -31,24 +31,54 @@ export async function GET(
     return NextResponse.json({ error: 'Salon not found' }, { status: 404 });
   }
 
+  // Check if date is blocked
+  const blockedDates = (salon.blocked_dates || []) as string[];
+  if (blockedDates.includes(dateStr)) {
+    return NextResponse.json({ slots: [], closed: true, reason: 'blocked' }, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate',
+        'Pragma': 'no-cache',
+      },
+    });
+  }
+
   // Parse date
   const date = new Date(dateStr + 'T00:00:00');
   const dayOfWeek = date.getDay(); // 0=Sun, 1=Mon...6=Sat
 
-  // Default working hours per day (TODO: make configurable per salon/staff)
-  const workingHours: Record<number, { start: number; end: number } | null> = {
-    0: null,            // Zondag: dicht
-    1: { start: 9, end: 18 },  // Maandag
-    2: { start: 9, end: 18 },  // Dinsdag
-    3: { start: 9, end: 18 },  // Woensdag
-    4: { start: 9, end: 18 },  // Donderdag
-    5: { start: 9, end: 18 },  // Vrijdag
-    6: { start: 9, end: 17 },  // Zaterdag
-  };
+  // Map day number to day name
+  const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+  const dayName = dayNames[dayOfWeek];
 
-  const hours = workingHours[dayOfWeek];
+  // Get opening hours from salon settings or use defaults
+  const openingHours = salon.opening_hours as Record<string, { open: string; close: string; closed: boolean }> | null;
+  
+  let hours: { start: number; end: number } | null = null;
+  
+  if (openingHours && openingHours[dayName]) {
+    const dayHours = openingHours[dayName];
+    if (!dayHours.closed) {
+      const [openH, openM] = dayHours.open.split(':').map(Number);
+      const [closeH, closeM] = dayHours.close.split(':').map(Number);
+      hours = { start: openH + openM / 60, end: closeH + closeM / 60 };
+    }
+  } else {
+    // Default working hours if not set
+    const defaultHours: Record<number, { start: number; end: number } | null> = {
+      0: null, 1: { start: 9, end: 18 }, 2: { start: 9, end: 18 },
+      3: { start: 9, end: 18 }, 4: { start: 9, end: 18 }, 5: { start: 9, end: 18 },
+      6: { start: 9, end: 17 },
+    };
+    hours = defaultHours[dayOfWeek];
+  }
+
   if (!hours) {
-    return NextResponse.json({ slots: [], closed: true });
+    return NextResponse.json({ slots: [], closed: true }, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate',
+        'Pragma': 'no-cache',
+      },
+    });
   }
 
   // Get existing bookings for this date (only active ones)
@@ -82,34 +112,40 @@ export async function GET(
   // Generate all possible slots
   const slots: { startTime: string; endTime: string; available: boolean }[] = [];
 
-  for (let hour = hours.start; hour < hours.end; hour++) {
-    for (let min = 0; min < 60; min += 30) {
-      const startTime = new Date(date);
-      startTime.setHours(hour, min, 0, 0);
-      const endTime = new Date(startTime.getTime() + duration * 60 * 1000);
+  // Convert fractional hours to minutes for easier calculation
+  const startMinutes = Math.floor(hours.start * 60);
+  const endMinutes = Math.floor(hours.end * 60);
 
-      // Skip if service extends past closing
-      if (endTime.getHours() > hours.end || (endTime.getHours() === hours.end && endTime.getMinutes() > 0)) continue;
+  for (let totalMin = startMinutes; totalMin < endMinutes; totalMin += 30) {
+    const hour = Math.floor(totalMin / 60);
+    const min = totalMin % 60;
+    
+    const startTime = new Date(date);
+    startTime.setHours(hour, min, 0, 0);
+    const endTime = new Date(startTime.getTime() + duration * 60 * 1000);
 
-      // Skip past times + min notice
-      if (startTime.getTime() < now + minNotice) continue;
+    // Skip if service extends past closing
+    const endTotalMin = endTime.getHours() * 60 + endTime.getMinutes();
+    if (endTotalMin > endMinutes) continue;
 
-      // Check overlap with existing bookings (including buffer)
-      const slotStart = startTime.getTime();
-      const slotEnd = endTime.getTime();
+    // Skip past times + min notice
+    if (startTime.getTime() < now + minNotice) continue;
 
-      const hasConflict = bookedSlots.some(booked => {
-        const bookedStartWithBuffer = booked.start - buffer;
-        const bookedEndWithBuffer = booked.end + buffer;
-        return slotStart < bookedEndWithBuffer && slotEnd > bookedStartWithBuffer;
-      });
+    // Check overlap with existing bookings (including buffer)
+    const slotStart = startTime.getTime();
+    const slotEnd = endTime.getTime();
 
-      slots.push({
-        startTime: startTime.toISOString(),
-        endTime: endTime.toISOString(),
-        available: !hasConflict,
-      });
-    }
+    const hasConflict = bookedSlots.some(booked => {
+      const bookedStartWithBuffer = booked.start - buffer;
+      const bookedEndWithBuffer = booked.end + buffer;
+      return slotStart < bookedEndWithBuffer && slotEnd > bookedStartWithBuffer;
+    });
+
+    slots.push({
+      startTime: startTime.toISOString(),
+      endTime: endTime.toISOString(),
+      available: !hasConflict,
+    });
   }
 
   // Only return available slots

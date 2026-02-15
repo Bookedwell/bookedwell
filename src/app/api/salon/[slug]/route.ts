@@ -1,6 +1,10 @@
 import { createServiceClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 
+// Force dynamic - no caching
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 // Public API: fetch salon + services by slug (no auth required)
 export async function GET(
   request: Request,
@@ -9,10 +13,10 @@ export async function GET(
   const { slug } = await params;
   const serviceClient = createServiceClient();
 
-  // Fetch salon
+  // Fetch salon (explicitly include opening_hours and blocked_dates)
   const { data: salon, error: salonError } = await serviceClient
     .from('salons')
-    .select('*')
+    .select('*, opening_hours, blocked_dates')
     .eq('slug', slug)
     .eq('active', true)
     .maybeSingle();

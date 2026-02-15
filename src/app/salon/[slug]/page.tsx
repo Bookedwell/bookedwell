@@ -58,7 +58,7 @@ export default function SalonBookingPage() {
 
   useEffect(() => {
     async function fetchSalon() {
-      const res = await fetch(`/api/salon/${slug}`);
+      const res = await fetch(`/api/salon/${slug}`, { cache: 'no-store' });
       if (!res.ok) {
         setNotFound(true);
         setPageLoading(false);
@@ -78,26 +78,37 @@ export default function SalonBookingPage() {
   , [selectedServices]);
 
   // Calculate closed days from opening_hours (0 = Sunday, 1 = Monday, etc.)
-  const closedDays = useMemo(() => {
-    if (!salon?.opening_hours) return [];
-    const dayMap: Record<string, number> = {
-      sunday: 0, monday: 1, tuesday: 2, wednesday: 3,
-      thursday: 4, friday: 5, saturday: 6,
-    };
-    const closed: number[] = [];
-    for (const [day, hours] of Object.entries(salon.opening_hours)) {
-      if ((hours as any)?.closed) {
-        closed.push(dayMap[day]);
-      }
-    }
-    return closed;
-  }, [salon?.opening_hours]);
+  const [closedDays, setClosedDays] = useState<number[]>([]);
+  const [blockedDates, setBlockedDates] = useState<Date[]>([]);
 
-  // Calculate blocked dates from blocked_dates array
-  const blockedDates = useMemo(() => {
-    if (!salon?.blocked_dates) return [];
-    return (salon.blocked_dates as string[]).map((d: string) => new Date(d));
-  }, [salon?.blocked_dates]);
+  useEffect(() => {
+    if (!salon) return;
+    
+    // Closed days - EXACT same logic as working debug page
+    const oh = salon.opening_hours;
+    if (oh) {
+      const dayMap: Record<string, number> = {
+        sunday: 0, monday: 1, tuesday: 2, wednesday: 3,
+        thursday: 4, friday: 5, saturday: 6,
+      };
+      const closed: number[] = [];
+      for (const [day, hours] of Object.entries(oh)) {
+        if ((hours as any)?.closed === true) {
+          closed.push(dayMap[day]);
+        }
+      }
+      console.log('MAIN PAGE closedDays calculated:', closed);
+      setClosedDays(closed);
+    }
+
+    // Blocked dates
+    const bd = salon.blocked_dates;
+    if (bd && Array.isArray(bd)) {
+      const dates = bd.map((d: string) => new Date(d));
+      console.log('MAIN PAGE blockedDates calculated:', dates);
+      setBlockedDates(dates);
+    }
+  }, [salon]);
 
   const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
   const [slotsLoading, setSlotsLoading] = useState(false);

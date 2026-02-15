@@ -56,11 +56,16 @@ export async function PATCH(request: Request) {
   }
   update.updated_at = new Date().toISOString();
 
-  const { error } = await serviceClient
+  const { data, error } = await serviceClient
     .from('salons')
     .update(update)
-    .eq('id', salonId);
+    .eq('id', salonId)
+    .select('id, opening_hours')
+    .single();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+  
   return NextResponse.json({ success: true });
 }
