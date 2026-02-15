@@ -28,16 +28,25 @@ export async function GET(request: Request) {
       .select(`
         id,
         start_time,
+        end_time,
         customer_name,
         deposit_amount_cents,
-        service:services(name, price_cents),
-        salon:salons(name, address, city)
+        service:services(name, price_cents, duration_minutes),
+        salon:salons(name, address, city, primary_color)
       `)
       .eq('id', session.metadata.booking_id)
       .single();
 
     if (error || !booking) {
       return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
+    }
+
+    // Calculate end_time if not set
+    let endTime = booking.end_time;
+    if (!endTime && booking.start_time) {
+      const duration = (booking.service as any)?.duration_minutes || 30;
+      const start = new Date(booking.start_time);
+      endTime = new Date(start.getTime() + duration * 60 * 1000).toISOString();
     }
 
     return NextResponse.json({
@@ -47,9 +56,11 @@ export async function GET(request: Request) {
       salon_address: (booking.salon as any)?.address || '',
       salon_city: (booking.salon as any)?.city || '',
       start_time: booking.start_time,
+      end_time: endTime,
       customer_name: booking.customer_name,
       deposit_amount_cents: booking.deposit_amount_cents || session.amount_total || 0,
       full_price_cents: (booking.service as any)?.price_cents || session.amount_total || 0,
+      accent_color: (booking.salon as any)?.primary_color || '#22c55e',
     });
   } catch (err: any) {
     console.error('Booking success error:', err.message);
