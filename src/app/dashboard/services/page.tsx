@@ -404,8 +404,9 @@ export default function ServicesPage() {
                 </button>
               )}
             </div>
-            {showCategoryDropdown && categories.length > 0 && (
-              <div className="absolute z-10 mt-1 w-full bg-white border border-light-gray rounded-lg shadow-lg max-h-32 overflow-y-auto">
+            {showCategoryDropdown && (
+              <div className="absolute z-10 mt-1 w-full bg-white border border-light-gray rounded-lg shadow-lg max-h-40 overflow-y-auto">
+                {/* Show existing categories that match */}
                 {categories
                   .filter((c) => !category || c.toLowerCase().includes(category.toLowerCase()))
                   .map((cat) => (
@@ -421,6 +422,26 @@ export default function ServicesPage() {
                       {cat}
                     </button>
                   ))}
+                {/* Show "create new" option if typed text doesn't match any existing category */}
+                {category && !categories.some(c => c.toLowerCase() === category.toLowerCase()) && (
+                  <button
+                    type="button"
+                    className="w-full text-left px-3 py-2 text-sm hover:bg-bg-gray transition-colors border-t border-light-gray flex items-center gap-2"
+                    style={{ color: accentColor }}
+                    onClick={() => {
+                      setShowCategoryDropdown(false);
+                    }}
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    Nieuwe categorie: "{category}"
+                  </button>
+                )}
+                {/* Show hint when no category typed yet */}
+                {!category && categories.length === 0 && (
+                  <div className="px-3 py-2 text-sm text-gray-text">
+                    Typ om een nieuwe categorie te maken
+                  </div>
+                )}
               </div>
             )}
           </div>
