@@ -21,12 +21,11 @@ export async function GET(
     return NextResponse.json({ error: 'Salon niet gevonden' }, { status: 404 });
   }
 
-  // Fetch available services
+  // Fetch all services for this salon
   const { data: services } = await serviceClient
     .from('services')
     .select('*')
     .eq('salon_id', salon.id)
-    .eq('available', true)
     .order('category', { ascending: true, nullsFirst: false })
     .order('display_order', { ascending: true });
 
