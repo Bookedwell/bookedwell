@@ -30,6 +30,7 @@ export default function StripePage() {
   const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(false);
   const setupComplete = searchParams.get('setup') === 'complete';
 
   const [error, setError] = useState<string | null>(null);
@@ -93,6 +94,31 @@ export default function StripePage() {
     }
     await fetchStatus();
     setRefreshing(false);
+  };
+
+  const handleDisconnect = async () => {
+    if (!confirm('Weet je zeker dat je je Stripe account wilt ontkoppelen? Je kunt daarna geen betalingen meer ontvangen.')) {
+      return;
+    }
+    setDisconnecting(true);
+    try {
+      const res = await fetch('/api/stripe/connect', { method: 'DELETE' });
+      if (res.ok) {
+        setStatus({
+          stripe_account_id: null,
+          stripe_onboarded: false,
+          charges_enabled: false,
+          payouts_enabled: false,
+          details_submitted: false,
+        });
+      } else {
+        const data = await res.json();
+        alert('Fout: ' + (data.error || 'Onbekende fout'));
+      }
+    } catch {
+      alert('Netwerkfout bij ontkoppelen');
+    }
+    setDisconnecting(false);
   };
 
   if (loading) {
@@ -301,11 +327,18 @@ export default function StripePage() {
                 </a>
               </div>
 
-              <div className="mt-6 p-4 bg-bg-gray rounded-lg">
+              <div className="mt-6 p-4 bg-bg-gray rounded-lg flex items-center justify-between">
                 <p className="text-xs text-gray-text">
                   <strong className="text-navy">Account ID:</strong>{' '}
                   <code className="text-xs bg-white px-1.5 py-0.5 rounded">{status?.stripe_account_id}</code>
                 </p>
+                <button
+                  onClick={handleDisconnect}
+                  disabled={disconnecting}
+                  className="text-xs text-red-600 hover:text-red-700 hover:underline disabled:opacity-50"
+                >
+                  {disconnecting ? 'Ontkoppelen...' : 'Ontkoppelen'}
+                </button>
               </div>
             </div>
           )}

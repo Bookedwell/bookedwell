@@ -269,3 +269,36 @@ export async function PATCH() {
     details_submitted: account.details_submitted,
   });
 }
+
+// DELETE: Disconnect Stripe account (removes link from database, does not delete Stripe account)
+export async function DELETE() {
+  try {
+    const salonId = await getAuthSalonId();
+    if (!salonId) return NextResponse.json({ error: 'Niet ingelogd' }, { status: 401 });
+
+    const serviceClient = createServiceClient();
+    
+    // Clear Stripe account link from database
+    const { error } = await serviceClient
+      .from('salons')
+      .update({ 
+        stripe_account_id: null, 
+        stripe_onboarded: false 
+      })
+      .eq('id', salonId);
+
+    if (error) {
+      console.error('[Stripe Disconnect] Error:', error);
+      return NextResponse.json({ error: 'Kon Stripe niet ontkoppelen' }, { status: 500 });
+    }
+
+    console.log('[Stripe Disconnect] Successfully disconnected for salon:', salonId);
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Stripe account ontkoppeld' 
+    });
+  } catch (err: any) {
+    console.error('[Stripe Disconnect] Error:', err);
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}
