@@ -1,7 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { CreditCard, Check, ArrowRight, Loader2, ExternalLink, Gift, Zap } from 'lucide-react';
+
+// Smart sync interval: 5 minutes
+const SYNC_INTERVAL_MS = 5 * 60 * 1000;
 
 interface SubscriptionData {
   tier: string;
@@ -59,8 +62,10 @@ export function SubscriptionCard({ accentColor }: SubscriptionCardProps) {
   const [loading, setLoading] = useState(true);
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
+  const lastSyncRef = useRef<number>(0);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const fetchSubscription = async () => {
+  const fetchSubscription = useCallback(async () => {
     try {
       const res = await fetch('/api/subscriptions/checkout', { cache: 'no-store' });
       if (res.ok) {
@@ -68,11 +73,59 @@ export function SubscriptionCard({ accentColor }: SubscriptionCardProps) {
         setSubscription(data);
       }
     } catch { /* silent */ }
-  };
-
-  useEffect(() => {
-    fetchSubscription().then(() => setLoading(false));
   }, []);
+
+  // Smart sync: only sync if enough time has passed
+  const smartSync = useCallback(async (force = false) => {
+    const now = Date.now();
+    if (!force && now - lastSyncRef.current < SYNC_INTERVAL_MS) {
+      return; // Skip if synced recently
+    }
+    
+    lastSyncRef.current = now;
+    try {
+      const res = await fetch('/api/subscriptions/sync', { method: 'POST' });
+      if (res.ok) {
+        await fetchSubscription();
+      }
+    } catch { /* silent */ }
+  }, [fetchSubscription]);
+
+  // Initial load + auto-sync
+  useEffect(() => {
+    const init = async () => {
+      await fetchSubscription();
+      setLoading(false);
+      // Sync on mount (force)
+      await smartSync(true);
+    };
+    init();
+
+    // Set up periodic sync every 5 minutes
+    intervalRef.current = setInterval(() => {
+      smartSync(false);
+    }, SYNC_INTERVAL_MS);
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [fetchSubscription, smartSync]);
+
+  // Sync when page becomes visible again
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        smartSync(false);
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [smartSync]);
 
   const handleSync = async () => {
     setSyncing(true);
