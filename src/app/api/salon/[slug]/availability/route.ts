@@ -120,5 +120,10 @@ export async function GET(
     closed: false,
     totalSlots: slots.length,
     availableCount: availableSlots.length,
+  }, {
+    headers: {
+      'Cache-Control': 'no-store, no-cache, must-revalidate',
+      'Pragma': 'no-cache',
+    },
   });
 }
