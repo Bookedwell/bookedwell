@@ -35,11 +35,12 @@ export function TimePicker({ slots, selectedSlot, onSlotSelect, accentColor = '#
             className={cn(
               'py-2.5 px-3 rounded-lg text-sm font-medium transition-all',
               isSelected
-                ? 'bg-primary text-white shadow-md'
+                ? 'text-white shadow-md'
                 : slot.available
-                ? 'border border-light-gray text-navy hover:border-primary hover:text-primary'
+                ? 'border border-light-gray text-navy hover:border-current'
                 : 'border border-light-gray/50 text-light-gray cursor-not-allowed line-through'
             )}
+            style={isSelected ? { backgroundColor: accentColor } : slot.available ? { color: undefined } : undefined}
           >
             {formatTime(slot.startTime)}
           </button>

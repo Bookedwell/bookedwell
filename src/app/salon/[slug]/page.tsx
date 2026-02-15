@@ -77,6 +77,28 @@ export default function SalonBookingPage() {
     selectedServices.reduce((sum, s) => sum + s.duration_minutes, 0)
   , [selectedServices]);
 
+  // Calculate closed days from opening_hours (0 = Sunday, 1 = Monday, etc.)
+  const closedDays = useMemo(() => {
+    if (!salon?.opening_hours) return [];
+    const dayMap: Record<string, number> = {
+      sunday: 0, monday: 1, tuesday: 2, wednesday: 3,
+      thursday: 4, friday: 5, saturday: 6,
+    };
+    const closed: number[] = [];
+    for (const [day, hours] of Object.entries(salon.opening_hours)) {
+      if ((hours as any)?.closed) {
+        closed.push(dayMap[day]);
+      }
+    }
+    return closed;
+  }, [salon?.opening_hours]);
+
+  // Calculate blocked dates from blocked_dates array
+  const blockedDates = useMemo(() => {
+    if (!salon?.blocked_dates) return [];
+    return (salon.blocked_dates as string[]).map((d: string) => new Date(d));
+  }, [salon?.blocked_dates]);
+
   const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
   const [slotsLoading, setSlotsLoading] = useState(false);
 
@@ -376,6 +398,8 @@ export default function SalonBookingPage() {
                   }}
                   minDate={new Date()}
                   maxDate={addDays(new Date(), salon.max_booking_days_ahead)}
+                  closedDays={closedDays}
+                  disabledDates={blockedDates}
                   accentColor={accentColor}
                 />
               </div>

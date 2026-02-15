@@ -39,7 +39,7 @@ const ALLOWED_FIELDS = [
   'booking_buffer_minutes', 'min_booking_notice_hours', 'max_booking_days_ahead',
   'cancellation_hours_before',
   'require_deposit', 'deposit_percentage',
-  'opening_hours',
+  'opening_hours', 'blocked_dates',
 ];
 
 export async function PATCH(request: Request) {

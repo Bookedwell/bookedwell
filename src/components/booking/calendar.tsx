@@ -21,6 +21,7 @@ interface CalendarProps {
   minDate?: Date;
   maxDate?: Date;
   disabledDates?: Date[];
+  closedDays?: number[]; // 0 = Sunday, 1 = Monday, etc.
   busyDates?: Date[];
   accentColor?: string;
 }
@@ -31,6 +32,7 @@ export function Calendar({
   minDate,
   maxDate,
   disabledDates = [],
+  closedDays = [],
   busyDates = [],
   accentColor = '#4285F4',
 }: CalendarProps) {
@@ -49,6 +51,7 @@ export function Calendar({
 
   const isDisabled = (date: Date) => {
     if (disabledDates.some((d) => isSameDay(d, date))) return true;
+    if (closedDays.includes(date.getDay())) return true;
     return false;
   };
 

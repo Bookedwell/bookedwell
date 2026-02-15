@@ -37,6 +37,8 @@ export interface Salon {
   plan_expires_at: string | null;
   active: boolean;
   booking_redirect_url: string | null;
+  opening_hours: Record<string, { open: string; close: string; closed: boolean }> | null;
+  blocked_dates: string[] | null;
 }
 
 export interface Staff {

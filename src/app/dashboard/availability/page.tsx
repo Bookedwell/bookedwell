@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Clock, Save } from 'lucide-react';
+import { Clock, Save, Plus, X, CalendarOff } from 'lucide-react';
 import { useBranding } from '@/context/branding-context';
+import { format } from 'date-fns';
+import { nl } from 'date-fns/locale';
 
 interface DayHours {
   open: string;
@@ -51,6 +53,8 @@ for (let h = 0; h < 24; h++) {
 export default function AvailabilityPage() {
   const { primaryColor: accentColor } = useBranding();
   const [hours, setHours] = useState<OpeningHours>(defaultHours);
+  const [blockedDates, setBlockedDates] = useState<string[]>([]);
+  const [newBlockedDate, setNewBlockedDate] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -62,6 +66,9 @@ export default function AvailabilityPage() {
         const data = await res.json();
         if (data.opening_hours) {
           setHours(data.opening_hours);
+        }
+        if (data.blocked_dates) {
+          setBlockedDates(data.blocked_dates);
         }
       }
       setLoading(false);
@@ -75,13 +82,24 @@ export default function AvailabilityPage() {
     const res = await fetch('/api/settings', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ opening_hours: hours }),
+      body: JSON.stringify({ opening_hours: hours, blocked_dates: blockedDates }),
     });
     setSaving(false);
     if (res.ok) {
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     }
+  };
+
+  const addBlockedDate = () => {
+    if (newBlockedDate && !blockedDates.includes(newBlockedDate)) {
+      setBlockedDates(prev => [...prev, newBlockedDate].sort());
+      setNewBlockedDate('');
+    }
+  };
+
+  const removeBlockedDate = (date: string) => {
+    setBlockedDates(prev => prev.filter(d => d !== date));
   };
 
   const updateDay = (day: keyof OpeningHours, field: keyof DayHours, value: string | boolean) => {
@@ -185,6 +203,57 @@ export default function AvailabilityPage() {
             )}
           </div>
         ))}
+      </div>
+
+      <div className="mt-8">
+        <h2 className="text-lg font-bold text-navy mb-4">Geblokkeerde dagen</h2>
+        <p className="text-sm text-gray-text mb-4">Blokkeer specifieke dagen waarop geen boekingen mogelijk zijn (bijv. vakanties, feestdagen)</p>
+        
+        <div className="bg-white rounded-xl border border-light-gray p-4">
+          <div className="flex gap-2 mb-4">
+            <input
+              type="date"
+              value={newBlockedDate}
+              onChange={(e) => setNewBlockedDate(e.target.value)}
+              min={format(new Date(), 'yyyy-MM-dd')}
+              className="flex-1 px-3 py-2 border border-light-gray rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+            />
+            <button
+              onClick={addBlockedDate}
+              disabled={!newBlockedDate}
+              className="px-4 py-2 rounded-lg text-white text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ backgroundColor: accentColor }}
+            >
+              <Plus className="w-4 h-4" />
+            </button>
+          </div>
+
+          {blockedDates.length === 0 ? (
+            <div className="text-center py-6 text-gray-text">
+              <CalendarOff className="w-8 h-8 mx-auto mb-2 opacity-50" />
+              <p className="text-sm">Geen geblokkeerde dagen</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {blockedDates.map((date) => (
+                <div
+                  key={date}
+                  className="flex items-center justify-between p-3 bg-bg-gray rounded-lg"
+                >
+                  <span className="text-sm text-navy">
+                    {format(new Date(date), 'EEEE d MMMM yyyy', { locale: nl })}
+                  </span>
+                  <button
+                    onClick={() => removeBlockedDate(date)}
+                    className="p-1 text-gray-text hover:text-red-500 transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="mt-6 p-4 bg-bg-gray rounded-xl">
