@@ -22,6 +22,7 @@ import {
   Globe,
   CreditCard,
   Sparkles,
+  Clock,
 } from 'lucide-react';
 import type { Salon } from '@/types';
 import { BookingUsageBanner } from './booking-usage-banner';
@@ -52,6 +53,7 @@ const navItems: NavItem[] = [
   },
   { href: '/dashboard/services', label: 'Diensten', icon: Scissors },
   { href: '/dashboard/customers', label: 'Klanten', icon: Users },
+  { href: '/dashboard/availability', label: 'Tijden', icon: Clock },
   { href: '/dashboard/team', label: 'Team', icon: UsersRound },
   { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart3 },
   { href: '/dashboard/settings', label: 'Instellingen', icon: Settings },
