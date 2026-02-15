@@ -433,7 +433,7 @@ export default function ServicesPage() {
                     }}
                   >
                     <Plus className="w-3.5 h-3.5" />
-                    Nieuwe categorie: "{category}"
+                    Nieuwe categorie: &ldquo;{category}&rdquo;
                   </button>
                 )}
                 {/* Show hint when no category typed yet */}
