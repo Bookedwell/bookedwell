@@ -120,10 +120,14 @@ export default function SalonBookingPage() {
 
   const handleServicesContinue = () => {
     if (selectedServices.length > 0) {
-      // Skip staff step if no staff members accept bookings
-      if (staffMembers.length > 0) {
+      // Skip staff step if 1 or fewer staff members (no choice needed)
+      if (staffMembers.length > 1) {
         setStep('staff');
       } else {
+        // Auto-select the only staff member if there is one
+        if (staffMembers.length === 1) {
+          setSelectedStaffId(staffMembers[0].id);
+        }
         setStep('datetime');
       }
     }
@@ -197,7 +201,8 @@ export default function SalonBookingPage() {
   const handleBack = () => {
     if (step === 'staff') setStep('service');
     else if (step === 'datetime') {
-      if (staffMembers.length > 0) setStep('staff');
+      // Only go back to staff if there are multiple staff members
+      if (staffMembers.length > 1) setStep('staff');
       else setStep('service');
     }
     else if (step === 'details') setStep('datetime');
@@ -274,7 +279,7 @@ export default function SalonBookingPage() {
                 </motion.button>
               )}
               <div className="flex gap-1.5 flex-1">
-                {(staffMembers.length > 0
+                {(staffMembers.length > 1
                   ? ['service', 'staff', 'datetime', 'details'] as const
                   : ['service', 'datetime', 'details'] as const
                 ).map((s, i, arr) => (
