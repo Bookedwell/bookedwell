@@ -119,7 +119,7 @@ export async function POST(request: Request) {
       const customerId = await getOrCreateCustomer(salonId, salon.email || user.email!, salon.name);
       const portalSession = await stripe.billingPortal.sessions.create({
         customer: customerId,
-        return_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/settings`,
+        return_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/subscription`,
       });
       return NextResponse.json({ portal_url: portalSession.url });
     }
@@ -155,8 +155,8 @@ export async function POST(request: Request) {
         salon_id: salonId,
         tier,
       },
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/settings?subscription=success`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/settings?subscription=cancelled`,
+      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/subscription?subscription=success`,
+      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/subscription`,
     });
 
     return NextResponse.json({ checkout_url: session.url });

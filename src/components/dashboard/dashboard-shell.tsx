@@ -21,6 +21,7 @@ import {
   BarChart3,
   Globe,
   CreditCard,
+  Sparkles,
 } from 'lucide-react';
 import type { Salon } from '@/types';
 import { BookingUsageBanner } from './booking-usage-banner';
@@ -55,6 +56,7 @@ const navItems: NavItem[] = [
   { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart3 },
   { href: '/dashboard/settings', label: 'Instellingen', icon: Settings },
   { href: '/dashboard/stripe', label: 'Betalingen', icon: CreditCard },
+  { href: '/dashboard/subscription', label: 'Abonnement', icon: Sparkles },
 ];
 
 export function DashboardShell({ salon, staff, user, children }: DashboardShellProps) {
