@@ -4,9 +4,9 @@ import { NextResponse } from 'next/server';
 // Public API: fetch salon + services by slug (no auth required)
 export async function GET(
   request: Request,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
-  const { slug } = params;
+  const { slug } = await params;
   const serviceClient = createServiceClient();
 
   // Fetch salon

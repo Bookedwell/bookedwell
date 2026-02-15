@@ -4,9 +4,9 @@ import { NextResponse } from 'next/server';
 // Public API: get available time slots for a salon on a specific date
 export async function GET(
   request: Request,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
-  const { slug } = params;
+  const { slug } = await params;
   const url = new URL(request.url);
   const dateStr = url.searchParams.get('date'); // YYYY-MM-DD
   const durationStr = url.searchParams.get('duration'); // total duration in minutes
