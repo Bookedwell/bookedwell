@@ -12,12 +12,12 @@ const SUBSCRIPTION_TIERS = {
   },
   growth: {
     name: 'Growth', 
-    price: 3995, // €39,95
+    price: 2995, // €29,95
     limit: 500,
   },
   unlimited: {
     name: 'Unlimited',
-    price: 5995, // €59,95
+    price: 4995, // €49,95
     limit: -1,
   },
 };

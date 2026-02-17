@@ -5,8 +5,8 @@ import { createMollieClient } from '@/lib/mollie/client';
 // Subscription tiers
 const SUBSCRIPTION_TIERS = {
   solo: { name: 'Solo', price: 1995, limit: 100 },
-  growth: { name: 'Growth', price: 3995, limit: 500 },
-  unlimited: { name: 'Unlimited', price: 5995, limit: -1 },
+  growth: { name: 'Growth', price: 2995, limit: 500 },
+  unlimited: { name: 'Unlimited', price: 4995, limit: -1 },
 };
 
 export async function POST(request: Request) {
