@@ -312,7 +312,16 @@ export async function POST(request: Request) {
 
         const checkoutUrl = (payment as any)._links?.checkout?.href || (payment as any).links?.checkout?.href;
         
-        console.log(`Mollie payment created for booking ${booking.id}: ${payment.id}`);
+        console.log(`Mollie payment created for booking ${booking.id}: ${payment.id}, checkoutUrl: ${checkoutUrl}`);
+        console.log('Full Mollie payment response:', JSON.stringify(payment, null, 2));
+
+        if (!checkoutUrl) {
+          console.error('No checkout URL in Mollie response!');
+          return NextResponse.json({ 
+            error: 'Mollie betaling aangemaakt maar geen checkout URL ontvangen. Neem contact op met support.',
+            booking_id: booking.id,
+          }, { status: 500 });
+        }
 
         return NextResponse.json({
           success: true,
