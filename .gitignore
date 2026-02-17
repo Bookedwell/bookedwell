@@ -41,3 +41,6 @@ next-env.d.ts
 # Secret files
 *.txt
 *.zip
+
+# Mollie SDK reference (using npm package instead)
+/mollie-sdk
