@@ -6,21 +6,28 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
-  const sessionId = url.searchParams.get('session_id');
+  const sessionId = url.searchParams.get('session_id'); // Stripe
+  const bookingIdParam = url.searchParams.get('booking_id'); // Mollie
 
-  if (!sessionId) {
-    return NextResponse.json({ error: 'Session ID required' }, { status: 400 });
+  if (!sessionId && !bookingIdParam) {
+    return NextResponse.json({ error: 'Session ID or Booking ID required' }, { status: 400 });
   }
 
   try {
-    // Get Stripe session
-    const session = await stripe.checkout.sessions.retrieve(sessionId);
-
-    if (!session.metadata?.booking_id) {
-      return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
-    }
-
     const supabase = createServiceClient();
+    let bookingId: string;
+
+    if (sessionId) {
+      // Stripe flow - get booking_id from Stripe session
+      const session = await stripe.checkout.sessions.retrieve(sessionId);
+      if (!session.metadata?.booking_id) {
+        return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
+      }
+      bookingId = session.metadata.booking_id;
+    } else {
+      // Mollie flow - booking_id is passed directly
+      bookingId = bookingIdParam!;
+    }
 
     // Get booking with service and salon details
     const { data: booking, error } = await supabase
@@ -31,10 +38,11 @@ export async function GET(request: Request) {
         end_time,
         customer_name,
         deposit_amount_cents,
+        payment_amount,
         service:services(name, price_cents, duration_minutes),
         salon:salons(name, address, city, primary_color)
       `)
-      .eq('id', session.metadata.booking_id)
+      .eq('id', bookingId)
       .single();
 
     if (error || !booking) {
@@ -58,8 +66,8 @@ export async function GET(request: Request) {
       start_time: booking.start_time,
       end_time: endTime,
       customer_name: booking.customer_name,
-      deposit_amount_cents: booking.deposit_amount_cents || session.amount_total || 0,
-      full_price_cents: (booking.service as any)?.price_cents || session.amount_total || 0,
+      deposit_amount_cents: booking.deposit_amount_cents || (booking as any).payment_amount || 0,
+      full_price_cents: (booking.service as any)?.price_cents || 0,
       accent_color: (booking.salon as any)?.primary_color || '#22c55e',
     });
   } catch (err: any) {

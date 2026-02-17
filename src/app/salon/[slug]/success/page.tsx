@@ -23,21 +23,26 @@ export default function BookingSuccessPage() {
   const params = useParams();
   const searchParams = useSearchParams();
   const slug = params.slug as string;
-  const sessionId = searchParams.get('session_id');
+  const sessionId = searchParams.get('session_id'); // Stripe
+  const bookingId = searchParams.get('booking_id'); // Mollie
 
   const [booking, setBooking] = useState<BookingDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!sessionId) {
+    if (!sessionId && !bookingId) {
       setError('Geen sessie gevonden');
       setLoading(false);
       return;
     }
 
-    // Fetch booking details from session
-    fetch(`/api/bookings/success?session_id=${sessionId}`)
+    // Fetch booking details - support both Stripe session_id and Mollie booking_id
+    const apiUrl = sessionId 
+      ? `/api/bookings/success?session_id=${sessionId}`
+      : `/api/bookings/success?booking_id=${bookingId}`;
+    
+    fetch(apiUrl)
       .then(res => res.json())
       .then(data => {
         if (data.error) {
@@ -51,7 +56,7 @@ export default function BookingSuccessPage() {
         setError('Kon boeking niet laden');
         setLoading(false);
       });
-  }, [sessionId]);
+  }, [sessionId, bookingId]);
 
   const accentColor = booking?.accent_color || '#22c55e';
 
