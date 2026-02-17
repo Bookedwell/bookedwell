@@ -10,7 +10,6 @@ interface SubscriptionData {
   tier: string;
   tier_name: string;
   monthly_price: number;
-  service_fee: number;
   limit: number;
   status: string;
   bookings_this_period: number;
@@ -26,30 +25,27 @@ const PLANS = [
     subtitle: 'De Starter',
     price: 1995,
     priceDisplay: '19,95',
-    serviceFee: '1,49',
     limit: 100,
-    features: ['Tot 100 boekingen/maand', 'Onbeperkt teamleden', 'WhatsApp inbegrepen', 'E-mail reminders'],
+    features: ['Tot 100 boekingen/maand', 'Onbeperkt teamleden', 'WhatsApp inbegrepen', 'E-mail reminders', '€0,15 per betaling'],
   },
   {
     id: 'growth',
     name: 'Growth',
     subtitle: 'De Medium Salon',
-    price: 4900,
-    priceDisplay: '49',
-    serviceFee: '1,29',
+    price: 3995,
+    priceDisplay: '39,95',
     limit: 500,
     highlight: true,
-    features: ['Tot 500 boekingen/maand', 'Onbeperkt teamleden', 'WhatsApp inbegrepen', 'E-mail reminders'],
+    features: ['Tot 500 boekingen/maand', 'Onbeperkt teamleden', 'WhatsApp inbegrepen', 'E-mail reminders', '€0,15 per betaling'],
   },
   {
     id: 'unlimited',
     name: 'Unlimited',
     subtitle: 'De Grote Salon',
-    price: 8900,
-    priceDisplay: '89',
-    serviceFee: '0,99',
+    price: 5995,
+    priceDisplay: '59,95',
     limit: -1,
-    features: ['Onbeperkt boekingen', 'Onbeperkt teamleden', 'WhatsApp inbegrepen', 'E-mail reminders'],
+    features: ['Onbeperkt boekingen', 'Onbeperkt teamleden', 'WhatsApp inbegrepen', 'E-mail reminders', '€0,15 per betaling'],
   },
 ];
 
@@ -226,7 +222,7 @@ export function SubscriptionCard({ accentColor }: SubscriptionCardProps) {
               )}
               {!isTrial && (
                 <p className="text-xs text-gray-text mt-0.5">
-                  €{currentPlan?.priceDisplay}/maand + 1,9% + €{currentPlan?.serviceFee} per boeking
+                  €{currentPlan?.priceDisplay}/maand + €0,15 per betaling
                 </p>
               )}
             </div>
@@ -304,7 +300,7 @@ export function SubscriptionCard({ accentColor }: SubscriptionCardProps) {
                     <span className="text-sm font-bold text-navy">€{plan.priceDisplay}<span className="text-xs font-normal text-gray-text">/mnd</span></span>
                   </div>
                   <p className="text-xs text-gray-text mb-1">
-                    {plan.limit === -1 ? 'Onbeperkt boekingen' : `Tot ${plan.limit} boekingen/maand`} • €{plan.serviceFee} service fee
+                    {plan.limit === -1 ? 'Onbeperkt boekingen' : `Tot ${plan.limit} boekingen/maand`} • €0,15 per betaling
                   </p>
 
                   {/* Bonus bookings for upgrade from 100 to 500 */}
@@ -385,7 +381,7 @@ export function SubscriptionCard({ accentColor }: SubscriptionCardProps) {
               <span className="text-xs text-gray-text">/mnd</span>
             </div>
             <p className="text-xs mt-1" style={{ color: accentColor }}>
-              1,9% + €{plan.serviceFee} per boeking
+              + €0,15 per betaling
             </p>
             <ul className="mt-3 space-y-1.5">
               {plan.features.map((f) => (
