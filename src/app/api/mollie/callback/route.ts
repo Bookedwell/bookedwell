@@ -12,13 +12,13 @@ export async function GET(request: Request) {
   if (error) {
     console.error('Mollie OAuth error:', error);
     return NextResponse.redirect(
-      `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/stripe?mollie_error=${encodeURIComponent(error)}`
+      `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/betalingen?mollie_error=${encodeURIComponent(error)}`
     );
   }
 
   if (!code || !state) {
     return NextResponse.redirect(
-      `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/stripe?mollie_error=missing_params`
+      `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/betalingen?mollie_error=missing_params`
     );
   }
 
@@ -34,7 +34,7 @@ export async function GET(request: Request) {
   if (salonError || !salon) {
     console.error('Invalid OAuth state:', state);
     return NextResponse.redirect(
-      `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/stripe?mollie_error=invalid_state`
+      `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/betalingen?mollie_error=invalid_state`
     );
   }
 
@@ -72,12 +72,12 @@ export async function GET(request: Request) {
 
     // Redirect to success
     return NextResponse.redirect(
-      `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/stripe?mollie_setup=complete`
+      `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/betalingen?mollie_setup=complete`
     );
   } catch (err: any) {
     console.error('Mollie OAuth callback error:', err.message);
     return NextResponse.redirect(
-      `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/stripe?mollie_error=${encodeURIComponent(err.message)}`
+      `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/betalingen?mollie_error=${encodeURIComponent(err.message)}`
     );
   }
 }

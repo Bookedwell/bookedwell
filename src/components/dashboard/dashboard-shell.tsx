@@ -57,7 +57,7 @@ const navItems: NavItem[] = [
   { href: '/dashboard/team', label: 'Team', icon: UsersRound },
   { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart3 },
   { href: '/dashboard/settings', label: 'Instellingen', icon: Settings },
-  { href: '/dashboard/stripe', label: 'Betalingen', icon: CreditCard },
+  { href: '/dashboard/betalingen', label: 'Betalingen', icon: CreditCard },
   { href: '/dashboard/subscription', label: 'Abonnement', icon: Sparkles },
 ];
 
