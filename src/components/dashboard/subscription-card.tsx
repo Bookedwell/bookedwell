@@ -63,7 +63,7 @@ export function SubscriptionCard({ accentColor }: SubscriptionCardProps) {
 
   const fetchSubscription = useCallback(async () => {
     try {
-      const res = await fetch('/api/subscriptions/checkout', { cache: 'no-store' });
+      const res = await fetch('/api/mollie/subscriptions', { cache: 'no-store' });
       if (res.ok) {
         const data = await res.json();
         setSubscription(data);
@@ -80,10 +80,7 @@ export function SubscriptionCard({ accentColor }: SubscriptionCardProps) {
     
     lastSyncRef.current = now;
     try {
-      const res = await fetch('/api/subscriptions/sync', { method: 'POST' });
-      if (res.ok) {
-        await fetchSubscription();
-      }
+      await fetchSubscription();
     } catch { /* silent */ }
   }, [fetchSubscription]);
 
@@ -126,10 +123,7 @@ export function SubscriptionCard({ accentColor }: SubscriptionCardProps) {
   const handleSync = async () => {
     setSyncing(true);
     try {
-      const res = await fetch('/api/subscriptions/sync', { method: 'POST' });
-      if (res.ok) {
-        await fetchSubscription();
-      }
+      await fetchSubscription();
     } catch { /* silent */ }
     setSyncing(false);
   };
@@ -137,7 +131,7 @@ export function SubscriptionCard({ accentColor }: SubscriptionCardProps) {
   const handleSubscribe = async (tier: string) => {
     setCheckoutLoading(tier);
     try {
-      const res = await fetch('/api/subscriptions/checkout', {
+      const res = await fetch('/api/mollie/subscriptions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tier }),
@@ -146,8 +140,6 @@ export function SubscriptionCard({ accentColor }: SubscriptionCardProps) {
       
       if (data.checkout_url) {
         window.location.href = data.checkout_url;
-      } else if (data.portal_url) {
-        window.location.href = data.portal_url;
       } else {
         alert('Er ging iets mis: ' + (data.error || 'Onbekende fout'));
       }
@@ -157,17 +149,21 @@ export function SubscriptionCard({ accentColor }: SubscriptionCardProps) {
     setCheckoutLoading(null);
   };
 
-  const handleManage = async () => {
-    setCheckoutLoading('manage');
+  const handleManage = () => {
+    // Open Mollie dashboard for subscription management
+    window.open('https://my.mollie.com/dashboard', '_blank');
+  };
+
+  const handleCancel = async () => {
+    if (!confirm('Weet je zeker dat je je abonnement wilt opzeggen?')) return;
+    setCheckoutLoading('cancel');
     try {
-      const res = await fetch('/api/subscriptions/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tier: subscription?.tier || 'booked_100' }),
-      });
-      const data = await res.json();
-      if (data.portal_url) {
-        window.location.href = data.portal_url;
+      const res = await fetch('/api/mollie/subscriptions', { method: 'DELETE' });
+      if (res.ok) {
+        await fetchSubscription();
+      } else {
+        const data = await res.json();
+        alert('Er ging iets mis: ' + (data.error || 'Onbekende fout'));
       }
     } catch { /* silent */ }
     setCheckoutLoading(null);
@@ -336,7 +332,7 @@ export function SubscriptionCard({ accentColor }: SubscriptionCardProps) {
             disabled={syncing}
             className="text-[10px] text-gray-text hover:text-navy underline"
           >
-            {syncing ? 'Synchroniseren met Stripe...' : 'Abonnement synchroniseren'}
+            {syncing ? 'Synchroniseren...' : 'Vernieuwen'}
           </button>
         </div>
       </div>
