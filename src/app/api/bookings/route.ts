@@ -275,31 +275,11 @@ export async function POST(request: Request) {
         });
       } catch (mollieErr: any) {
         console.error('Mollie payment error:', mollieErr);
-        // Fall through to confirm without payment if Mollie fails
-        await supabase
-          .from('bookings')
-          .update({ status: 'confirmed' })
-          .eq('id', booking.id);
-
-        try {
-          await sendBookingConfirmation({
-            customerName: customer_name,
-            customerPhone: customer_phone,
-            customerEmail: customer_email || null,
-            salonName: salon.name,
-            serviceName: service.name,
-            startTime: startDate.toISOString(),
-            priceCents: service.price_cents,
-          });
-        } catch (notifError) {
-          console.error('Notification error:', notifError);
-        }
-
-        return NextResponse.json({
-          success: true,
+        // Return error - don't silently confirm without payment
+        return NextResponse.json({ 
+          error: `Mollie betaling mislukt: ${mollieErr.message || 'Onbekende fout'}`,
           booking_id: booking.id,
-          requires_payment: false,
-        });
+        }, { status: 500 });
       }
     }
 
