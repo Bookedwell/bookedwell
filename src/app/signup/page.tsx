@@ -5,7 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Mail, Lock, User, ArrowRight, Check } from 'lucide-react';
+import { Mail, Lock, User, ArrowRight } from 'lucide-react';
 
 export default function SignupPage() {
   const supabase = createClient();
@@ -15,21 +15,20 @@ export default function SignupPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
 
   const handleEmailSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
-    const { error } = await supabase.auth.signUp({
+    // Sign up with auto-confirm (no email verification needed)
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: {
           full_name: name,
         },
-        emailRedirectTo: `${window.location.origin}/auth/callback?next=/dashboard/onboarding`,
       },
     });
 
@@ -43,47 +42,26 @@ export default function SignupPage() {
       return;
     }
 
-    setSuccess(true);
-    setLoading(false);
-  };
+    // If user is created and session exists, redirect to onboarding
+    if (data.session) {
+      window.location.href = '/dashboard/onboarding';
+      return;
+    }
 
-  if (success) {
-    return (
-      <div className="min-h-screen bg-bg-gray flex flex-col">
-        <div className="p-4 sm:p-6">
-          <Link href="/">
-            <Image
-              src="/logo.png"
-              alt="BookedWell"
-              width={160}
-              height={40}
-              className="h-8 w-auto"
-              priority
-            />
-          </Link>
-        </div>
-        <div className="flex-1 flex items-center justify-center px-4">
-          <div className="w-full max-w-sm text-center">
-            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Check className="w-8 h-8 text-primary" />
-            </div>
-            <h1 className="text-2xl font-bold text-navy">Check je inbox</h1>
-            <p className="text-gray-text mt-3">
-              We hebben een bevestigingslink gestuurd naar{' '}
-              <span className="font-medium text-navy">{email}</span>. Klik op de link
-              om je account te activeren.
-            </p>
-            <Link
-              href="/login"
-              className="inline-block mt-6 text-primary font-medium hover:underline"
-            >
-              Terug naar inloggen
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
+    // Fallback: try to sign in immediately after signup
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (signInError) {
+      setError('Account aangemaakt, maar kon niet automatisch inloggen. Probeer in te loggen.');
+      setLoading(false);
+      return;
+    }
+
+    window.location.href = '/dashboard/onboarding';
+  };
 
   return (
     <div className="min-h-screen bg-bg-gray flex flex-col">
