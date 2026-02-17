@@ -264,7 +264,10 @@ export async function POST(request: Request) {
           }, { status: 500 });
         }
         
-        // Create Mollie payment via REST API (more reliable with OAuth)
+        // Platform fee in cents (15 cent per booking)
+        const platformFeeCents = 15;
+        
+        // Create Mollie payment via REST API with application fee
         const paymentRes = await fetch('https://api.mollie.com/v2/payments', {
           method: 'POST',
           headers: {
@@ -286,8 +289,16 @@ export async function POST(request: Request) {
               booking_id: booking.id,
               salon_id: salon.id,
               type: 'booking_payment',
-              platform_fee: 15,
+              platform_fee: platformFeeCents,
             }),
+            // Application fee - goes to BookedWell platform account
+            applicationFee: {
+              amount: {
+                currency: 'EUR',
+                value: (platformFeeCents / 100).toFixed(2),
+              },
+              description: 'BookedWell platform fee',
+            },
           }),
         });
 
