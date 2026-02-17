@@ -11,6 +11,7 @@ ALTER TABLE salons ADD COLUMN IF NOT EXISTS mollie_customer_id TEXT;
 ALTER TABLE salons ADD COLUMN IF NOT EXISTS mollie_subscription_id TEXT;
 ALTER TABLE salons ADD COLUMN IF NOT EXISTS pending_subscription_tier TEXT;
 ALTER TABLE salons ADD COLUMN IF NOT EXISTS pending_mollie_payment_id TEXT;
+ALTER TABLE salons ADD COLUMN IF NOT EXISTS trial_ends_at TIMESTAMPTZ;
 
 -- Add index for OAuth state lookup
 CREATE INDEX IF NOT EXISTS idx_salons_mollie_oauth_state ON salons(mollie_oauth_state) WHERE mollie_oauth_state IS NOT NULL;

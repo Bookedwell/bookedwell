@@ -12,28 +12,27 @@ export default function SubscriptionPage() {
   const { primaryColor: accentColor } = useBranding();
   const [subscriptionSuccess, setSubscriptionSuccess] = useState<string | null>(null);
 
-  // Handle subscription success - sync and show popup
+  // Handle subscription success - verify payment before showing popup
   useEffect(() => {
     if (searchParams.get('subscription') === 'success') {
       // Remove query param from URL
       router.replace('/dashboard/subscription', { scroll: false });
       
-      // Sync subscription from Stripe and show success popup
-      fetch('/api/subscriptions/sync', { method: 'POST' })
+      // Check if subscription is actually active/paid
+      fetch('/api/mollie/subscriptions')
         .then(res => res.json())
         .then(data => {
-          if (data.tier) {
+          // Only show success if subscription is actually active or trialing
+          if (data.has_subscription && (data.status === 'active' || data.status === 'trialing')) {
             const tierNames: Record<string, string> = {
               'solo': 'Solo',
               'growth': 'Growth',
               'unlimited': 'Unlimited',
             };
             setSubscriptionSuccess(tierNames[data.tier] || data.tier);
-          } else {
-            setSubscriptionSuccess('je abonnement');
           }
         })
-        .catch(() => setSubscriptionSuccess('je abonnement'));
+        .catch(() => {});
     }
   }, [searchParams, router]);
 
@@ -48,7 +47,7 @@ export default function SubscriptionPage() {
             </div>
             <h2 className="text-xl font-bold text-navy mb-2">Welkom bij {subscriptionSuccess}!</h2>
             <p className="text-gray-text text-sm mb-6">
-              Je abonnement is succesvol geactiveerd. Je proefperiode van 14 dagen is gestart.
+              Je abonnement is succesvol geactiveerd. Je proefperiode van 7 dagen is gestart.
             </p>
             <button
               onClick={() => setSubscriptionSuccess(null)}

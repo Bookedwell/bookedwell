@@ -16,6 +16,8 @@ interface SubscriptionData {
   has_subscription: boolean;
   current_period_start: string | null;
   current_period_end: string | null;
+  trial_ends_at: string | null;
+  limit_reached: boolean;
 }
 
 const PLANS = [
@@ -134,17 +136,21 @@ export function SubscriptionCard({ accentColor }: SubscriptionCardProps) {
       const res = await fetch('/api/mollie/subscriptions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tier }),
+        body: JSON.stringify({ tier }), // Start free trial
       });
       const data = await res.json();
       
-      if (data.checkout_url) {
+      if (data.success && data.trial) {
+        // Free trial started - redirect to success
+        window.location.href = data.redirect_url || '/dashboard/subscription?subscription=success';
+      } else if (data.checkout_url) {
+        // Payment needed
         window.location.href = data.checkout_url;
       } else {
         alert('Er ging iets mis: ' + (data.error || 'Onbekende fout'));
       }
     } catch (err) {
-      alert('Er ging iets mis bij het aanmaken van de checkout.');
+      alert('Er ging iets mis bij het starten van je proefperiode.');
     }
     setCheckoutLoading(null);
   };
@@ -214,7 +220,7 @@ export function SubscriptionCard({ accentColor }: SubscriptionCardProps) {
             <div>
               <h3 className="text-lg font-bold text-navy">{currentPlan?.name}</h3>
               {isTrial && (
-                <p className="text-xs text-blue-600 mt-0.5">14 dagen gratis proefperiode actief</p>
+                <p className="text-xs text-blue-600 mt-0.5">7 dagen gratis proefperiode actief</p>
               )}
               {!isTrial && (
                 <p className="text-xs text-gray-text mt-0.5">
@@ -235,6 +241,15 @@ export function SubscriptionCard({ accentColor }: SubscriptionCardProps) {
               )}
             </button>
           </div>
+
+          {/* Limit reached warning */}
+          {subscription?.limit_reached && bookingsLimit !== -1 && (
+            <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-xs font-medium text-red-800">
+                ⚠️ Je hebt je boekingslimiet bereikt! Upgrade naar een hoger plan om door te kunnen gaan.
+              </p>
+            </div>
+          )}
 
           {/* Bookings usage */}
           <div>
@@ -347,7 +362,7 @@ export function SubscriptionCard({ accentColor }: SubscriptionCardProps) {
         <h2 className="font-semibold text-navy">Abonnement</h2>
       </div>
       <p className="text-xs text-gray-text mb-4">
-        Start 14 dagen gratis. Geen betaling nodig tijdens je proefperiode.
+        Start 7 dagen gratis. Geen betaling nodig tijdens je proefperiode.
       </p>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -396,7 +411,7 @@ export function SubscriptionCard({ accentColor }: SubscriptionCardProps) {
               {checkoutLoading === plan.id ? (
                 <Loader2 className="w-3 h-3 animate-spin mx-auto" />
               ) : (
-                '14 dagen gratis proberen'
+                '7 dagen gratis proberen'
               )}
             </button>
           </div>
@@ -405,7 +420,7 @@ export function SubscriptionCard({ accentColor }: SubscriptionCardProps) {
 
       <div className="flex items-center justify-center gap-2 mt-3">
         <p className="text-[10px] text-gray-text">
-          14 dagen gratis proefperiode. Geen betaling tijdens trial. Prijzen excl. BTW.
+          7 dagen gratis proefperiode. Geen betaling tijdens trial. Prijzen excl. BTW.
         </p>
         <button
           onClick={handleSync}

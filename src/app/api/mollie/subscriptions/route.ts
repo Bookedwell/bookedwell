@@ -49,7 +49,7 @@ export async function GET() {
   // Get salon subscription info
   const { data: salon } = await serviceClient
     .from('salons')
-    .select('subscription_tier, subscription_status, mollie_customer_id, mollie_subscription_id, current_period_start, current_period_end')
+    .select('subscription_tier, subscription_status, mollie_customer_id, mollie_subscription_id, current_period_start, current_period_end, trial_ends_at')
     .eq('id', salonId)
     .single();
 
@@ -63,22 +63,36 @@ export async function GET() {
 
   const tier = salon?.subscription_tier || 'solo';
   const tierInfo = SUBSCRIPTION_TIERS[tier as keyof typeof SUBSCRIPTION_TIERS] || SUBSCRIPTION_TIERS.solo;
+  const status = salon?.subscription_status || 'inactive';
+  
+  // Check if trial has expired
+  const isTrialing = status === 'trialing';
+  const trialExpired = isTrialing && salon?.trial_ends_at && new Date(salon.trial_ends_at) < new Date();
+  
+  // has_subscription is true if trialing (not expired) or has active paid subscription
+  const hasSubscription = (isTrialing && !trialExpired) || !!salon?.mollie_subscription_id || status === 'active';
+
+  // Check if booking limit reached
+  const bookingsUsed = bookingsCount || 0;
+  const limitReached = tierInfo.limit !== -1 && bookingsUsed >= tierInfo.limit;
 
   return NextResponse.json({
     tier,
     tier_name: tierInfo.name,
     monthly_price: tierInfo.price / 100,
     limit: tierInfo.limit,
-    status: salon?.subscription_status || 'inactive',
-    bookings_this_period: bookingsCount || 0,
-    has_subscription: !!salon?.mollie_subscription_id,
+    status: trialExpired ? 'trial_expired' : status,
+    bookings_this_period: bookingsUsed,
+    has_subscription: hasSubscription,
     current_period_start: salon?.current_period_start,
     current_period_end: salon?.current_period_end,
+    trial_ends_at: salon?.trial_ends_at,
     mollie_customer_id: salon?.mollie_customer_id,
+    limit_reached: limitReached,
   });
 }
 
-// Create subscription checkout
+// Create subscription or start free trial
 export async function POST(request: Request) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -88,7 +102,7 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json();
-  const { tier } = body;
+  const { tier, action } = body;
 
   if (!tier || !SUBSCRIPTION_TIERS[tier as keyof typeof SUBSCRIPTION_TIERS]) {
     return NextResponse.json({ error: 'Ongeldig abonnement' }, { status: 400 });
@@ -113,10 +127,36 @@ export async function POST(request: Request) {
   // Get salon info
   const { data: salon } = await serviceClient
     .from('salons')
-    .select('name, mollie_customer_id, mollie_access_token, mollie_refresh_token, mollie_token_expires_at')
+    .select('name, subscription_status, trial_ends_at, mollie_customer_id, mollie_access_token, mollie_refresh_token, mollie_token_expires_at')
     .eq('id', salonId)
     .single();
 
+  // Start free trial (no payment needed)
+  if (action !== 'pay') {
+    const now = new Date();
+    const trialEnd = new Date(now);
+    trialEnd.setDate(trialEnd.getDate() + 7); // 7 days free trial
+
+    await serviceClient
+      .from('salons')
+      .update({
+        subscription_tier: tier,
+        subscription_status: 'trialing',
+        trial_ends_at: trialEnd.toISOString(),
+        current_period_start: now.toISOString(),
+        current_period_end: trialEnd.toISOString(),
+      })
+      .eq('id', salonId);
+
+    return NextResponse.json({ 
+      success: true, 
+      trial: true,
+      trial_ends_at: trialEnd.toISOString(),
+      redirect_url: '/dashboard/subscription?subscription=success',
+    });
+  }
+
+  // Payment required - check Mollie connection
   if (!salon?.mollie_access_token) {
     return NextResponse.json({ error: 'Mollie niet gekoppeld. Koppel eerst je Mollie account.' }, { status: 400 });
   }
