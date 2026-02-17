@@ -131,15 +131,10 @@ export async function POST(request: Request) {
     .eq('id', salonId)
     .single();
 
-  // Check Mollie connection - required for subscription
-  if (!salon?.mollie_access_token) {
-    return NextResponse.json({ error: 'Mollie niet gekoppeld. Koppel eerst je Mollie account.' }, { status: 400 });
-  }
-
   // Check if this is an upgrade (user already has subscription)
-  const isUpgrade = salon.subscription_status === 'active' || salon.subscription_status === 'trialing';
+  const isUpgrade = salon?.subscription_status === 'active' || salon?.subscription_status === 'trialing';
 
-  // For upgrades: update tier immediately (they already have a mandate)
+  // For upgrades: update tier immediately (no new payment needed during trial)
   if (isUpgrade) {
     await serviceClient
       .from('salons')
@@ -157,32 +152,16 @@ export async function POST(request: Request) {
   }
 
   try {
-    // Check if token needs refresh
-    let accessToken = salon.mollie_access_token;
-    if (salon.mollie_token_expires_at && new Date(salon.mollie_token_expires_at) < new Date()) {
-      const tokens = await refreshMollieToken(salon.mollie_refresh_token);
-      accessToken = tokens.access_token;
-      
-      // Update tokens in database
-      await serviceClient
-        .from('salons')
-        .update({
-          mollie_access_token: tokens.access_token,
-          mollie_refresh_token: tokens.refresh_token,
-          mollie_token_expires_at: new Date(Date.now() + tokens.expires_in * 1000).toISOString(),
-        })
-        .eq('id', salonId);
-    }
-
-    // Use platform Mollie client for subscription management
+    // Use BookedWell's platform Mollie client for subscription payments
+    // This is separate from the salon's own Mollie connection (which is for booking payments)
     const mollieClient = createMollieClient();
 
     // Create or get Mollie customer
-    let customerId = salon.mollie_customer_id;
+    let customerId = salon?.mollie_customer_id;
     if (!customerId) {
       const customer = await mollieClient.customers.create({
         customerRequest: {
-          name: salon.name || 'Salon',
+          name: salon?.name || 'Salon',
           email: user.email,
           metadata: { salon_id: salonId },
         },

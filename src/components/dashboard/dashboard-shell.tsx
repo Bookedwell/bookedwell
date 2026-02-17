@@ -146,6 +146,7 @@ export function DashboardShell({ salon, staff, user, children }: DashboardShellP
                 />
               )}
             </Link>
+            <span className="ml-2 text-[10px] text-gray-400 font-mono">{salon.id.slice(0, 8)}</span>
             <button
               onClick={() => setSidebarOpen(false)}
               className="ml-auto p-1 lg:hidden"

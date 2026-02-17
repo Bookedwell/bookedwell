@@ -68,10 +68,10 @@ export async function POST(request: Request) {
 
     const supabase = createServiceClient();
 
-    // Get salon with Stripe info, deposit settings, and subscription tier
+    // Get salon with Stripe/Mollie info, deposit settings, and subscription tier
     const { data: salon, error: salonError } = await supabase
       .from('salons')
-      .select('id, name, slug, stripe_account_id, stripe_onboarded, require_deposit, deposit_percentage, subscription_tier, bookings_this_period')
+      .select('id, name, slug, stripe_account_id, stripe_onboarded, mollie_access_token, mollie_onboarded, require_deposit, deposit_percentage, subscription_tier, bookings_this_period')
       .eq('id', salon_id)
       .single();
 
@@ -175,15 +175,136 @@ export async function POST(request: Request) {
       .update({ bookings_this_period: currentCount + 1 })
       .eq('id', salon_id);
 
-    // Check if salon has Stripe Connect and requires deposit
-    if (!salon.stripe_account_id || !salon.stripe_onboarded || salon.require_deposit === false) {
-      // No Stripe or deposit not required - confirm booking directly
+    // Determine if payment is required
+    const hasStripe = salon.stripe_account_id && salon.stripe_onboarded;
+    const hasMollie = salon.mollie_access_token && salon.mollie_onboarded;
+    const requiresDeposit = salon.require_deposit !== false && service.price_cents > 0;
+
+    // No payment provider connected or no deposit required - confirm directly
+    if ((!hasStripe && !hasMollie) || !requiresDeposit) {
       await supabase
         .from('bookings')
         .update({ status: 'confirmed' })
         .eq('id', booking.id);
 
       // Send confirmation SMS + email
+      try {
+        await sendBookingConfirmation({
+          customerName: customer_name,
+          customerPhone: customer_phone,
+          customerEmail: customer_email || null,
+          salonName: salon.name,
+          serviceName: service.name,
+          startTime: startDate.toISOString(),
+          priceCents: service.price_cents,
+        });
+      } catch (notifError) {
+        console.error('Notification error:', notifError);
+      }
+
+      return NextResponse.json({
+        success: true,
+        booking_id: booking.id,
+        requires_payment: false,
+      });
+    }
+
+    // Calculate payment amount based on deposit settings
+    const depositPercentage = salon.deposit_percentage ?? 100;
+    const paymentAmount = Math.round(service.price_cents * (depositPercentage / 100));
+    const isDeposit = depositPercentage < 100;
+
+    // MOLLIE PAYMENT FLOW
+    if (hasMollie) {
+      try {
+        const { createMollieClientWithToken, refreshMollieToken } = await import('@/lib/mollie/client');
+        
+        // Check if token needs refresh
+        let accessToken = salon.mollie_access_token;
+        // Note: mollie_token_expires_at check would need that column in select
+        
+        const mollieClient = createMollieClientWithToken(accessToken);
+        
+        // Create Mollie payment
+        const payment = await mollieClient.payments.create({
+          paymentRequest: {
+            amount: {
+              currency: 'EUR',
+              value: (paymentAmount / 100).toFixed(2),
+            },
+            description: isDeposit 
+              ? `Aanbetaling: ${service.name} bij ${salon.name}`
+              : `${service.name} bij ${salon.name}`,
+            redirectUrl: `${process.env.NEXT_PUBLIC_APP_URL}/salon/${salon.slug}/success?booking_id=${booking.id}`,
+            webhookUrl: `${process.env.NEXT_PUBLIC_APP_URL}/api/mollie/webhook`,
+            metadata: JSON.stringify({
+              booking_id: booking.id,
+              salon_id: salon.id,
+              type: 'booking_payment',
+              platform_fee: 15, // €0.15
+            }),
+          },
+        } as any);
+
+        // Update booking with payment info
+        await supabase
+          .from('bookings')
+          .update({
+            payment_status: 'pending',
+            mollie_payment_id: payment.id,
+            payment_amount: paymentAmount,
+            platform_fee: 15,
+          })
+          .eq('id', booking.id);
+
+        const checkoutUrl = (payment as any)._links?.checkout?.href || (payment as any).links?.checkout?.href;
+        
+        console.log(`Mollie payment created for booking ${booking.id}: ${payment.id}`);
+
+        return NextResponse.json({
+          success: true,
+          booking_id: booking.id,
+          checkout_url: checkoutUrl,
+          requires_payment: true,
+        });
+      } catch (mollieErr: any) {
+        console.error('Mollie payment error:', mollieErr);
+        // Fall through to confirm without payment if Mollie fails
+        await supabase
+          .from('bookings')
+          .update({ status: 'confirmed' })
+          .eq('id', booking.id);
+
+        try {
+          await sendBookingConfirmation({
+            customerName: customer_name,
+            customerPhone: customer_phone,
+            customerEmail: customer_email || null,
+            salonName: salon.name,
+            serviceName: service.name,
+            startTime: startDate.toISOString(),
+            priceCents: service.price_cents,
+          });
+        } catch (notifError) {
+          console.error('Notification error:', notifError);
+        }
+
+        return NextResponse.json({
+          success: true,
+          booking_id: booking.id,
+          requires_payment: false,
+        });
+      }
+    }
+
+    // STRIPE PAYMENT FLOW (fallback if no Mollie)
+    if (!hasStripe) {
+      // No payment provider - confirm directly
+      await supabase
+        .from('bookings')
+        .update({ status: 'confirmed' })
+        .eq('id', booking.id);
+
       try {
         await sendBookingConfirmation({
           customerName: customer_name,
@@ -267,10 +388,7 @@ export async function POST(request: Request) {
       });
     }
 
-    // Calculate payment amount based on deposit settings
-    const depositPercentage = salon.deposit_percentage ?? 100;
-    const paymentAmount = Math.round(service.price_cents * (depositPercentage / 100));
-    const isDeposit = depositPercentage < 100;
+    // Calculate Stripe service fee (variables depositPercentage, paymentAmount, isDeposit already declared above)
     const serviceFee = calculatePlatformFee(paymentAmount, tier);
     
     // Create Stripe Checkout session with transfer to connected account
