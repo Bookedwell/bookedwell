@@ -83,6 +83,67 @@ export async function POST() {
   return NextResponse.json({ url: authUrl });
 }
 
+// Refresh Mollie profile info (for existing connections)
+export async function PATCH() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) {
+    return NextResponse.json({ error: 'Niet ingelogd' }, { status: 401 });
+  }
+
+  const serviceClient = createServiceClient();
+
+  // Get staff member's salon
+  const { data: staff } = await serviceClient
+    .from('staff')
+    .select('salon_id')
+    .eq('user_id', user.id)
+    .limit(1);
+
+  if (!staff?.[0]?.salon_id) {
+    return NextResponse.json({ error: 'Geen salon gevonden' }, { status: 404 });
+  }
+
+  const salonId = staff[0].salon_id;
+
+  // Get salon's Mollie credentials
+  const { data: salon } = await serviceClient
+    .from('salons')
+    .select('mollie_access_token')
+    .eq('id', salonId)
+    .single();
+
+  if (!salon?.mollie_access_token) {
+    return NextResponse.json({ error: 'Mollie niet gekoppeld' }, { status: 400 });
+  }
+
+  try {
+    // Fetch profile from Mollie
+    const mollieClient = createMollieClientWithToken(salon.mollie_access_token);
+    const profile = await mollieClient.profiles.getCurrent({});
+
+    // Update profile ID
+    await serviceClient
+      .from('salons')
+      .update({
+        mollie_profile_id: profile.id,
+        mollie_onboarded: true,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', salonId);
+
+    return NextResponse.json({ 
+      success: true, 
+      mollie_profile_id: profile.id,
+      mollie_onboarded: true,
+    });
+  } catch (err: any) {
+    console.error('Mollie profile refresh error:', err);
+    return NextResponse.json({ error: err.message || 'Kon profiel niet ophalen' }, { status: 500 });
+  }
+}
+
 // Disconnect Mollie
 export async function DELETE() {
   const supabase = await createClient();

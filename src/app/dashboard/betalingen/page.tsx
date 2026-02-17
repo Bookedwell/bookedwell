@@ -88,7 +88,22 @@ export default function BetalingenPage() {
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    await fetchMollieStatus();
+    try {
+      // First try to refresh profile from Mollie API
+      const patchRes = await fetch('/api/mollie/connect', { method: 'PATCH' });
+      if (patchRes.ok) {
+        const data = await patchRes.json();
+        setMollieStatus({
+          mollie_profile_id: data.mollie_profile_id,
+          mollie_onboarded: data.mollie_onboarded,
+        });
+      } else {
+        // Fallback to just fetching current status
+        await fetchMollieStatus();
+      }
+    } catch {
+      await fetchMollieStatus();
+    }
     setRefreshing(false);
   };
 
