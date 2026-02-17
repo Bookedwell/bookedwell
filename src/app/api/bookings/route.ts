@@ -71,7 +71,7 @@ export async function POST(request: Request) {
     // Get salon with Stripe/Mollie info, deposit settings, and subscription tier
     const { data: salon, error: salonError } = await supabase
       .from('salons')
-      .select('id, name, slug, stripe_account_id, stripe_onboarded, mollie_access_token, mollie_onboarded, require_deposit, deposit_percentage, subscription_tier, bookings_this_period')
+      .select('id, name, slug, stripe_account_id, stripe_onboarded, mollie_access_token, mollie_profile_id, mollie_onboarded, require_deposit, deposit_percentage, subscription_tier, bookings_this_period')
       .eq('id', salon_id)
       .single();
 
@@ -231,9 +231,10 @@ export async function POST(request: Request) {
         
         const mollieClient = createMollieClientWithToken(accessToken);
         
-        // Create Mollie payment
+        // Create Mollie payment with profileId (required for OAuth)
         const payment = await mollieClient.payments.create({
           paymentRequest: {
+            profileId: salon.mollie_profile_id || undefined,
             amount: {
               currency: 'EUR',
               value: (paymentAmount / 100).toFixed(2),
