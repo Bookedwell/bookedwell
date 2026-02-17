@@ -43,7 +43,10 @@ export async function updateSession(request: NextRequest) {
   // Redirect unauthenticated users from dashboard to login
   if (!user && pathname.startsWith('/dashboard')) {
     const url = request.nextUrl.clone();
+    // Preserve original destination for redirect after login
+    const redirectTo = encodeURIComponent(pathname + request.nextUrl.search);
     url.pathname = '/login';
+    url.search = `?redirectTo=${redirectTo}`;
     return NextResponse.redirect(url);
   }
 

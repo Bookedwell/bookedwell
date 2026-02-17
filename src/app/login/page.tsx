@@ -3,13 +3,14 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Mail, Lock, ArrowRight } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = createClient();
 
   const [email, setEmail] = useState('');
@@ -37,7 +38,9 @@ export default function LoginPage() {
       return;
     }
 
-    router.push('/dashboard');
+    // Redirect to original page or dashboard
+    const redirectTo = searchParams.get('redirectTo');
+    router.push(redirectTo ? decodeURIComponent(redirectTo) : '/dashboard');
     router.refresh();
   };
 
