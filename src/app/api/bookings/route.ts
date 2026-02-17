@@ -223,18 +223,32 @@ export async function POST(request: Request) {
     // MOLLIE PAYMENT FLOW
     if (hasMollie) {
       try {
-        const { createMollieClientWithToken, refreshMollieToken } = await import('@/lib/mollie/client');
+        const { createMollieClientWithToken } = await import('@/lib/mollie/client');
         
-        // Check if token needs refresh
         let accessToken = salon.mollie_access_token;
-        // Note: mollie_token_expires_at check would need that column in select
-        
         const mollieClient = createMollieClientWithToken(accessToken);
+        
+        // Auto-fetch profileId if missing
+        let profileId = salon.mollie_profile_id;
+        if (!profileId) {
+          try {
+            const profile = await mollieClient.profiles.getCurrent({});
+            profileId = profile.id;
+            // Save for future use
+            await supabase
+              .from('salons')
+              .update({ mollie_profile_id: profileId, mollie_onboarded: true })
+              .eq('id', salon_id);
+            console.log(`Auto-fetched Mollie profileId for salon ${salon.name}: ${profileId}`);
+          } catch (profileErr) {
+            console.error('Could not fetch Mollie profile:', profileErr);
+          }
+        }
         
         // Create Mollie payment with profileId (required for OAuth)
         const payment = await mollieClient.payments.create({
           paymentRequest: {
-            profileId: salon.mollie_profile_id || undefined,
+            profileId: profileId || undefined,
             amount: {
               currency: 'EUR',
               value: (paymentAmount / 100).toFixed(2),
