@@ -223,32 +223,47 @@ export async function POST(request: Request) {
     // MOLLIE PAYMENT FLOW
     if (hasMollie) {
       try {
-        const { createMollieClientWithToken } = await import('@/lib/mollie/client');
-        
         let accessToken = salon.mollie_access_token;
-        const mollieClient = createMollieClientWithToken(accessToken);
         
-        // Auto-fetch profileId if missing
+        // Auto-fetch profileId if missing (via direct REST API)
         let profileId = salon.mollie_profile_id;
         if (!profileId) {
           try {
-            const profile = await mollieClient.profiles.getCurrent({});
-            profileId = profile.id;
-            // Save for future use
-            await supabase
-              .from('salons')
-              .update({ mollie_profile_id: profileId, mollie_onboarded: true })
-              .eq('id', salon_id);
-            console.log(`Auto-fetched Mollie profileId for salon ${salon.name}: ${profileId}`);
+            const profileRes = await fetch('https://api.mollie.com/v2/profiles/me', {
+              headers: { 'Authorization': `Bearer ${accessToken}` },
+            });
+            if (profileRes.ok) {
+              const profileData = await profileRes.json();
+              profileId = profileData.id;
+              await supabase
+                .from('salons')
+                .update({ mollie_profile_id: profileId, mollie_onboarded: true })
+                .eq('id', salon_id);
+              console.log(`Auto-fetched Mollie profileId: ${profileId}`);
+            } else {
+              console.error('Profile fetch failed:', await profileRes.text());
+            }
           } catch (profileErr) {
             console.error('Could not fetch Mollie profile:', profileErr);
           }
         }
+
+        if (!profileId) {
+          return NextResponse.json({ 
+            error: 'Mollie profiel niet gevonden. Koppel Mollie opnieuw via Betalingen.',
+            booking_id: booking.id,
+          }, { status: 500 });
+        }
         
-        // Create Mollie payment with profileId (required for OAuth)
-        const payment = await mollieClient.payments.create({
-          paymentRequest: {
-            profileId: profileId || undefined,
+        // Create Mollie payment via REST API (more reliable with OAuth)
+        const paymentRes = await fetch('https://api.mollie.com/v2/payments', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            profileId: profileId,
             amount: {
               currency: 'EUR',
               value: (paymentAmount / 100).toFixed(2),
@@ -262,10 +277,18 @@ export async function POST(request: Request) {
               booking_id: booking.id,
               salon_id: salon.id,
               type: 'booking_payment',
-              platform_fee: 15, // €0.15
+              platform_fee: 15,
             }),
-          },
-        } as any);
+          }),
+        });
+
+        if (!paymentRes.ok) {
+          const errBody = await paymentRes.text();
+          console.error('Mollie payment creation failed:', errBody);
+          throw new Error(errBody);
+        }
+
+        const payment = await paymentRes.json();
 
         // Update booking with payment info
         await supabase
