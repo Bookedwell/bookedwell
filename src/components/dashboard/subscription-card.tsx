@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { CreditCard, Check, ArrowRight, Loader2, ExternalLink, Gift, Zap } from 'lucide-react';
+import { CreditCard, Check, ArrowRight, Loader2, ExternalLink, Gift, Zap, X, AlertCircle } from 'lucide-react';
 
 // Smart sync interval: 5 minutes
 const SYNC_INTERVAL_MS = 5 * 60 * 1000;
@@ -60,6 +60,7 @@ export function SubscriptionCard({ accentColor }: SubscriptionCardProps) {
   const [loading, setLoading] = useState(true);
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const lastSyncRef = useRef<number>(0);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -147,10 +148,10 @@ export function SubscriptionCard({ accentColor }: SubscriptionCardProps) {
         // Payment needed
         window.location.href = data.checkout_url;
       } else {
-        alert('Er ging iets mis: ' + (data.error || 'Onbekende fout'));
+        setError(data.error || 'Er ging iets mis');
       }
     } catch (err) {
-      alert('Er ging iets mis bij het starten van je proefperiode.');
+      setError('Er ging iets mis bij het starten van je proefperiode.');
     }
     setCheckoutLoading(null);
   };
@@ -169,7 +170,7 @@ export function SubscriptionCard({ accentColor }: SubscriptionCardProps) {
         await fetchSubscription();
       } else {
         const data = await res.json();
-        alert('Er ging iets mis: ' + (data.error || 'Onbekende fout'));
+        setError(data.error || 'Er ging iets mis');
       }
     } catch { /* silent */ }
     setCheckoutLoading(null);
@@ -199,10 +200,34 @@ export function SubscriptionCard({ accentColor }: SubscriptionCardProps) {
   const usagePercent = bookingsLimit === -1 ? 0 : Math.min(100, (bookingsUsed / bookingsLimit) * 100);
   const upgradePlans = PLANS.filter(p => p.price > (currentPlan?.price || 0));
 
+  // Error toast component
+  const ErrorToast = () => error ? (
+    <div className="fixed top-4 right-4 z-50 max-w-sm animate-in slide-in-from-top-2 fade-in duration-300">
+      <div className="bg-white rounded-xl shadow-lg border border-red-200 p-4">
+        <div className="flex items-start gap-3">
+          <div className="flex-shrink-0 w-8 h-8 rounded-full bg-red-100 flex items-center justify-center">
+            <AlertCircle className="w-4 h-4 text-red-600" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-navy">Er ging iets mis</p>
+            <p className="text-xs text-gray-text mt-0.5">{error}</p>
+          </div>
+          <button
+            onClick={() => setError(null)}
+            className="flex-shrink-0 p-1 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <X className="w-4 h-4 text-gray-400" />
+          </button>
+        </div>
+      </div>
+    </div>
+  ) : null;
+
   // Active subscription view
   if (isActive) {
     return (
       <div className="bg-white rounded-xl border border-light-gray p-5">
+        <ErrorToast />
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-2">
@@ -360,6 +385,7 @@ export function SubscriptionCard({ accentColor }: SubscriptionCardProps) {
   // No subscription - show plan picker with 3 horizontal cards
   return (
     <div className="bg-white rounded-xl border border-light-gray p-5">
+      <ErrorToast />
       <div className="flex items-center gap-2 mb-2">
         <CreditCard className="w-5 h-5" style={{ color: accentColor }} />
         <h2 className="font-semibold text-navy">Kies je abonnement</h2>
