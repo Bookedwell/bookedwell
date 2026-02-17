@@ -180,7 +180,11 @@ export async function POST(request: Request) {
     const hasMollie = !!salon.mollie_access_token; // Only check for token - if they have it, they're connected
     const requiresDeposit = salon.require_deposit !== false && service.price_cents > 0;
     
-    console.log(`Payment check - hasStripe: ${hasStripe}, hasMollie: ${hasMollie}, requiresDeposit: ${requiresDeposit}, price: ${service.price_cents}`);
+    console.log(`Payment check for salon ${salon.name}:`);
+    console.log(`  - hasStripe: ${hasStripe} (stripe_account_id: ${salon.stripe_account_id}, stripe_onboarded: ${salon.stripe_onboarded})`);
+    console.log(`  - hasMollie: ${hasMollie} (mollie_access_token: ${salon.mollie_access_token ? 'SET' : 'NULL'})`);
+    console.log(`  - requiresDeposit: ${requiresDeposit} (require_deposit: ${salon.require_deposit}, price_cents: ${service.price_cents})`);
+    console.log(`  - Will skip payment: ${(!hasStripe && !hasMollie) || !requiresDeposit}`);
 
     // No payment provider connected or no deposit required - confirm directly
     if ((!hasStripe && !hasMollie) || !requiresDeposit) {
