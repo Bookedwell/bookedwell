@@ -124,7 +124,7 @@ export default function LandingPage() {
               Simpele, eerlijke prijzen
             </h2>
             <p className="mt-3 text-gray-text">
-              14 dagen gratis proberen. Geen betaling nodig. Prijzen excl. BTW.
+              7 dagen gratis proberen. Prijzen excl. BTW.
             </p>
           </div>
 
@@ -133,7 +133,7 @@ export default function LandingPage() {
               {
                 name: 'Solo',
                 price: '19,95',
-                serviceFee: '1,9% + €1,49 per boeking',
+                serviceFee: '+ €0,15 per betaling',
                 desc: 'De Starter',
                 features: [
                   'Tot 100 boekingen per maand',
@@ -141,13 +141,13 @@ export default function LandingPage() {
                   'E-mail reminders inbegrepen',
                   'WhatsApp inbegrepen',
                 ],
-                cta: '14 dagen gratis proberen',
+                cta: '7 dagen gratis proberen',
                 highlight: false,
               },
               {
                 name: 'Growth',
-                price: '49',
-                serviceFee: '1,9% + €1,29 per boeking',
+                price: '29,95',
+                serviceFee: '+ €0,15 per betaling',
                 desc: 'De Medium Salon',
                 features: [
                   'Tot 500 boekingen per maand',
@@ -155,13 +155,13 @@ export default function LandingPage() {
                   'E-mail reminders inbegrepen',
                   'WhatsApp inbegrepen',
                 ],
-                cta: '14 dagen gratis proberen',
+                cta: '7 dagen gratis proberen',
                 highlight: true,
               },
               {
                 name: 'Unlimited',
-                price: '89',
-                serviceFee: '1,9% + €0,99 per boeking',
+                price: '49,95',
+                serviceFee: '+ €0,15 per betaling',
                 desc: 'De Grote Salon',
                 features: [
                   'Onbeperkt boekingen',
@@ -169,7 +169,7 @@ export default function LandingPage() {
                   'E-mail reminders inbegrepen',
                   'WhatsApp inbegrepen',
                 ],
-                cta: '14 dagen gratis proberen',
+                cta: '7 dagen gratis proberen',
                 highlight: false,
               },
             ].map((plan) => (
@@ -218,7 +218,7 @@ export default function LandingPage() {
           </div>
 
           <p className="text-center text-xs text-gray-text mt-8">
-            14 dagen gratis proefperiode bij elk pakket. Prijzen excl. BTW.
+            7 dagen gratis proefperiode bij elk pakket. Prijzen excl. BTW.
           </p>
         </div>
       </section>
