@@ -225,26 +225,35 @@ export async function POST(request: Request) {
       try {
         let accessToken = salon.mollie_access_token;
         
-        // Auto-fetch profileId if missing (via direct REST API)
+        // Auto-fetch profileId if missing (via /v2/profiles list - /me doesn't work with OAuth)
         let profileId = salon.mollie_profile_id;
         if (!profileId) {
           try {
-            const profileRes = await fetch('https://api.mollie.com/v2/profiles/me', {
+            const profileRes = await fetch('https://api.mollie.com/v2/profiles', {
               headers: { 'Authorization': `Bearer ${accessToken}` },
             });
             if (profileRes.ok) {
               const profileData = await profileRes.json();
-              profileId = profileData.id;
-              await supabase
-                .from('salons')
-                .update({ mollie_profile_id: profileId, mollie_onboarded: true })
-                .eq('id', salon_id);
-              console.log(`Auto-fetched Mollie profileId: ${profileId}`);
+              // Find first verified profile
+              const profiles = profileData._embedded?.profiles || [];
+              const verifiedProfile = profiles.find((p: any) => p.status === 'verified');
+              if (verifiedProfile) {
+                profileId = verifiedProfile.id;
+                await supabase
+                  .from('salons')
+                  .update({ mollie_profile_id: profileId, mollie_onboarded: true })
+                  .eq('id', salon_id);
+                console.log(`Auto-fetched Mollie profileId (verified): ${profileId}`);
+              } else if (profiles.length > 0) {
+                // Fallback to first profile if none verified
+                profileId = profiles[0].id;
+                console.log(`Using first available Mollie profile: ${profileId} (status: ${profiles[0].status})`);
+              }
             } else {
-              console.error('Profile fetch failed:', await profileRes.text());
+              console.error('Profile list fetch failed:', await profileRes.text());
             }
           } catch (profileErr) {
-            console.error('Could not fetch Mollie profile:', profileErr);
+            console.error('Could not fetch Mollie profiles:', profileErr);
           }
         }
 

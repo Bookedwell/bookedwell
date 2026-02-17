@@ -30,7 +30,15 @@ export async function GET() {
     .single();
 
   if (!salon?.mollie_access_token) {
-    return NextResponse.json({ error: 'Geen Mollie token' }, { status: 400 });
+    return NextResponse.json({ 
+      error: 'Geen Mollie token',
+      debug: {
+        user_email: user.email,
+        salon_id: staff[0].salon_id,
+        salon_name: salon?.name || 'unknown',
+        has_token: !!salon?.mollie_access_token,
+      }
+    }, { status: 400 });
   }
 
   const token = salon.mollie_access_token;
