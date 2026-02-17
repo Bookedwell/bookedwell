@@ -1,0 +1,41 @@
+speakeasyVersion: 1.709.3
+sources:
+    Mollie API:
+        sourceNamespace: mollie-api
+        sourceRevisionDigest: sha256:9abda5245286b5894a64a59b619f0a4790de2743e2fcc86f44fc6d543f74aaba
+        sourceBlobDigest: sha256:65e77bde1555389fc5aa5954a47ea175e37bc33006627839b51b565e68892eeb
+        tags:
+            - latest
+            - speakeasy-sdk-regen-1770718903
+            - 1.0.0
+targets:
+    client:
+        source: Mollie API
+        sourceNamespace: mollie-api
+        sourceRevisionDigest: sha256:9abda5245286b5894a64a59b619f0a4790de2743e2fcc86f44fc6d543f74aaba
+        sourceBlobDigest: sha256:65e77bde1555389fc5aa5954a47ea175e37bc33006627839b51b565e68892eeb
+        codeSamplesNamespace: mollie-api-typescript-code-samples
+        codeSamplesRevisionDigest: sha256:e26add53e08ee1accfcd8cfbd9ae0ce1320f709945e1caa27f12903d29c5c669
+workflow:
+    workflowVersion: 1.0.0
+    speakeasyVersion: latest
+    sources:
+        Mollie API:
+            inputs:
+                - location: https://raw.githubusercontent.com/mollie/openapi-specs/main/specs.yaml
+            output: .speakeasy/out.openapi.yaml
+            registry:
+                location: registry.speakeasyapi.dev/mollie-oom/mollie/mollie-api
+    targets:
+        client:
+            target: typescript
+            source: Mollie API
+            publish:
+                npm:
+                    token: $npm_token
+            codeSamples:
+                registry:
+                    location: registry.speakeasyapi.dev/mollie-oom/mollie/mollie-api-typescript-code-samples
+                labelOverride:
+                    fixedValue: Typescript (SDK)
+                blocking: false

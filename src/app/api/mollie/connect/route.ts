@@ -1,0 +1,124 @@
+import { NextResponse } from 'next/server';
+import { createClient } from '@/lib/supabase/server';
+import { createServiceClient } from '@/lib/supabase/server';
+import { getMollieAuthUrl, createMollieClientWithToken } from '@/lib/mollie/client';
+import crypto from 'crypto';
+
+// Get current Mollie connection status
+export async function GET() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) {
+    return NextResponse.json({ error: 'Niet ingelogd' }, { status: 401 });
+  }
+
+  const serviceClient = createServiceClient();
+
+  // Get staff member's salon
+  const { data: staff } = await serviceClient
+    .from('staff')
+    .select('salon_id')
+    .eq('user_id', user.id)
+    .limit(1);
+
+  if (!staff?.[0]?.salon_id) {
+    return NextResponse.json({ error: 'Geen salon gevonden' }, { status: 404 });
+  }
+
+  const salonId = staff[0].salon_id;
+
+  // Get salon's Mollie status
+  const { data: salon } = await serviceClient
+    .from('salons')
+    .select('mollie_profile_id, mollie_onboarded')
+    .eq('id', salonId)
+    .single();
+
+  return NextResponse.json({
+    mollie_profile_id: salon?.mollie_profile_id || null,
+    mollie_onboarded: salon?.mollie_onboarded || false,
+  });
+}
+
+// Start Mollie OAuth flow
+export async function POST() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) {
+    return NextResponse.json({ error: 'Niet ingelogd' }, { status: 401 });
+  }
+
+  const serviceClient = createServiceClient();
+
+  // Get staff member's salon
+  const { data: staff } = await serviceClient
+    .from('staff')
+    .select('salon_id')
+    .eq('user_id', user.id)
+    .limit(1);
+
+  if (!staff?.[0]?.salon_id) {
+    return NextResponse.json({ error: 'Geen salon gevonden' }, { status: 404 });
+  }
+
+  const salonId = staff[0].salon_id;
+
+  // Generate state token for OAuth security
+  const state = crypto.randomBytes(32).toString('hex');
+
+  // Store state in database for verification
+  await serviceClient
+    .from('salons')
+    .update({
+      mollie_oauth_state: state,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', salonId);
+
+  // Generate OAuth URL
+  const authUrl = getMollieAuthUrl(state);
+
+  return NextResponse.json({ url: authUrl });
+}
+
+// Disconnect Mollie
+export async function DELETE() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) {
+    return NextResponse.json({ error: 'Niet ingelogd' }, { status: 401 });
+  }
+
+  const serviceClient = createServiceClient();
+
+  // Get staff member's salon
+  const { data: staff } = await serviceClient
+    .from('staff')
+    .select('salon_id')
+    .eq('user_id', user.id)
+    .limit(1);
+
+  if (!staff?.[0]?.salon_id) {
+    return NextResponse.json({ error: 'Geen salon gevonden' }, { status: 404 });
+  }
+
+  const salonId = staff[0].salon_id;
+
+  // Clear Mollie credentials
+  await serviceClient
+    .from('salons')
+    .update({
+      mollie_profile_id: null,
+      mollie_access_token: null,
+      mollie_refresh_token: null,
+      mollie_token_expires_at: null,
+      mollie_onboarded: false,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', salonId);
+
+  return NextResponse.json({ success: true });
+}
