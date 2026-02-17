@@ -235,7 +235,7 @@ export default function BetalingenPage() {
                 {/* Left side - description and button */}
                 <div className="flex-shrink-0">
                   <p className="text-sm text-gray-text mb-4">
-                    Beheer uw Mollie-integratie en betawingsinstellings.
+                    Beheer je Mollie-integratie en betalingsinstellingen.
                   </p>
                   <a
                     href="https://my.mollie.com/dashboard"
@@ -249,11 +249,11 @@ export default function BetalingenPage() {
                 </div>
 
                 {/* Right side - Profile selector */}
-                {mollieStatus?.profiles && mollieStatus.profiles.length > 0 && (
-                  <div className="flex-1">
-                    <label className="block text-sm font-medium text-navy mb-2">
-                      Selecteer Mollie profiel voor betalingen:
-                    </label>
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-navy mb-2">
+                    Selecteer Mollie profiel voor betalingen:
+                  </label>
+                  {mollieStatus?.profiles && mollieStatus.profiles.length > 0 ? (
                     <select
                       value={mollieStatus?.mollie_profile_id || ''}
                       onChange={(e) => handleSelectProfile(e.target.value)}
@@ -268,9 +268,11 @@ export default function BetalingenPage() {
                         </option>
                       ))}
                     </select>
-                    {savingProfile && <p className="text-xs text-gray-text mt-1">Opslaan...</p>}
-                  </div>
-                )}
+                  ) : (
+                    <p className="text-sm text-gray-text py-2">Profielen laden...</p>
+                  )}
+                  {savingProfile && <p className="text-xs text-gray-text mt-1">Opslaan...</p>}
+                </div>
               </div>
 
               <div className="flex items-center gap-3 mt-5 pt-5 border-t border-light-gray">
@@ -320,7 +322,7 @@ export default function BetalingenPage() {
         </div>
         <p className="text-xs text-gray-text mt-4">
           De platform fee van €0,15 wordt automatisch ingehouden bij elke boeking met online betaling. 
-          Mollie transactiekosten worden direct door Mollie verrekend.
+          Deze fee dekt de kosten voor WhatsApp- en SMS-herinneringen. Mollie transactiekosten worden direct door Mollie verrekend.
         </p>
       </div>
 
