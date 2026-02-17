@@ -228,18 +228,21 @@ export function SubscriptionCard({ accentColor }: SubscriptionCardProps) {
                 </p>
               )}
             </div>
-            <button
-              onClick={handleManage}
-              className="text-xs px-3 py-1.5 border rounded-lg transition-colors font-medium flex items-center gap-1 hover:bg-white"
-              style={{ borderColor: accentColor, color: accentColor }}
-              disabled={checkoutLoading === 'manage'}
-            >
-              {checkoutLoading === 'manage' ? (
-                <Loader2 className="w-3 h-3 animate-spin" />
-              ) : (
-                <>Beheren <ExternalLink className="w-3 h-3" /></>
-              )}
-            </button>
+            {/* Only show Beheren for paid subscriptions, not trials */}
+            {!isTrial && (
+              <button
+                onClick={handleManage}
+                className="text-xs px-3 py-1.5 border rounded-lg transition-colors font-medium flex items-center gap-1 hover:bg-white"
+                style={{ borderColor: accentColor, color: accentColor }}
+                disabled={checkoutLoading === 'manage'}
+              >
+                {checkoutLoading === 'manage' ? (
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                ) : (
+                  <>Beheren <ExternalLink className="w-3 h-3" /></>
+                )}
+              </button>
+            )}
           </div>
 
           {/* Limit reached warning */}
@@ -411,7 +414,7 @@ export function SubscriptionCard({ accentColor }: SubscriptionCardProps) {
               {checkoutLoading === plan.id ? (
                 <Loader2 className="w-3 h-3 animate-spin mx-auto" />
               ) : (
-                '7 dagen gratis proberen'
+                'Start 7 dagen gratis'
               )}
             </button>
           </div>
@@ -420,7 +423,7 @@ export function SubscriptionCard({ accentColor }: SubscriptionCardProps) {
 
       <div className="flex items-center justify-center gap-2 mt-3">
         <p className="text-[10px] text-gray-text">
-          7 dagen gratis proefperiode. Geen betaling tijdens trial. Prijzen excl. BTW.
+          €0,01 activatie voor 7 dagen gratis trial. Eerste betaling na proefperiode. Prijzen excl. BTW.
         </p>
         <button
           onClick={handleSync}

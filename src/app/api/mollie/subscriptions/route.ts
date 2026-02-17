@@ -131,32 +131,7 @@ export async function POST(request: Request) {
     .eq('id', salonId)
     .single();
 
-  // Start free trial (no payment needed)
-  if (action !== 'pay') {
-    const now = new Date();
-    const trialEnd = new Date(now);
-    trialEnd.setDate(trialEnd.getDate() + 7); // 7 days free trial
-
-    await serviceClient
-      .from('salons')
-      .update({
-        subscription_tier: tier,
-        subscription_status: 'trialing',
-        trial_ends_at: trialEnd.toISOString(),
-        current_period_start: now.toISOString(),
-        current_period_end: trialEnd.toISOString(),
-      })
-      .eq('id', salonId);
-
-    return NextResponse.json({ 
-      success: true, 
-      trial: true,
-      trial_ends_at: trialEnd.toISOString(),
-      redirect_url: '/dashboard/subscription?subscription=success',
-    });
-  }
-
-  // Payment required - check Mollie connection
+  // Check Mollie connection - required for subscription
   if (!salon?.mollie_access_token) {
     return NextResponse.json({ error: 'Mollie niet gekoppeld. Koppel eerst je Mollie account.' }, { status: 400 });
   }
@@ -201,14 +176,15 @@ export async function POST(request: Request) {
         .eq('id', salonId);
     }
 
-    // Create first payment to set up mandate (for SEPA Direct Debit)
+    // Create €0.01 first payment to set up SEPA mandate
+    // After this payment, subscription will be created with 7-day trial
     const payment = await mollieClient.payments.create({
       paymentRequest: {
         amount: {
           currency: 'EUR',
-          value: (tierInfo.price / 100).toFixed(2),
+          value: '0.01', // Minimum amount for mandate creation
         },
-        description: `BookedWell ${tierInfo.name} abonnement`,
+        description: `BookedWell activatie - 7 dagen gratis trial`,
         redirectUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/subscription?subscription=success`,
         webhookUrl: `${process.env.NEXT_PUBLIC_APP_URL}/api/mollie/webhook`,
         sequenceType: 'first',
@@ -217,6 +193,7 @@ export async function POST(request: Request) {
           salon_id: salonId,
           tier: tier,
           type: 'subscription_setup',
+          trial_days: 7,
         }),
       },
     });
