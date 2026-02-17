@@ -149,24 +149,28 @@ export default function BetalingenPage() {
       </div>
 
       {/* Mollie Connect card */}
-      <div className="bg-white rounded-xl border border-light-gray overflow-hidden">
-        <div className="p-5 border-b border-light-gray bg-gradient-to-r from-[#0a0a0a]/5 to-transparent">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-black rounded-xl flex items-center justify-center">
-              <span className="text-white font-bold text-sm">mollie</span>
+      <div className="bg-white rounded-xl border border-light-gray overflow-hidden shadow-sm">
+        <div className="p-5">
+          <div className="flex items-center gap-4">
+            {/* Mollie Logo */}
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: '#0a9e6f' }}>
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                <path d="M12 4C7.58 4 4 7.58 4 12s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6z" fill="white"/>
+                <circle cx="12" cy="12" r="3" fill="white"/>
+              </svg>
             </div>
-            <div>
-              <h2 className="font-semibold text-navy">Mollie</h2>
-              <p className="text-xs text-gray-text">iDEAL & online betalingen</p>
+            <div className="flex-1">
+              <h2 className="text-lg font-semibold text-navy">Mollie</h2>
+              <p className="text-sm text-gray-text">iDEAL & online betalingen</p>
             </div>
-            {mollieStatus?.mollie_onboarded ? (
-              <span className="ml-auto text-xs bg-green-50 text-green-700 px-3 py-1 rounded-full font-medium flex items-center gap-1">
-                <CheckCircle className="w-3 h-3" />
+            {mollieStatus?.mollie_onboarded && (
+              <span className="text-sm px-4 py-1.5 rounded-full font-medium text-white" style={{ backgroundColor: '#0a9e6f' }}>
                 Actief
               </span>
-            ) : null}
+            )}
           </div>
         </div>
+        <div className="border-t border-light-gray" />
         <div className="p-5">
           {mollieSetupComplete && mollieStatus?.mollie_onboarded && (
             <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4 flex items-center gap-3">
@@ -230,55 +234,53 @@ export default function BetalingenPage() {
             </>
           ) : (
             <>
-              <p className="text-sm text-gray-text mb-4">
-                Je Mollie account is gekoppeld. Online betalingen zijn nu beschikbaar voor je klanten.
+              <p className="text-sm text-gray-text mb-5">
+                Beheer uw Mollie-integratie en betawingsinstellings.
               </p>
 
-              <div className="flex flex-wrap gap-3 mb-4">
-                <a
-                  href="https://my.mollie.com/dashboard"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-sm px-4 py-2 border border-light-gray rounded-lg text-navy hover:bg-bg-gray transition-colors font-medium"
-                >
-                  <ExternalLink className="w-4 h-4" />
-                  Mollie Dashboard
-                </a>
-              </div>
+              <a
+                href="https://my.mollie.com/dashboard"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 text-sm px-5 py-2.5 rounded-lg text-white font-medium hover:opacity-90 transition-colors mb-6"
+                style={{ backgroundColor: '#0a9e6f' }}
+              >
+                Open dashboard
+              </a>
 
               {/* Profile selector */}
               {mollieStatus?.profiles && mollieStatus.profiles.length > 0 && (
-                <div className="p-4 bg-bg-gray rounded-lg mb-4">
-                  <label className="block text-xs font-medium text-navy mb-2">
-                    Selecteer Mollie profiel voor betalingen:
+                <div className="border-t border-light-gray pt-5 mt-2">
+                  <label className="block text-sm font-semibold text-navy mb-3">
+                    Mollie profiel voor betalingen
                   </label>
                   <select
                     value={mollieStatus?.mollie_profile_id || ''}
                     onChange={(e) => handleSelectProfile(e.target.value)}
                     disabled={savingProfile}
-                    className="w-full px-3 py-2 border border-light-gray rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-opacity-50 disabled:opacity-50"
-                    style={{ focusRing: accentColor } as any}
+                    className="w-full px-4 py-3 border border-light-gray rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-opacity-50 disabled:opacity-50 appearance-none cursor-pointer"
+                    style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center', backgroundSize: '20px' }}
                   >
                     <option value="">-- Selecteer profiel --</option>
                     {mollieStatus.profiles.map((profile) => (
                       <option key={profile.id} value={profile.id}>
-                        {profile.name} ({profile.status === 'verified' ? '✓ Geverifieerd' : profile.status})
+                        {profile.name} (ID: {profile.id.replace('pfl_', '')}) {profile.status === 'verified' ? '✓' : `- ${profile.status}`}
                       </option>
                     ))}
                   </select>
-                  {savingProfile && <p className="text-xs text-gray-text mt-1">Opslaan...</p>}
+                  {savingProfile && <p className="text-xs text-gray-text mt-2">Opslaan...</p>}
                 </div>
               )}
 
-              <div className="p-4 bg-bg-gray rounded-lg flex items-center justify-between">
-                <p className="text-xs text-gray-text">
-                  <strong className="text-navy">Actief Profile ID:</strong>{' '}
-                  <code className="text-xs bg-white px-1.5 py-0.5 rounded">{mollieStatus?.mollie_profile_id || 'Niet geselecteerd'}</code>
-                </p>
+              <div className="flex items-center gap-3 mt-5 pt-5 border-t border-light-gray">
+                <span className="text-sm text-gray-text">Actief profiel ID</span>
+                <code className="text-sm bg-bg-gray text-navy px-3 py-1.5 rounded-lg font-mono">
+                  {mollieStatus?.mollie_profile_id ? `/${mollieStatus.mollie_profile_id.replace('pfl_', '')}` : 'Niet geselecteerd'}
+                </code>
                 <button
                   onClick={handleMollieDisconnect}
                   disabled={mollieDisconnecting}
-                  className="text-xs text-red-600 hover:text-red-700 hover:underline disabled:opacity-50"
+                  className="text-sm text-red-600 hover:text-red-700 hover:underline disabled:opacity-50 ml-auto"
                 >
                   {mollieDisconnecting ? 'Ontkoppelen...' : 'Ontkoppelen'}
                 </button>
