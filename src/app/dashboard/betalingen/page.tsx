@@ -16,9 +16,17 @@ import {
   Euro,
 } from 'lucide-react';
 
+interface MollieProfile {
+  id: string;
+  name: string;
+  website: string;
+  status: string;
+}
+
 interface MollieStatus {
   mollie_profile_id: string | null;
   mollie_onboarded: boolean;
+  profiles: MollieProfile[];
 }
 
 export default function BetalingenPage() {
@@ -29,6 +37,7 @@ export default function BetalingenPage() {
   const [mollieConnecting, setMollieConnecting] = useState(false);
   const [mollieDisconnecting, setMollieDisconnecting] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [savingProfile, setSavingProfile] = useState(false);
   const mollieSetupComplete = searchParams.get('mollie_setup') === 'complete';
   const mollieError = searchParams.get('mollie_error');
 
@@ -75,6 +84,7 @@ export default function BetalingenPage() {
         setMollieStatus({
           mollie_profile_id: null,
           mollie_onboarded: false,
+          profiles: [],
         });
       } else {
         const data = await res.json();
@@ -88,23 +98,28 @@ export default function BetalingenPage() {
 
   const handleRefresh = async () => {
     setRefreshing(true);
+    await fetchMollieStatus();
+    setRefreshing(false);
+  };
+
+  const handleSelectProfile = async (profileId: string) => {
+    setSavingProfile(true);
     try {
-      // First try to refresh profile from Mollie API
-      const patchRes = await fetch('/api/mollie/connect', { method: 'PATCH' });
-      if (patchRes.ok) {
-        const data = await patchRes.json();
-        setMollieStatus({
-          mollie_profile_id: data.mollie_profile_id,
-          mollie_onboarded: data.mollie_onboarded,
-        });
+      const res = await fetch('/api/mollie/connect', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ profile_id: profileId }),
+      });
+      if (res.ok) {
+        setMollieStatus(prev => prev ? { ...prev, mollie_profile_id: profileId } : null);
       } else {
-        // Fallback to just fetching current status
-        await fetchMollieStatus();
+        const data = await res.json();
+        alert('Fout: ' + (data.error || 'Kon profiel niet opslaan'));
       }
     } catch {
-      await fetchMollieStatus();
+      alert('Netwerkfout bij opslaan profiel');
     }
-    setRefreshing(false);
+    setSavingProfile(false);
   };
 
   if (loading) {
@@ -231,10 +246,34 @@ export default function BetalingenPage() {
                 </a>
               </div>
 
+              {/* Profile selector */}
+              {mollieStatus?.profiles && mollieStatus.profiles.length > 0 && (
+                <div className="p-4 bg-bg-gray rounded-lg mb-4">
+                  <label className="block text-xs font-medium text-navy mb-2">
+                    Selecteer Mollie profiel voor betalingen:
+                  </label>
+                  <select
+                    value={mollieStatus?.mollie_profile_id || ''}
+                    onChange={(e) => handleSelectProfile(e.target.value)}
+                    disabled={savingProfile}
+                    className="w-full px-3 py-2 border border-light-gray rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-opacity-50 disabled:opacity-50"
+                    style={{ focusRing: accentColor } as any}
+                  >
+                    <option value="">-- Selecteer profiel --</option>
+                    {mollieStatus.profiles.map((profile) => (
+                      <option key={profile.id} value={profile.id}>
+                        {profile.name} ({profile.status === 'verified' ? '✓ Geverifieerd' : profile.status})
+                      </option>
+                    ))}
+                  </select>
+                  {savingProfile && <p className="text-xs text-gray-text mt-1">Opslaan...</p>}
+                </div>
+              )}
+
               <div className="p-4 bg-bg-gray rounded-lg flex items-center justify-between">
                 <p className="text-xs text-gray-text">
-                  <strong className="text-navy">Profile ID:</strong>{' '}
-                  <code className="text-xs bg-white px-1.5 py-0.5 rounded">{mollieStatus?.mollie_profile_id || 'N/A'}</code>
+                  <strong className="text-navy">Actief Profile ID:</strong>{' '}
+                  <code className="text-xs bg-white px-1.5 py-0.5 rounded">{mollieStatus?.mollie_profile_id || 'Niet geselecteerd'}</code>
                 </p>
                 <button
                   onClick={handleMollieDisconnect}
