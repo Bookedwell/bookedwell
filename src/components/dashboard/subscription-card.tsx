@@ -357,25 +357,25 @@ export function SubscriptionCard({ accentColor }: SubscriptionCardProps) {
     );
   }
 
-  // No subscription - show plan picker
+  // No subscription - show plan picker with 3 horizontal cards
   return (
     <div className="bg-white rounded-xl border border-light-gray p-5">
       <div className="flex items-center gap-2 mb-2">
         <CreditCard className="w-5 h-5" style={{ color: accentColor }} />
-        <h2 className="font-semibold text-navy">Abonnement</h2>
+        <h2 className="font-semibold text-navy">Kies je abonnement</h2>
       </div>
       <p className="text-xs text-gray-text mb-4">
-        Start 7 dagen gratis. Geen betaling nodig tijdens je proefperiode.
+        Start met 7 dagen gratis. €0,01 activatie voor SEPA mandaat.
       </p>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {PLANS.map((plan) => (
           <div
             key={plan.id}
-            className={`relative p-4 rounded-lg border transition-all ${
+            className={`relative p-5 rounded-xl border-2 transition-all ${
               plan.highlight
-                ? 'border-2 bg-white shadow-sm'
-                : 'border-light-gray bg-white hover:border-gray-300'
+                ? 'bg-white shadow-lg'
+                : 'border-light-gray bg-white hover:border-gray-300 hover:shadow-sm'
             }`}
             style={{
               borderColor: plan.highlight ? accentColor : undefined,
@@ -383,24 +383,25 @@ export function SubscriptionCard({ accentColor }: SubscriptionCardProps) {
           >
             {plan.highlight && (
               <span
-                className="absolute -top-2.5 left-1/2 -translate-x-1/2 px-2 py-0.5 text-[10px] font-semibold text-white rounded-full"
+                className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 text-[10px] font-semibold text-white rounded-full"
                 style={{ backgroundColor: accentColor }}
               >
-                Populair
+                Meest gekozen
               </span>
             )}
-            <h3 className="text-sm font-bold text-navy">{plan.name}</h3>
-            <div className="mt-2">
-              <span className="text-2xl font-bold text-navy">&euro;{plan.priceDisplay}</span>
-              <span className="text-xs text-gray-text">/mnd</span>
+            <h3 className="text-base font-bold text-navy">{plan.name}</h3>
+            <p className="text-xs text-gray-text">{plan.subtitle}</p>
+            <div className="mt-3">
+              <span className="text-3xl font-bold text-navy">&euro;{plan.priceDisplay}</span>
+              <span className="text-sm text-gray-text">/mnd</span>
             </div>
-            <p className="text-xs mt-1" style={{ color: accentColor }}>
+            <p className="text-xs mt-1 font-medium" style={{ color: accentColor }}>
               + €0,15 per betaling
             </p>
-            <ul className="mt-3 space-y-1.5">
+            <ul className="mt-4 space-y-2">
               {plan.features.map((f) => (
-                <li key={f} className="flex items-center gap-1.5 text-xs text-gray-text">
-                  <Check className="w-3 h-3 flex-shrink-0" style={{ color: accentColor }} />
+                <li key={f} className="flex items-center gap-2 text-xs text-gray-text">
+                  <Check className="w-3.5 h-3.5 flex-shrink-0" style={{ color: accentColor }} />
                   {f}
                 </li>
               ))}
@@ -408,31 +409,30 @@ export function SubscriptionCard({ accentColor }: SubscriptionCardProps) {
             <button
               onClick={() => handleSubscribe(plan.id)}
               disabled={checkoutLoading === plan.id}
-              className="mt-3 w-full py-2 rounded-lg text-xs font-medium text-white hover:opacity-90 transition-colors"
-              style={{ backgroundColor: accentColor }}
+              className={`mt-4 w-full py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                plan.highlight 
+                  ? 'text-white hover:opacity-90' 
+                  : 'border-2 hover:bg-gray-50'
+              }`}
+              style={{ 
+                backgroundColor: plan.highlight ? accentColor : 'transparent',
+                borderColor: plan.highlight ? accentColor : accentColor,
+                color: plan.highlight ? 'white' : accentColor,
+              }}
             >
               {checkoutLoading === plan.id ? (
-                <Loader2 className="w-3 h-3 animate-spin mx-auto" />
+                <Loader2 className="w-4 h-4 animate-spin mx-auto" />
               ) : (
-                'Start 7 dagen gratis'
+                '7 dagen gratis'
               )}
             </button>
           </div>
         ))}
       </div>
 
-      <div className="flex items-center justify-center gap-2 mt-3">
-        <p className="text-[10px] text-gray-text">
-          €0,01 activatie voor 7 dagen gratis trial. Eerste betaling na proefperiode. Prijzen excl. BTW.
-        </p>
-        <button
-          onClick={handleSync}
-          disabled={syncing}
-          className="text-[10px] text-gray-text hover:text-navy underline"
-        >
-          {syncing ? 'Synchroniseren...' : 'Sync'}
-        </button>
-      </div>
+      <p className="text-center text-[10px] text-gray-text mt-4">
+        Prijzen excl. BTW. Opzeggen kan altijd.
+      </p>
     </div>
   );
 }
