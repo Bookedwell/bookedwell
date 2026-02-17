@@ -134,23 +134,6 @@ export async function POST(request: Request) {
   // Check if this is an upgrade (user already has subscription)
   const isUpgrade = salon?.subscription_status === 'active' || salon?.subscription_status === 'trialing';
 
-  // For upgrades: update tier immediately (no new payment needed during trial)
-  if (isUpgrade) {
-    await serviceClient
-      .from('salons')
-      .update({
-        subscription_tier: tier,
-      })
-      .eq('id', salonId);
-
-    return NextResponse.json({ 
-      success: true, 
-      upgraded: true,
-      new_tier: tier,
-      redirect_url: '/dashboard/subscription?subscription=success',
-    });
-  }
-
   try {
     // Use BookedWell's platform Mollie client for subscription payments
     // This is separate from the salon's own Mollie connection (which is for booking payments)

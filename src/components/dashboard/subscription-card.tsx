@@ -141,10 +141,7 @@ export function SubscriptionCard({ accentColor }: SubscriptionCardProps) {
       });
       const data = await res.json();
       
-      if (data.success && data.upgraded) {
-        // Upgrade successful - redirect to success
-        window.location.href = data.redirect_url || '/dashboard/subscription?subscription=success';
-      } else if (data.success && data.trial) {
+      if (data.success && data.trial) {
         // Free trial started - redirect to success
         window.location.href = data.redirect_url || '/dashboard/subscription?subscription=success';
       } else if (data.checkout_url) {
