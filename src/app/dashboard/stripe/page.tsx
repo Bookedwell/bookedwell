@@ -345,13 +345,68 @@ export default function StripePage() {
         </div>
       </div>
 
+      {/* Mollie Connect card */}
+      <div className="mt-6 bg-white rounded-xl border border-light-gray overflow-hidden">
+        <div className="p-5 border-b border-light-gray bg-gradient-to-r from-[#0a0a0a]/5 to-transparent">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-black rounded-xl flex items-center justify-center">
+              <span className="text-white font-bold text-sm">mollie</span>
+            </div>
+            <div>
+              <h2 className="font-semibold text-navy">Mollie</h2>
+              <p className="text-xs text-gray-text">iDEAL betalingen via Mollie</p>
+            </div>
+            <span className="ml-auto text-xs bg-yellow-50 text-yellow-700 px-3 py-1 rounded-full font-medium">
+              Binnenkort
+            </span>
+          </div>
+        </div>
+        <div className="p-5">
+          <p className="text-sm text-gray-text mb-4">
+            Koppel je Mollie account om iDEAL betalingen te accepteren tegen lagere kosten (€0,29 per transactie).
+          </p>
+          
+          <div className="grid sm:grid-cols-3 gap-4 mb-6">
+            <div className="flex items-start gap-3 p-3 bg-bg-gray rounded-lg">
+              <CreditCard className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: accentColor }} />
+              <div>
+                <p className="text-sm font-medium text-navy">iDEAL</p>
+                <p className="text-xs text-gray-text">€0,29 per transactie</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 p-3 bg-bg-gray rounded-lg">
+              <Banknote className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: accentColor }} />
+              <div>
+                <p className="text-sm font-medium text-navy">Bancontact</p>
+                <p className="text-xs text-gray-text">€0,29 + 1,5%</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 p-3 bg-bg-gray rounded-lg">
+              <Shield className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: accentColor }} />
+              <div>
+                <p className="text-sm font-medium text-navy">Nederlands</p>
+                <p className="text-xs text-gray-text">Nederlandse betaalprovider</p>
+              </div>
+            </div>
+          </div>
+
+          <button
+            disabled
+            className="inline-flex items-center gap-2 text-sm px-4 py-2 rounded-lg font-medium bg-gray-100 text-gray-400 cursor-not-allowed"
+          >
+            <CreditCard className="w-4 h-4" />
+            Mollie koppelen (binnenkort)
+          </button>
+        </div>
+      </div>
+
       {/* Info section */}
       <div className="mt-6 bg-white rounded-xl border border-light-gray p-5">
         <h3 className="font-semibold text-navy mb-3">Hoe werkt het?</h3>
         <div className="space-y-3">
           <div className="flex items-start gap-3">
             <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0" style={{ backgroundColor: accentColor + '15', color: accentColor }}>1</span>
-            <p className="text-sm text-gray-text">Koppel je Stripe account (eenmalig)</p>
+            <p className="text-sm text-gray-text">Koppel je betaalaccount (Stripe of Mollie)</p>
           </div>
           <div className="flex items-start gap-3">
             <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0" style={{ backgroundColor: accentColor + '15', color: accentColor }}>2</span>
