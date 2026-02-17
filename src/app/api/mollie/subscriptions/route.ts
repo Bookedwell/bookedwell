@@ -136,6 +136,26 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Mollie niet gekoppeld. Koppel eerst je Mollie account.' }, { status: 400 });
   }
 
+  // Check if this is an upgrade (user already has subscription)
+  const isUpgrade = salon.subscription_status === 'active' || salon.subscription_status === 'trialing';
+
+  // For upgrades: update tier immediately (they already have a mandate)
+  if (isUpgrade) {
+    await serviceClient
+      .from('salons')
+      .update({
+        subscription_tier: tier,
+      })
+      .eq('id', salonId);
+
+    return NextResponse.json({ 
+      success: true, 
+      upgraded: true,
+      new_tier: tier,
+      redirect_url: '/dashboard/subscription?subscription=success',
+    });
+  }
+
   try {
     // Check if token needs refresh
     let accessToken = salon.mollie_access_token;
