@@ -1,5 +1,14 @@
 import { Client } from 'mollie-api-typescript';
 
+// Check if we're in test mode - use explicit env var or check if API key starts with 'test_'
+const isTestMode = () => {
+  if (process.env.MOLLIE_TEST_MODE === 'true') return true;
+  if (process.env.MOLLIE_TEST_MODE === 'false') return false;
+  // Auto-detect based on API key prefix
+  const apiKey = process.env.MOLLIE_API_KEY || '';
+  return apiKey.startsWith('test_');
+};
+
 // Create Mollie client with API key (for platform operations)
 export function createMollieClient() {
   const apiKey = process.env.MOLLIE_API_KEY;
@@ -8,21 +17,25 @@ export function createMollieClient() {
     throw new Error('MOLLIE_API_KEY is not configured');
   }
 
+  const testmode = isTestMode();
+  console.log(`Mollie client created with testmode: ${testmode}`);
+
   return new Client({
     security: {
       apiKey,
     },
-    testmode: process.env.NODE_ENV !== 'production',
+    testmode,
   });
 }
 
 // Create Mollie client with OAuth token (for connected account operations)
 export function createMollieClientWithToken(accessToken: string) {
+  const testmode = isTestMode();
   return new Client({
     security: {
       oAuth: accessToken,
     },
-    testmode: process.env.NODE_ENV !== 'production',
+    testmode,
   });
 }
 
