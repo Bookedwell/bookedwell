@@ -326,10 +326,23 @@ export function CustomerDetailClient({
           >
             <ArrowLeft className="w-5 h-5 text-gray-600" />
           </button>
+          {formData.profilePictureUrl ? (
+            <img
+              src={formData.profilePictureUrl}
+              alt={customer.name}
+              className="w-12 h-12 rounded-full object-cover border-2 border-gray-200"
+            />
+          ) : (
+            <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center border-2 border-gray-200">
+              <span className="text-gray-400 text-lg font-medium">
+                {customer.name?.charAt(0)?.toUpperCase() || '?'}
+              </span>
+            </div>
+          )}
           <div>
-            <h1 className="text-2xl font-bold text-navy">Klantdetails</h1>
+            <h1 className="text-2xl font-bold text-navy">{customer.name}</h1>
             <p className="text-gray-text text-sm mt-1">
-              Bekijk en bewerk klantinformatie
+              ID: {customer.id}
             </p>
           </div>
         </div>
