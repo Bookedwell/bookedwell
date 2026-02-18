@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useBranding } from '@/context/branding-context';
 import { ChevronLeft, ChevronRight, ChevronDown, User } from 'lucide-react';
+import { BookingDetailModal } from '@/components/dashboard/booking-detail-modal';
 
 interface CalendarBooking {
   id: string;
@@ -10,7 +11,10 @@ interface CalendarBooking {
   end_time: string;
   customer_name: string;
   customer_phone: string;
+  customer_email?: string;
   status: string;
+  notes?: string;
+  payment_status?: string;
   service: { name: string; duration_minutes: number; price_cents: number } | null;
   staff: { name: string } | null;
 }
@@ -24,6 +28,7 @@ const HOURS = Array.from({ length: 13 }, (_, i) => i + 8); // 08:00 - 20:00
 export default function BookingsCalendarPage() {
   const { primaryColor } = useBranding();
   const [bookings, setBookings] = useState<CalendarBooking[]>([]);
+  const [selectedBooking, setSelectedBooking] = useState<CalendarBooking | null>(null);
   const [loading, setLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const [view, setView] = useState<'week' | 'day'>('week');
@@ -66,28 +71,47 @@ export default function BookingsCalendarPage() {
     return d;
   }, [weekStart]);
 
-  useEffect(() => {
-    async function fetchBookings() {
-      setLoading(true);
-      const startStr = view === 'week'
-        ? weekStart.toISOString()
-        : new Date(currentDate.setHours(0, 0, 0, 0)).toISOString();
-      const endStr = view === 'week'
-        ? weekEnd.toISOString()
-        : new Date(new Date(currentDate).setHours(23, 59, 59, 999)).toISOString();
+  const fetchBookings = async () => {
+    setLoading(true);
+    const startStr = view === 'week'
+      ? weekStart.toISOString()
+      : new Date(currentDate.setHours(0, 0, 0, 0)).toISOString();
+    const endStr = view === 'week'
+      ? weekEnd.toISOString()
+      : new Date(new Date(currentDate).setHours(23, 59, 59, 999)).toISOString();
 
-      const res = await fetch(
-        `/api/dashboard/bookings?start=${encodeURIComponent(startStr)}&end=${encodeURIComponent(endStr)}`,
-        { cache: 'no-store' }
-      );
-      if (res.ok) {
-        const data = await res.json();
-        setBookings(data);
-      }
-      setLoading(false);
+    const res = await fetch(
+      `/api/dashboard/bookings?start=${encodeURIComponent(startStr)}&end=${encodeURIComponent(endStr)}`,
+      { cache: 'no-store' }
+    );
+    if (res.ok) {
+      const data = await res.json();
+      setBookings(data);
     }
+    setLoading(false);
+  };
+
+  useEffect(() => {
     fetchBookings();
   }, [currentDate, view, weekStart, weekEnd]);
+
+  const handleCancel = async (id: string) => {
+    if (!confirm('Weet je zeker dat je deze boeking wilt annuleren?')) return;
+    
+    const res = await fetch(`/api/bookings/${id}/cancel`, { method: 'POST' });
+    if (res.ok) {
+      await fetchBookings();
+      setSelectedBooking(null);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    const res = await fetch(`/api/bookings/${id}`, { method: 'DELETE' });
+    if (res.ok) {
+      await fetchBookings();
+      setSelectedBooking(null);
+    }
+  };
 
   const navigateWeek = (dir: number) => {
     const d = new Date(currentDate);
@@ -295,6 +319,7 @@ export default function BookingsCalendarPage() {
                             borderLeft: `3px solid ${statusColor}`,
                           }}
                           title={`${booking.customer_name} - ${booking.service?.name || ''}`}
+                          onClick={() => setSelectedBooking(booking)}
                         >
                           <p className="text-[10px] font-semibold text-navy truncate">
                             {formatTime(booking.start_time)}
@@ -345,13 +370,14 @@ export default function BookingsCalendarPage() {
                   return (
                     <div
                       key={booking.id}
-                      className="absolute left-2 right-2 rounded-lg px-3 py-2 overflow-hidden"
+                      className="absolute left-2 right-2 rounded-lg px-3 py-2 overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
                       style={{
                         top,
                         height,
                         backgroundColor: primaryColor + '12',
                         borderLeft: `4px solid ${statusColor}`,
                       }}
+                      onClick={() => setSelectedBooking(booking)}
                     >
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-semibold text-navy">
@@ -382,6 +408,17 @@ export default function BookingsCalendarPage() {
           </div>
         )}
       </div>
+
+      {/* Booking Detail Modal */}
+      {selectedBooking && (
+        <BookingDetailModal
+          booking={selectedBooking}
+          onClose={() => setSelectedBooking(null)}
+          onCancel={handleCancel}
+          onDelete={handleDelete}
+          accentColor={primaryColor}
+        />
+      )}
     </div>
   );
 }
