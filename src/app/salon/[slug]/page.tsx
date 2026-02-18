@@ -506,11 +506,8 @@ export default function SalonBookingPage() {
 
       {/* Powered by */}
       <div className="text-center py-6">
-        <p className="text-xs text-gray-text">
-          Powered by{' '}
-          <a href="https://bookedwell.app" className="hover:underline font-medium" style={{ color: accentColor }}>
-            BookedWell
-          </a>
+        <p className="text-xs text-gray-400">
+          Powered by BookedWell
         </p>
       </div>
     </div>

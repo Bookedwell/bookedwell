@@ -582,7 +582,7 @@ export default function SettingsPage() {
             Plaats de boekingswidget op je eigen website. Klanten boeken direct zonder je site te verlaten.
           </p>
 
-          <div className="bg-slate-900 rounded-xl p-4 font-mono text-xs text-green-400 overflow-x-auto mb-3">
+          <div className="bg-gray-100 rounded-xl p-4 font-mono text-xs text-gray-600 overflow-x-auto mb-3">
             <code className="break-all">{`<iframe src="https://bookedwell.app/salon/${slug}?embed=true" width="100%" height="700" frameborder="0" style="border-radius: 12px; max-width: 480px;"></iframe>`}</code>
           </div>
           <Button
