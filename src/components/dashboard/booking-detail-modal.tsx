@@ -13,6 +13,17 @@ interface BookingDetailModalProps {
   accentColor?: string;
 }
 
+const COLOR_OPTIONS = [
+  { name: 'Groen', value: '#10B981' },
+  { name: 'Oranje', value: '#F59E0B' },
+  { name: 'Blauw', value: '#3B82F6' },
+  { name: 'Roze', value: '#EC4899' },
+  { name: 'Paars', value: '#8B5CF6' },
+  { name: 'Rood', value: '#EF4444' },
+  { name: 'Teal', value: '#14B8A6' },
+  { name: 'Indigo', value: '#6366F1' },
+];
+
 export function BookingDetailModal({ 
   booking, 
   onClose, 
@@ -26,6 +37,7 @@ export function BookingDetailModal({
   const [newDate, setNewDate] = useState('');
   const [newTime, setNewTime] = useState('');
   const [rescheduling, setRescheduling] = useState(false);
+  const [selectedColor, setSelectedColor] = useState(booking.color || '#3B82F6');
   const start = new Date(booking.start_time);
 
   const handleReschedule = async () => {
@@ -157,6 +169,24 @@ export function BookingDetailModal({
               <p className="text-sm text-slate bg-gray-50 rounded-lg p-3">{booking.notes}</p>
             </div>
           )}
+
+          {/* Color picker */}
+          <div className="space-y-3">
+            <h3 className="text-sm font-semibold text-navy">Kleur aanpassen</h3>
+            <div className="flex flex-wrap gap-2">
+              {COLOR_OPTIONS.map((color) => (
+                <button
+                  key={color.value}
+                  onClick={() => setSelectedColor(color.value)}
+                  className={`w-8 h-8 rounded-full border-2 transition-all ${
+                    selectedColor === color.value ? 'scale-110 border-navy' : 'border-transparent hover:scale-105'
+                  }`}
+                  style={{ backgroundColor: color.value }}
+                  title={color.name}
+                />
+              ))}
+            </div>
+          </div>
         </div>
 
         {/* Actions */}

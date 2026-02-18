@@ -320,11 +320,9 @@ export default function BookingsCalendarPage() {
                       {dayBookings.map((booking, bookingIdx) => {
                         const { top, height } = getBookingPosition(booking);
                         const statusColor = statusColors[booking.status] || primaryColor;
-                        // Different colors based on service name for consistency
-                        const colors = ['#10B981', '#F59E0B', '#3B82F6', '#EC4899', '#8B5CF6', '#06B6D4', '#EF4444', '#14B8A6'];
-                        const svcName = booking.service?.name || '';
-                        const serviceHash = svcName ? svcName.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0) : bookingIdx;
-                        const bookingColor = colors[serviceHash % colors.length];
+                        // Different distinct colors for each booking
+                        const distinctColors = ['#10B981', '#F59E0B', '#3B82F6', '#EC4899', '#8B5CF6', '#EF4444', '#14B8A6', '#6366F1'];
+                        const bookingColor = distinctColors[bookingIdx % distinctColors.length];
                         return (
                           <div
                             key={booking.id}
@@ -332,20 +330,17 @@ export default function BookingsCalendarPage() {
                             style={{
                               top,
                               height,
-                              backgroundColor: bookingColor + '15',
+                              backgroundColor: bookingColor + '20',
                               borderLeft: `3px solid ${bookingColor}`,
                             }}
-                            title={`${booking.customer_name} - ${booking.service?.name || ''}`}
+                            title={`${booking.service?.name || 'Dienst'} - ${booking.customer_name}`}
                             onClick={() => setSelectedBooking(booking)}
                           >
                             <p className="text-[10px] font-semibold truncate" style={{ color: bookingColor }}>
-                              {formatTime(booking.start_time)}
+                              {formatTime(booking.start_time)} - {booking.service?.name || 'Dienst'}
                             </p>
-                            <p className="text-[10px] text-navy truncate font-medium">
+                            <p className="text-[10px] text-navy truncate">
                               {booking.customer_name}
-                            </p>
-                            <p className="text-[10px] text-gray-text truncate">
-                              {booking.service?.name}
                             </p>
                           </div>
                         );
