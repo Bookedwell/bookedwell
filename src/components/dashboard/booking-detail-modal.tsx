@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Calendar, Clock, User, Check, Trash2, X } from 'lucide-react';
+import { Calendar, Clock, User, Check, Trash2, X, ShoppingCart, Move, Copy, XCircle, Maximize2, ChevronDown } from 'lucide-react';
 
 interface BookingDetailModalProps {
   booking: any;
@@ -34,231 +34,238 @@ export function BookingDetailModal({
   accentColor = '#4285F4' 
 }: BookingDetailModalProps) {
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [confirmCancel, setConfirmCancel] = useState(false);
-  const [showReschedule, setShowReschedule] = useState(false);
-  const [newDate, setNewDate] = useState('');
-  const [newTime, setNewTime] = useState('');
-  const [rescheduling, setRescheduling] = useState(false);
+  const [showLabelCreate, setShowLabelCreate] = useState(false);
+  const [newLabelTitle, setNewLabelTitle] = useState('');
+  const [newLabelColor, setNewLabelColor] = useState('#3B82F6');
   const [selectedColor, setSelectedColor] = useState(booking.color || '#3B82F6');
   const start = new Date(booking.start_time);
   const end = new Date(booking.end_time);
 
-  const handleReschedule = async () => {
-    if (!newDate || !newTime || !onReschedule) return;
-    setRescheduling(true);
-    const newDateTime = `${newDate}T${newTime}:00`;
-    await onReschedule(booking.id, newDateTime);
-    setRescheduling(false);
-  };
-  
-  const statusLabels: Record<string, { label: string; bg: string; text: string; border: string }> = {
-    pending: { label: 'In afwachting', bg: '#FEF3C7', text: '#92400E', border: '#F59E0B' },
-    confirmed: { label: 'Bevestigd', bg: '#D1FAE5', text: '#065F46', border: '#10B981' },
-    completed: { label: 'Voltooid', bg: '#DBEAFE', text: '#1E40AF', border: '#3B82F6' },
-    cancelled: { label: 'Geannuleerd', bg: '#FEE2E2', text: '#991B1B', border: '#EF4444' },
-    no_show: { label: 'No-show', bg: '#FEE2E2', text: '#991B1B', border: '#EF4444' },
-  };
-
-  const status = statusLabels[booking.status] || statusLabels.pending;
-
-  const handleDelete = () => {
-    if (!confirmDelete) {
-      setConfirmDelete(true);
-      return;
-    }
-    onDelete(booking.id);
-  };
-
   const timeStr = (d: Date) => d.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' });
   const durationMin = booking.service?.duration_minutes || Math.round((end.getTime() - start.getTime()) / 60000);
+
+  const handleCreateLabel = () => {
+    if (!newLabelTitle.trim()) return;
+    if (onColorChange) {
+      onColorChange(booking.id, newLabelColor);
+    }
+    setSelectedColor(newLabelColor);
+    setShowLabelCreate(false);
+    setNewLabelTitle('');
+  };
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div 
-        className="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden relative"
+        className="bg-white rounded-xl max-w-4xl w-full shadow-2xl overflow-hidden relative"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Close button */}
-        <button
-          onClick={onClose}
-          className="absolute top-4 left-4 p-1.5 rounded-full hover:bg-gray-100 transition-colors z-10"
-          aria-label="Sluiten"
-        >
-          <X className="w-5 h-5 text-gray-400" />
-        </button>
-
-        {/* Header: Title left, Status badge right */}
-        <div className="px-8 pt-8 pb-6 flex items-center justify-between">
-          <h2 className="text-xl font-bold text-gray-900">Booking details</h2>
-          <span 
-            className="text-sm px-4 py-1.5 rounded-full font-medium"
-            style={{ backgroundColor: status.bg, color: status.text, border: `1px solid ${status.border}` }}
-          >
-            {status.label}
-          </span>
+        {/* Header */}
+        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-gray-900">Appointment</h2>
+          <div className="flex items-center gap-2">
+            <button className="p-2 hover:bg-gray-100 rounded transition-colors">
+              <Maximize2 className="w-4 h-4 text-gray-500" />
+            </button>
+            <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded transition-colors">
+              <X className="w-4 h-4 text-gray-500" />
+            </button>
+          </div>
         </div>
 
-        {/* Content */}
-        <div className="px-8 pb-6 space-y-6">
-          {/* Customer */}
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
-              <User className="w-6 h-6 text-gray-400" />
+        {/* Two-column layout */}
+        <div className="flex">
+          {/* Left column */}
+          <div className="flex-1 p-6 space-y-6 border-r border-gray-200">
+            {/* Date & Time */}
+            <div className="flex items-center gap-3 text-sm text-gray-600">
+              <Calendar className="w-4 h-4" />
+              <span>{start.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</span>
+              <Clock className="w-4 h-4 ml-2" />
+              <span>{timeStr(start)} - {timeStr(end)}</span>
             </div>
-            <div>
-              <p className="font-semibold text-gray-900">{booking.customer_name}</p>
-              <p className="text-sm text-gray-500">{booking.customer_phone}</p>
-            </div>
-          </div>
 
-          <div className="border-t border-gray-100" />
-
-          {/* Date & Time */}
-          <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-xl bg-gray-50 flex items-center justify-center flex-shrink-0">
-              <Calendar className="w-5 h-5 text-gray-400" />
-            </div>
-            <div>
-              <p className="font-medium text-gray-900">
-                {start.toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-              </p>
-              <p className="text-sm text-gray-500">
-                {timeStr(start)} – {timeStr(end)} ({durationMin} min)
-              </p>
-            </div>
-          </div>
-
-          <div className="border-t border-gray-100" />
-
-          {/* Service & Price */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-gray-50 flex items-center justify-center flex-shrink-0">
-                <Clock className="w-5 h-5 text-gray-400" />
+            {/* Service */}
+            <div className="flex items-center justify-between py-3 border-t border-b border-gray-200">
+              <div className="flex items-center gap-3">
+                <X className="w-4 h-4 text-gray-400" />
+                <span className="text-gray-900">{booking.service?.name || 'Dienst'}</span>
               </div>
-              <p className="font-medium text-gray-900">{booking.service?.name || 'Dienst'}</p>
+              <div className="flex items-center gap-2 text-gray-500 text-sm">
+                <Clock className="w-4 h-4" />
+                <span>{durationMin} min</span>
+              </div>
             </div>
-            <p className="font-semibold text-gray-900 text-lg">
-              {booking.service?.price_cents ? `€ ${(booking.service.price_cents / 100).toFixed(2).replace('.', ',')}` : '-'}
-            </p>
-          </div>
 
-          {/* Color dots - left aligned */}
-          <div className="flex items-center gap-3 pt-2">
-            {COLOR_OPTIONS.map((color) => (
-              <button
-                key={color.value}
-                onClick={() => {
-                  setSelectedColor(color.value);
-                  if (onColorChange) onColorChange(booking.id, color.value);
-                }}
-                className="relative w-8 h-8 rounded-full transition-transform hover:scale-110"
-                style={{ backgroundColor: color.value }}
-                title={color.name}
-              >
-                {selectedColor === color.value && (
-                  <Check className="w-4 h-4 text-white absolute inset-0 m-auto" strokeWidth={3} />
-                )}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Reschedule expand */}
-        {showReschedule && (
-          <div className="mx-8 mb-4 bg-gray-50 rounded-xl p-4 space-y-3">
-            <p className="text-sm font-semibold text-gray-900">Nieuwe datum & tijd</p>
-            <div className="grid grid-cols-2 gap-2">
-              <input
-                type="date"
-                value={newDate}
-                onChange={(e) => setNewDate(e.target.value)}
-                min={new Date().toISOString().split('T')[0]}
-                className="px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-              />
-              <select
-                value={newTime}
-                onChange={(e) => setNewTime(e.target.value)}
-                className="px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-              >
-                <option value="">Tijd</option>
-                {Array.from({ length: 13 }, (_, i) => i + 8).flatMap(hour => 
-                  [0, 15, 30, 45].map(min => {
-                    const val = `${String(hour).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
-                    return <option key={val} value={val}>{val}</option>;
-                  })
-                )}
-              </select>
-            </div>
-            <div className="flex gap-2">
-              <button
-                className="flex-1 px-4 py-2 text-sm font-medium border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors"
-                onClick={() => setShowReschedule(false)}
-              >
-                Annuleren
-              </button>
-              <button
-                className="flex-1 px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors disabled:opacity-50"
-                style={{ backgroundColor: accentColor }}
-                onClick={handleReschedule}
-                disabled={!newDate || !newTime || rescheduling}
-              >
-                {rescheduling ? 'Bezig...' : 'Opslaan'}
-              </button>
+            {/* History */}
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold text-gray-900">History</h3>
+              <div className="space-y-2 text-sm text-gray-600">
+                <div className="flex items-start gap-2">
+                  <Calendar className="w-4 h-4 mt-0.5 text-gray-400" />
+                  <div className="flex-1">
+                    <p>Appointment created for {start.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })} at {timeStr(start)}</p>
+                    <span className="text-xs text-gray-400">{new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })} - {new Date().toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })}</span>
+                  </div>
+                  <button className="text-gray-400 hover:text-gray-600">
+                    <User className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
-        )}
 
-        {/* Actions */}
-        <div className="px-8 pb-8 pt-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              {booking.status !== 'cancelled' && booking.status !== 'completed' && onReschedule && !showReschedule && (
-                <button
-                  className="px-6 py-2.5 text-sm font-medium border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-gray-700"
-                  onClick={() => setShowReschedule(true)}
-                >
-                  Verplaatsen
-                </button>
+          {/* Right column */}
+          <div className="w-80 p-6 space-y-6 bg-gray-50">
+            {/* Customer */}
+            <div className="space-y-2">
+              <div className="text-sm font-medium text-gray-500">No customer added</div>
+              <div className="relative">
+                <User className="w-4 h-4 text-gray-400 absolute left-3 top-3" />
+                <input
+                  type="text"
+                  placeholder="Search customer"
+                  className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                  defaultValue={booking.customer_name || ''}
+                />
+              </div>
+              {booking.customer_phone && (
+                <p className="text-sm text-gray-500 pl-9">{booking.customer_phone}</p>
               )}
+            </div>
 
-              {booking.status !== 'cancelled' && booking.status !== 'completed' && !confirmCancel && (
-                <button
-                  className="px-6 py-2.5 text-sm font-medium border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-gray-700"
-                  onClick={() => setConfirmCancel(true)}
-                >
-                  Annuleren
-                </button>
-              )}
-
-              {confirmCancel && (
+            {/* Label */}
+            <div className="space-y-2 relative">
+              <button
+                onClick={() => setShowLabelCreate(!showLabelCreate)}
+                className="w-full flex items-center justify-between px-3 py-2 border border-gray-200 rounded-lg text-sm hover:bg-white transition-colors bg-white"
+              >
                 <div className="flex items-center gap-2">
-                  <button
-                    className="px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors bg-red-500 hover:bg-red-600"
-                    onClick={() => {
-                      onCancel(booking.id);
-                      setConfirmCancel(false);
-                    }}
-                  >
-                    Ja, annuleren
-                  </button>
-                  <button
-                    className="px-4 py-2 text-sm font-medium border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-gray-700"
-                    onClick={() => setConfirmCancel(false)}
-                  >
-                    Nee
-                  </button>
+                  <X className="w-4 h-4 text-gray-400" />
+                  <span className="text-gray-600">No label</span>
+                </div>
+                <ChevronDown className="w-4 h-4 text-gray-400" />
+              </button>
+
+              {showLabelCreate && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 p-4 z-20 space-y-3">
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-gray-500 uppercase">Title *</label>
+                    <input
+                      type="text"
+                      value={newLabelTitle}
+                      onChange={(e) => setNewLabelTitle(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Label name"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-gray-500 uppercase">Colour</label>
+                    <div className="flex gap-2">
+                      {COLOR_OPTIONS.slice(0, 5).map((color) => (
+                        <button
+                          key={color.value}
+                          onClick={() => setNewLabelColor(color.value)}
+                          className="relative w-7 h-7 rounded-full"
+                          style={{ backgroundColor: color.value }}
+                        >
+                          {newLabelColor === color.value && (
+                            <Check className="w-3.5 h-3.5 text-white absolute inset-0 m-auto" strokeWidth={3} />
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 pt-2">
+                    <button
+                      onClick={() => {
+                        setShowLabelCreate(false);
+                        setNewLabelTitle('');
+                      }}
+                      className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleCreateLabel}
+                      disabled={!newLabelTitle.trim()}
+                      className="flex-1 px-3 py-2 text-sm text-white rounded-lg transition-colors disabled:opacity-50"
+                      style={{ backgroundColor: '#4F46E5' }}
+                    >
+                      Save
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <button
+                onClick={() => setShowLabelCreate(true)}
+                className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+              >
+                Create new label
+              </button>
+            </div>
+
+            {/* Actions */}
+            <div className="space-y-1 pt-4">
+              <button className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-white rounded-lg transition-colors">
+                <ShoppingCart className="w-4 h-4" />
+                <span>Checkout</span>
+              </button>
+
+              {onReschedule && (
+                <button className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-white rounded-lg transition-colors">
+                  <Move className="w-4 h-4" />
+                  <span>Move</span>
+                </button>
+              )}
+
+              <button className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-white rounded-lg transition-colors">
+                <Copy className="w-4 h-4" />
+                <span>Copy</span>
+              </button>
+
+              <button 
+                onClick={() => onCancel(booking.id)}
+                className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-white rounded-lg transition-colors"
+              >
+                <XCircle className="w-4 h-4" />
+                <span>Mark as no show</span>
+              </button>
+
+              {!confirmDelete ? (
+                <button 
+                  onClick={() => setConfirmDelete(true)}
+                  className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-white rounded-lg transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span>Delete</span>
+                </button>
+              ) : (
+                <div className="bg-white rounded-lg p-3 space-y-2">
+                  <p className="text-sm text-gray-700">Delete this appointment?</p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        onDelete(booking.id);
+                        setConfirmDelete(false);
+                      }}
+                      className="flex-1 px-3 py-1.5 text-sm text-white bg-red-500 hover:bg-red-600 rounded transition-colors"
+                    >
+                      Yes
+                    </button>
+                    <button
+                      onClick={() => setConfirmDelete(false)}
+                      className="flex-1 px-3 py-1.5 text-sm border border-gray-200 rounded hover:bg-gray-50 transition-colors"
+                    >
+                      No
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
-
-            <button
-              className={`p-2.5 rounded-lg transition-colors ${confirmDelete ? 'bg-red-100' : 'hover:bg-gray-100'}`}
-              onClick={handleDelete}
-              title={confirmDelete ? 'Klik nogmaals om te verwijderen' : 'Verwijderen'}
-            >
-              <Trash2 className="w-5 h-5 text-red-500" />
-            </button>
           </div>
         </div>
       </div>
