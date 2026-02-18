@@ -36,15 +36,21 @@ export default function BookingsCalendarPage() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [showViewDropdown, setShowViewDropdown] = useState(false);
 
-  // Drag-and-drop state
-  const [dragBooking, setDragBooking] = useState<CalendarBooking | null>(null);
-  const [dragOffsetY, setDragOffsetY] = useState(0);
-  const [dragCurrentTop, setDragCurrentTop] = useState(0);
-  const [dragDayIdx, setDragDayIdx] = useState(0);
+  // Drag-and-drop – all refs to avoid re-renders during drag
+  const [dragBookingId, setDragBookingId] = useState<string | null>(null);
+  const dragRef = useRef<{
+    booking: CalendarBooking;
+    offsetY: number;
+    currentTop: number;
+    dayIdx: number;
+    startX: number;
+    startY: number;
+    moved: boolean;
+  } | null>(null);
+  const ghostRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
+  const daysGridRef = useRef<HTMLDivElement>(null);
   const dayColRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const hasDragged = useRef(false);
-  const dragStartPos = useRef({ x: 0, y: 0 });
 
   // Detect mobile and set default view
   useEffect(() => {
@@ -136,96 +142,143 @@ export default function BookingsCalendarPage() {
     }
   };
 
-  // Drag-and-drop handlers
+  // Drag-and-drop: all DOM manipulation via refs for zero re-renders during drag
   const handleDragStart = useCallback((e: React.MouseEvent, booking: CalendarBooking, dayIdx: number) => {
     e.preventDefault();
     e.stopPropagation();
-    hasDragged.current = false;
-    dragStartPos.current = { x: e.clientX, y: e.clientY };
+    const daysGrid = daysGridRef.current;
+    if (!daysGrid) return;
+    const gridRect = daysGrid.getBoundingClientRect();
     const { top } = getBookingPosition(booking);
-    const gridRect = gridRef.current?.getBoundingClientRect();
-    if (!gridRect) return;
     const mouseYInGrid = e.clientY - gridRect.top;
-    setDragOffsetY(mouseYInGrid - top);
-    setDragCurrentTop(top);
-    setDragBooking(booking);
-    setDragDayIdx(dayIdx);
-  }, []);
 
-  useEffect(() => {
-    if (!dragBooking) return;
+    dragRef.current = {
+      booking,
+      offsetY: mouseYInGrid - top,
+      currentTop: top,
+      dayIdx,
+      startX: e.clientX,
+      startY: e.clientY,
+      moved: false,
+    };
+    setDragBookingId(booking.id);
 
-    const handleMouseMove = (e: MouseEvent) => {
-      // Check if mouse moved enough to count as drag (5px threshold)
-      const dx = e.clientX - dragStartPos.current.x;
-      const dy = e.clientY - dragStartPos.current.y;
-      if (!hasDragged.current && Math.abs(dx) + Math.abs(dy) < 5) return;
-      hasDragged.current = true;
+    // Pre-configure ghost element with booking colors and height
+    const ghost = ghostRef.current;
+    if (ghost) {
+      const { height } = getBookingPosition(booking);
+      const distinctColors = ['#10B981', '#F59E0B', '#3B82F6', '#EC4899', '#8B5CF6', '#EF4444', '#14B8A6', '#6366F1'];
+      const idHash = booking.id.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
+      const color = booking.color || distinctColors[idHash % distinctColors.length];
+      ghost.style.height = height + 'px';
+      ghost.style.backgroundColor = color + '40';
+      ghost.style.borderColor = color;
+      ghost.style.borderLeft = `3px solid ${color}`;
+      const timeEl = ghost.querySelector('[data-ghost-time]') as HTMLElement;
+      const nameEl = ghost.querySelector('[data-ghost-name]') as HTMLElement;
+      if (timeEl) timeEl.style.color = color;
+      if (nameEl) nameEl.textContent = booking.customer_name;
+    }
 
-      const gridRect = gridRef.current?.getBoundingClientRect();
-      if (!gridRect) return;
-      const mouseYInGrid = e.clientY - gridRect.top;
-      const newTop = Math.max(0, Math.round((mouseYInGrid - dragOffsetY) / 16) * 16); // snap to 15min (16px)
-      setDragCurrentTop(newTop);
+    const onMouseMove = (ev: MouseEvent) => {
+      const d = dragRef.current;
+      if (!d) return;
+      const dx = ev.clientX - d.startX;
+      const dy = ev.clientY - d.startY;
+      if (!d.moved && Math.abs(dx) + Math.abs(dy) < 5) return;
+      d.moved = true;
 
-      // Detect which day column the mouse is over
+      const rect = daysGrid.getBoundingClientRect();
+      const mouseY = ev.clientY - rect.top;
+      d.currentTop = Math.max(0, Math.round((mouseY - d.offsetY) / 16) * 16);
+
+      // Detect day column from mouse X using actual column positions
       for (let i = 0; i < dayColRefs.current.length; i++) {
         const col = dayColRefs.current[i];
         if (col) {
-          const rect = col.getBoundingClientRect();
-          if (e.clientX >= rect.left && e.clientX <= rect.right) {
-            setDragDayIdx(i);
+          const cr = col.getBoundingClientRect();
+          if (ev.clientX >= cr.left && ev.clientX < cr.right) {
+            d.dayIdx = i;
             break;
           }
         }
       }
+
+      // Move ghost directly via DOM – no React state
+      const ghost = ghostRef.current;
+      if (ghost) {
+        ghost.style.display = 'block';
+        ghost.style.top = d.currentTop + 'px';
+        const col = dayColRefs.current[d.dayIdx];
+        if (col) {
+          const colRect = col.getBoundingClientRect();
+          ghost.style.left = (colRect.left - rect.left + 2) + 'px';
+          ghost.style.width = (colRect.width - 4) + 'px';
+        }
+        // Update time label in ghost
+        const h = Math.floor(8 + d.currentTop / 64);
+        const m = Math.round(((d.currentTop / 64) % 1) * 60 / 15) * 15;
+        const timeLabel = ghost.querySelector('[data-ghost-time]');
+        if (timeLabel) {
+          timeLabel.textContent = `${String(h).padStart(2, '0')}:${String(m >= 60 ? 0 : m).padStart(2, '0')} - ${d.booking.service?.name || 'Dienst'}`;
+        }
+      }
     };
 
-    const handleMouseUp = async () => {
-      if (!dragBooking) return;
-      const didDrag = hasDragged.current;
-      
-      if (!didDrag) {
-        // It was a click, not a drag - open the modal
-        setSelectedBooking(dragBooking);
-        setDragBooking(null);
+    const onMouseUp = () => {
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+
+      const d = dragRef.current;
+      if (!d) return;
+
+      // Hide ghost
+      if (ghostRef.current) ghostRef.current.style.display = 'none';
+
+      if (!d.moved) {
+        // Click – open modal
+        setSelectedBooking(d.booking);
+        setDragBookingId(null);
+        dragRef.current = null;
         return;
       }
 
-      // Calculate new start time from position
-      const hoursFromTop = dragCurrentTop / 64; // 64px per hour
+      // Calculate new start time from final position
+      const hoursFromTop = d.currentTop / 64;
       const newHour = Math.floor(8 + hoursFromTop);
-      const newMinute = Math.round(((dragCurrentTop / 64) % 1) * 60 / 15) * 15;
-      const targetDay = view === 'week' ? weekDays[dragDayIdx] : currentDate;
+      const fracMinutes = (hoursFromTop % 1) * 60;
+      const newMinute = Math.round(fracMinutes / 15) * 15;
+      const targetDay = view === 'week' ? weekDays[d.dayIdx] : currentDate;
       const newStart = new Date(targetDay);
-      newStart.setHours(newHour, newMinute, 0, 0);
+      newStart.setHours(newHour, newMinute >= 60 ? 0 : newMinute, 0, 0);
+      if (newMinute >= 60) newStart.setHours(newStart.getHours() + 1);
 
-      // Only reschedule if actually moved
-      const oldStart = new Date(dragBooking.start_time);
+      const oldStart = new Date(d.booking.start_time);
       if (newStart.getTime() !== oldStart.getTime()) {
-        // Optimistic update
-        const duration = new Date(dragBooking.end_time).getTime() - oldStart.getTime();
+        // Optimistic UI update – instant, no reload
+        const duration = new Date(d.booking.end_time).getTime() - oldStart.getTime();
         const newEnd = new Date(newStart.getTime() + duration);
-        setBookings(prev => prev.map(b => b.id === dragBooking.id ? { ...b, start_time: newStart.toISOString(), end_time: newEnd.toISOString() } : b));
+        setBookings(prev => prev.map(b =>
+          b.id === d.booking.id
+            ? { ...b, start_time: newStart.toISOString(), end_time: newEnd.toISOString() }
+            : b
+        ));
 
-        await fetch(`/api/bookings/${dragBooking.id}/reschedule`, {
+        // Fire-and-forget API call – no await, no reload
+        fetch(`/api/bookings/${d.booking.id}/reschedule`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ new_start_time: newStart.toISOString() }),
         });
-        await fetchBookings();
       }
 
-      setDragBooking(null);
+      setDragBookingId(null);
+      dragRef.current = null;
     };
 
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-    return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [dragBooking, dragCurrentTop, dragOffsetY, dragDayIdx, view, weekDays, currentDate]);
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+  }, [view, weekDays, currentDate]);
 
   const handleColorChange = async (id: string, color: string) => {
     // Update UI immediately
@@ -412,7 +465,7 @@ export default function BookingsCalendarPage() {
               </div>
 
               {/* Days grid */}
-              <div className="flex-1 grid grid-cols-7 relative">
+              <div ref={daysGridRef} className="flex-1 grid grid-cols-7 relative">
                 {/* Hour lines */}
                 {HOURS.map((hour, idx) => (
                   <div
@@ -437,7 +490,7 @@ export default function BookingsCalendarPage() {
                     >
                       {dayBookings.map((booking) => {
                         const { top, height } = getBookingPosition(booking);
-                        const isDragging = dragBooking?.id === booking.id;
+                        const isDragging = dragBookingId === booking.id;
                         // Use stored color or generate from booking ID
                         const distinctColors = ['#10B981', '#F59E0B', '#3B82F6', '#EC4899', '#8B5CF6', '#EF4444', '#14B8A6', '#6366F1'];
                         const idHash = booking.id.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
@@ -470,32 +523,15 @@ export default function BookingsCalendarPage() {
                   );
                 })}
 
-                {/* Drag ghost */}
-                {dragBooking && (
-                  <div
-                    className="absolute rounded-md px-1.5 py-1 overflow-hidden pointer-events-none z-30 shadow-lg border"
-                    style={{
-                      top: dragCurrentTop,
-                      height: getBookingPosition(dragBooking).height,
-                      left: `calc(${(dragDayIdx / 7) * 100}% + 4px)`,
-                      width: `calc(${100 / 7}% - 8px)`,
-                      backgroundColor: (dragBooking.color || '#3B82F6') + '40',
-                      borderColor: dragBooking.color || '#3B82F6',
-                      borderLeft: `3px solid ${dragBooking.color || '#3B82F6'}`,
-                    }}
-                  >
-                    <p className="text-[10px] font-semibold truncate" style={{ color: dragBooking.color || '#3B82F6' }}>
-                      {(() => {
-                        const h = Math.floor(8 + dragCurrentTop / 64);
-                        const m = Math.round(((dragCurrentTop / 64) % 1) * 60 / 15) * 15;
-                        return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-                      })()} - {dragBooking.service?.name || 'Dienst'}
-                    </p>
-                    <p className="text-[10px] text-navy truncate">
-                      {dragBooking.customer_name}
-                    </p>
-                  </div>
-                )}
+                {/* Drag ghost – positioned via direct DOM manipulation */}
+                <div
+                  ref={ghostRef}
+                  className="absolute rounded-md px-1.5 py-1 overflow-hidden pointer-events-none z-30 shadow-lg border-2"
+                  style={{ display: 'none', backgroundColor: '#3B82F640', borderColor: '#3B82F6', borderLeft: '3px solid #3B82F6' }}
+                >
+                  <p data-ghost-time="true" className="text-[10px] font-semibold truncate" style={{ color: '#3B82F6' }} />
+                  <p data-ghost-name="true" className="text-[10px] text-navy truncate" />
+                </div>
               </div>
             </div>
           </div>
