@@ -23,8 +23,6 @@ export default function BookingsPage() {
   }
 
   async function handleCancel(id: string) {
-    if (!confirm('Weet je zeker dat je deze boeking wilt annuleren?')) return;
-    
     const res = await fetch(`/api/bookings/${id}/cancel`, { method: 'POST' });
     if (res.ok) {
       await fetchBookings();
