@@ -302,7 +302,7 @@ export async function POST(request: Request) {
         }
         
         // Create Mollie payment via REST API
-        const paymentRes = await fetch('https://api.mollie.com/v2/payments', {
+        let paymentRes = await fetch('https://api.mollie.com/v2/payments', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${accessToken}`,
@@ -311,10 +311,31 @@ export async function POST(request: Request) {
           body: JSON.stringify(paymentBody),
         });
 
+        // If application fee fails (own account), retry without fee
         if (!paymentRes.ok) {
           const errBody = await paymentRes.text();
-          console.error('Mollie payment creation failed:', errBody);
-          throw new Error(errBody);
+          if (errBody.includes('Application fees can not be created for your own account')) {
+            console.log('Retrying payment without application fee (own account)');
+            delete paymentBody.applicationFee;
+            paymentBody.metadata = JSON.stringify({
+              ...JSON.parse(paymentBody.metadata),
+              platform_fee: 0,
+            });
+            paymentRes = await fetch('https://api.mollie.com/v2/payments', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(paymentBody),
+            });
+          }
+          
+          if (!paymentRes.ok) {
+            const finalErr = await paymentRes.text();
+            console.error('Mollie payment creation failed:', finalErr);
+            throw new Error(finalErr);
+          }
         }
 
         const payment = await paymentRes.json();
