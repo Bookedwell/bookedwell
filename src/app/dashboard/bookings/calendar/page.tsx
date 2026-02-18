@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useBranding } from '@/context/branding-context';
 import { ChevronLeft, ChevronRight, ChevronDown, User } from 'lucide-react';
 import { BookingDetailModal } from '@/components/dashboard/booking-detail-modal';
@@ -35,6 +35,16 @@ export default function BookingsCalendarPage() {
   const [view, setView] = useState<'week' | 'day'>('week');
   const [currentDate, setCurrentDate] = useState(new Date());
   const [showViewDropdown, setShowViewDropdown] = useState(false);
+
+  // Drag-and-drop state
+  const [dragBooking, setDragBooking] = useState<CalendarBooking | null>(null);
+  const [dragOffsetY, setDragOffsetY] = useState(0);
+  const [dragCurrentTop, setDragCurrentTop] = useState(0);
+  const [dragDayIdx, setDragDayIdx] = useState(0);
+  const gridRef = useRef<HTMLDivElement>(null);
+  const dayColRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const hasDragged = useRef(false);
+  const dragStartPos = useRef({ x: 0, y: 0 });
 
   // Detect mobile and set default view
   useEffect(() => {
@@ -125,6 +135,97 @@ export default function BookingsCalendarPage() {
       setSelectedBooking(null);
     }
   };
+
+  // Drag-and-drop handlers
+  const handleDragStart = useCallback((e: React.MouseEvent, booking: CalendarBooking, dayIdx: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    hasDragged.current = false;
+    dragStartPos.current = { x: e.clientX, y: e.clientY };
+    const { top } = getBookingPosition(booking);
+    const gridRect = gridRef.current?.getBoundingClientRect();
+    if (!gridRect) return;
+    const mouseYInGrid = e.clientY - gridRect.top;
+    setDragOffsetY(mouseYInGrid - top);
+    setDragCurrentTop(top);
+    setDragBooking(booking);
+    setDragDayIdx(dayIdx);
+  }, []);
+
+  useEffect(() => {
+    if (!dragBooking) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      // Check if mouse moved enough to count as drag (5px threshold)
+      const dx = e.clientX - dragStartPos.current.x;
+      const dy = e.clientY - dragStartPos.current.y;
+      if (!hasDragged.current && Math.abs(dx) + Math.abs(dy) < 5) return;
+      hasDragged.current = true;
+
+      const gridRect = gridRef.current?.getBoundingClientRect();
+      if (!gridRect) return;
+      const mouseYInGrid = e.clientY - gridRect.top;
+      const newTop = Math.max(0, Math.round((mouseYInGrid - dragOffsetY) / 16) * 16); // snap to 15min (16px)
+      setDragCurrentTop(newTop);
+
+      // Detect which day column the mouse is over
+      for (let i = 0; i < dayColRefs.current.length; i++) {
+        const col = dayColRefs.current[i];
+        if (col) {
+          const rect = col.getBoundingClientRect();
+          if (e.clientX >= rect.left && e.clientX <= rect.right) {
+            setDragDayIdx(i);
+            break;
+          }
+        }
+      }
+    };
+
+    const handleMouseUp = async () => {
+      if (!dragBooking) return;
+      const didDrag = hasDragged.current;
+      
+      if (!didDrag) {
+        // It was a click, not a drag - open the modal
+        setSelectedBooking(dragBooking);
+        setDragBooking(null);
+        return;
+      }
+
+      // Calculate new start time from position
+      const hoursFromTop = dragCurrentTop / 64; // 64px per hour
+      const newHour = Math.floor(8 + hoursFromTop);
+      const newMinute = Math.round(((dragCurrentTop / 64) % 1) * 60 / 15) * 15;
+      const targetDay = view === 'week' ? weekDays[dragDayIdx] : currentDate;
+      const newStart = new Date(targetDay);
+      newStart.setHours(newHour, newMinute, 0, 0);
+
+      // Only reschedule if actually moved
+      const oldStart = new Date(dragBooking.start_time);
+      if (newStart.getTime() !== oldStart.getTime()) {
+        // Optimistic update
+        const duration = new Date(dragBooking.end_time).getTime() - oldStart.getTime();
+        const newEnd = new Date(newStart.getTime() + duration);
+        setBookings(prev => prev.map(b => b.id === dragBooking.id ? { ...b, start_time: newStart.toISOString(), end_time: newEnd.toISOString() } : b));
+
+        await fetch(`/api/bookings/${dragBooking.id}/reschedule`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ new_start_time: newStart.toISOString() }),
+        });
+        await fetchBookings();
+      }
+
+      setDragBooking(null);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [dragBooking, dragCurrentTop, dragOffsetY, dragDayIdx, view, weekDays, currentDate]);
 
   const handleColorChange = async (id: string, color: string) => {
     // Update UI immediately
@@ -296,7 +397,7 @@ export default function BookingsCalendarPage() {
             </div>
 
             {/* Time grid */}
-            <div className="flex relative" style={{ minHeight: HOURS.length * 64 }}>
+            <div ref={gridRef} className="flex relative" style={{ minHeight: HOURS.length * 64 }}>
               {/* Hour labels column */}
               <div className="w-[80px] flex-shrink-0 border-r border-light-gray bg-white">
                 {HOURS.map((hour, idx) => (
@@ -327,6 +428,7 @@ export default function BookingsCalendarPage() {
                   return (
                     <div
                       key={dayIdx}
+                      ref={(el) => { dayColRefs.current[dayIdx] = el; }}
                       className="relative border-r border-light-gray last:border-r-0"
                       style={{
                         minHeight: HOURS.length * 64,
@@ -335,7 +437,7 @@ export default function BookingsCalendarPage() {
                     >
                       {dayBookings.map((booking) => {
                         const { top, height } = getBookingPosition(booking);
-                        const statusColor = statusColors[booking.status] || primaryColor;
+                        const isDragging = dragBooking?.id === booking.id;
                         // Use stored color or generate from booking ID
                         const distinctColors = ['#10B981', '#F59E0B', '#3B82F6', '#EC4899', '#8B5CF6', '#EF4444', '#14B8A6', '#6366F1'];
                         const idHash = booking.id.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
@@ -343,7 +445,9 @@ export default function BookingsCalendarPage() {
                         return (
                           <div
                             key={booking.id}
-                            className="absolute left-1 right-1 rounded-md px-1.5 py-1 overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
+                            className={`absolute left-1 right-1 rounded-md px-1.5 py-1 overflow-hidden cursor-grab hover:opacity-90 transition-opacity select-none ${
+                              isDragging ? 'opacity-40' : ''
+                            }`}
                             style={{
                               top,
                               height,
@@ -351,7 +455,7 @@ export default function BookingsCalendarPage() {
                               borderLeft: `3px solid ${bookingColor}`,
                             }}
                             title={`${booking.service?.name || 'Dienst'} - ${booking.customer_name}`}
-                            onClick={() => setSelectedBooking(booking)}
+                            onMouseDown={(e) => handleDragStart(e, booking, dayIdx)}
                           >
                             <p className="text-[10px] font-semibold truncate" style={{ color: bookingColor }}>
                               {formatTime(booking.start_time)} - {booking.service?.name || 'Dienst'}
@@ -365,6 +469,33 @@ export default function BookingsCalendarPage() {
                     </div>
                   );
                 })}
+
+                {/* Drag ghost */}
+                {dragBooking && (
+                  <div
+                    className="absolute rounded-md px-1.5 py-1 overflow-hidden pointer-events-none z-30 shadow-lg border"
+                    style={{
+                      top: dragCurrentTop,
+                      height: getBookingPosition(dragBooking).height,
+                      left: `calc(${(dragDayIdx / 7) * 100}% + 4px)`,
+                      width: `calc(${100 / 7}% - 8px)`,
+                      backgroundColor: (dragBooking.color || '#3B82F6') + '40',
+                      borderColor: dragBooking.color || '#3B82F6',
+                      borderLeft: `3px solid ${dragBooking.color || '#3B82F6'}`,
+                    }}
+                  >
+                    <p className="text-[10px] font-semibold truncate" style={{ color: dragBooking.color || '#3B82F6' }}>
+                      {(() => {
+                        const h = Math.floor(8 + dragCurrentTop / 64);
+                        const m = Math.round(((dragCurrentTop / 64) % 1) * 60 / 15) * 15;
+                        return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+                      })()} - {dragBooking.service?.name || 'Dienst'}
+                    </p>
+                    <p className="text-[10px] text-navy truncate">
+                      {dragBooking.customer_name}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
