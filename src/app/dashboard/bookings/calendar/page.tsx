@@ -320,9 +320,11 @@ export default function BookingsCalendarPage() {
                       {dayBookings.map((booking, bookingIdx) => {
                         const { top, height } = getBookingPosition(booking);
                         const statusColor = statusColors[booking.status] || primaryColor;
-                        // Different colors based on booking index
-                        const colors = ['#10B981', '#F59E0B', '#3B82F6', '#EC4899', '#8B5CF6', '#06B6D4'];
-                        const bookingColor = colors[bookingIdx % colors.length];
+                        // Different colors based on service name for consistency
+                        const colors = ['#10B981', '#F59E0B', '#3B82F6', '#EC4899', '#8B5CF6', '#06B6D4', '#EF4444', '#14B8A6'];
+                        const svcName = booking.service?.name || '';
+                        const serviceHash = svcName ? svcName.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0) : bookingIdx;
+                        const bookingColor = colors[serviceHash % colors.length];
                         return (
                           <div
                             key={booking.id}

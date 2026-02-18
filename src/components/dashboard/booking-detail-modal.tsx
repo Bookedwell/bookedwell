@@ -186,14 +186,20 @@ export function BookingDetailModal({
                       className="px-3 py-2 border border-light-gray rounded-lg text-sm focus:outline-none focus:ring-2"
                       style={{ '--tw-ring-color': accentColor } as any}
                     />
-                    <input
-                      type="time"
+                    <select
                       value={newTime}
                       onChange={(e) => setNewTime(e.target.value)}
-                      step="900"
-                      className="px-3 py-2 border border-light-gray rounded-lg text-sm focus:outline-none focus:ring-2 [&::-webkit-calendar-picker-indicator]:hidden"
+                      className="px-3 py-2 border border-light-gray rounded-lg text-sm focus:outline-none focus:ring-2 bg-white"
                       style={{ '--tw-ring-color': accentColor } as any}
-                    />
+                    >
+                      <option value="">Tijd</option>
+                      {Array.from({ length: 13 }, (_, i) => i + 8).flatMap(hour => 
+                        [0, 15, 30, 45].map(min => {
+                          const val = `${String(hour).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
+                          return <option key={val} value={val}>{val}</option>;
+                        })
+                      )}
+                    </select>
                   </div>
                   <div className="flex gap-2">
                     <Button
