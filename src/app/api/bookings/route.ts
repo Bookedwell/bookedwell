@@ -166,6 +166,10 @@ export async function POST(request: Request) {
     const startDate = new Date(start_time);
     const endDate = new Date(startDate.getTime() + service.duration_minutes * 60 * 1000);
 
+    // Auto-assign a random color to new bookings
+    const bookingColors = ['#10B981', '#F59E0B', '#3B82F6', '#EC4899', '#8B5CF6', '#EF4444', '#14B8A6', '#6366F1'];
+    const randomColor = bookingColors[Math.floor(Math.random() * bookingColors.length)];
+
     // Always create booking first (status: pending)
     const { data: booking, error: bookingError } = await supabase
       .from('bookings')
@@ -181,6 +185,7 @@ export async function POST(request: Request) {
         customer_notes: notes || null,
         status: 'pending',
         deposit_paid: false,
+        color: randomColor,
       })
       .select('id')
       .single();

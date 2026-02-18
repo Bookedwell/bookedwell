@@ -15,6 +15,7 @@ interface CalendarBooking {
   status: string;
   notes?: string;
   payment_status?: string;
+  color?: string;
   service: { name: string; duration_minutes: number; price_cents: number } | null;
   staff: { name: string } | null;
 }
@@ -122,6 +123,17 @@ export default function BookingsCalendarPage() {
     if (res.ok) {
       await fetchBookings();
       setSelectedBooking(null);
+    }
+  };
+
+  const handleColorChange = async (id: string, color: string) => {
+    const res = await fetch(`/api/bookings/${id}/color`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ color }),
+    });
+    if (res.ok) {
+      await fetchBookings();
     }
   };
 
@@ -320,9 +332,9 @@ export default function BookingsCalendarPage() {
                       {dayBookings.map((booking, bookingIdx) => {
                         const { top, height } = getBookingPosition(booking);
                         const statusColor = statusColors[booking.status] || primaryColor;
-                        // Different distinct colors for each booking
+                        // Use stored color or assign based on index
                         const distinctColors = ['#10B981', '#F59E0B', '#3B82F6', '#EC4899', '#8B5CF6', '#EF4444', '#14B8A6', '#6366F1'];
-                        const bookingColor = distinctColors[bookingIdx % distinctColors.length];
+                        const bookingColor = booking.color || distinctColors[bookingIdx % distinctColors.length];
                         return (
                           <div
                             key={booking.id}
@@ -428,6 +440,7 @@ export default function BookingsCalendarPage() {
           onCancel={handleCancel}
           onDelete={handleDelete}
           onReschedule={handleReschedule}
+          onColorChange={handleColorChange}
           accentColor={primaryColor}
         />
       )}

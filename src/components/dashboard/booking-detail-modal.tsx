@@ -10,6 +10,7 @@ interface BookingDetailModalProps {
   onCancel: (id: string) => void;
   onDelete: (id: string) => void;
   onReschedule?: (id: string, newDateTime: string) => void;
+  onColorChange?: (id: string, color: string) => void;
   accentColor?: string;
 }
 
@@ -30,6 +31,7 @@ export function BookingDetailModal({
   onCancel, 
   onDelete,
   onReschedule,
+  onColorChange,
   accentColor = '#4285F4' 
 }: BookingDetailModalProps) {
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -177,7 +179,12 @@ export function BookingDetailModal({
               {COLOR_OPTIONS.map((color) => (
                 <button
                   key={color.value}
-                  onClick={() => setSelectedColor(color.value)}
+                  onClick={() => {
+                    setSelectedColor(color.value);
+                    if (onColorChange) {
+                      onColorChange(booking.id, color.value);
+                    }
+                  }}
                   className={`w-8 h-8 rounded-full border-2 transition-all ${
                     selectedColor === color.value ? 'scale-110 border-navy' : 'border-transparent hover:scale-105'
                   }`}
