@@ -4,9 +4,10 @@ import { getUserSalon } from '@/lib/supabase/get-session';
 
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const { salon } = await getUserSalon();
     if (!salon) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -25,11 +26,12 @@ export async function POST(
     const { data: booking, error: fetchError } = await supabase
       .from('bookings')
       .select('*, service:services(duration_minutes)')
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('salon_id', salon.id)
       .single();
 
     if (fetchError || !booking) {
+      console.error('Fetch booking for reschedule error:', fetchError);
       return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
     }
 
@@ -46,7 +48,7 @@ export async function POST(
         end_time: endDate.toISOString(),
         updated_at: new Date().toISOString(),
       })
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('salon_id', salon.id);
 
     if (updateError) {

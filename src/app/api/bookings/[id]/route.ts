@@ -4,9 +4,10 @@ import { getUserSalon } from '@/lib/supabase/get-session';
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const { salon } = await getUserSalon();
     if (!salon) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -18,7 +19,7 @@ export async function DELETE(
     const { error } = await supabase
       .from('bookings')
       .delete()
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('salon_id', salon.id);
 
     if (error) {
