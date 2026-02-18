@@ -127,14 +127,18 @@ export default function BookingsCalendarPage() {
   };
 
   const handleColorChange = async (id: string, color: string) => {
-    const res = await fetch(`/api/bookings/${id}/color`, {
+    // Update UI immediately
+    setBookings(prev => prev.map(b => b.id === id ? { ...b, color } : b));
+    if (selectedBooking?.id === id) {
+      setSelectedBooking(prev => prev ? { ...prev, color } : null);
+    }
+    
+    // Save to database
+    await fetch(`/api/bookings/${id}/color`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ color }),
     });
-    if (res.ok) {
-      await fetchBookings();
-    }
   };
 
   const navigateWeek = (dir: number) => {
@@ -329,12 +333,13 @@ export default function BookingsCalendarPage() {
                         backgroundColor: isToday(day) ? primaryColor + '05' : undefined,
                       }}
                     >
-                      {dayBookings.map((booking, bookingIdx) => {
+                      {dayBookings.map((booking) => {
                         const { top, height } = getBookingPosition(booking);
                         const statusColor = statusColors[booking.status] || primaryColor;
-                        // Use stored color or assign based on index
+                        // Use stored color or generate from booking ID
                         const distinctColors = ['#10B981', '#F59E0B', '#3B82F6', '#EC4899', '#8B5CF6', '#EF4444', '#14B8A6', '#6366F1'];
-                        const bookingColor = booking.color || distinctColors[bookingIdx % distinctColors.length];
+                        const idHash = booking.id.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
+                        const bookingColor = booking.color || distinctColors[idHash % distinctColors.length];
                         return (
                           <div
                             key={booking.id}
