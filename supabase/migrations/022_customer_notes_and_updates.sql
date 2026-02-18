@@ -28,6 +28,9 @@ create index if not exists customer_notes_staff_id_idx on customer_notes(staff_i
 -- RLS policies
 alter table customer_notes enable row level security;
 
+-- Drop policy if exists and recreate
+drop policy if exists "Salon staff can manage notes for their customers" on customer_notes;
+
 -- Salon staff can view and manage notes for their customers
 create policy "Salon staff can manage notes for their customers"
   on customer_notes
