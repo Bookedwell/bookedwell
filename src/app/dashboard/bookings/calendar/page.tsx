@@ -192,17 +192,10 @@ export default function BookingsCalendarPage() {
       const mouseY = ev.clientY - rect.top;
       d.currentTop = Math.max(0, Math.round((mouseY - d.offsetY) / 16) * 16);
 
-      // Detect day column from mouse X using actual column positions
-      for (let i = 0; i < dayColRefs.current.length; i++) {
-        const col = dayColRefs.current[i];
-        if (col) {
-          const cr = col.getBoundingClientRect();
-          if (ev.clientX >= cr.left && ev.clientX < cr.right) {
-            d.dayIdx = i;
-            break;
-          }
-        }
-      }
+      // Detect day column using simple math - much more accurate
+      const relativeX = ev.clientX - rect.left;
+      const colWidth = rect.width / 7;
+      d.dayIdx = Math.min(6, Math.max(0, Math.floor(relativeX / colWidth)));
 
       // Move ghost directly via DOM – no React state
       const ghost = ghostRef.current;
