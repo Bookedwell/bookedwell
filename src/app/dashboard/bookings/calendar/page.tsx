@@ -90,12 +90,19 @@ export default function BookingsCalendarPage() {
 
   const fetchBookings = async () => {
     setLoading(true);
-    const startStr = view === 'week'
-      ? weekStart.toISOString()
-      : new Date(currentDate.setHours(0, 0, 0, 0)).toISOString();
-    const endStr = view === 'week'
-      ? weekEnd.toISOString()
-      : new Date(new Date(currentDate).setHours(23, 59, 59, 999)).toISOString();
+    let startStr: string;
+    let endStr: string;
+    if (view === 'week') {
+      startStr = weekStart.toISOString();
+      endStr = weekEnd.toISOString();
+    } else {
+      const start = new Date(currentDate);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(currentDate);
+      end.setHours(23, 59, 59, 999);
+      startStr = start.toISOString();
+      endStr = end.toISOString();
+    }
 
     const res = await fetch(
       `/api/dashboard/bookings?start=${encodeURIComponent(startStr)}&end=${encodeURIComponent(endStr)}`,
@@ -305,9 +312,13 @@ export default function BookingsCalendarPage() {
     return date.toDateString() === today.toDateString();
   };
 
+  const pad2 = (n: number) => String(n).padStart(2, '0');
+  const localDateKey = (d: Date) =>
+    `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+
   const getBookingsForDay = (date: Date) => {
-    const dayStr = date.toISOString().split('T')[0];
-    return bookings.filter((b) => b.start_time.startsWith(dayStr));
+    const key = localDateKey(date);
+    return bookings.filter((b) => localDateKey(new Date(b.start_time)) === key);
   };
 
   const getBookingPosition = (booking: CalendarBooking) => {
