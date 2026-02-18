@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Calendar, Clock, User, Check, Trash2, X, ShoppingCart, Move, Copy, XCircle, Maximize2, ChevronDown } from 'lucide-react';
 
 interface BookingDetailModalProps {
@@ -41,23 +41,78 @@ export function BookingDetailModal({
   const [moveDate, setMoveDate] = useState('');
   const [moveTime, setMoveTime] = useState('');
   const [showLabelCreate, setShowLabelCreate] = useState(false);
+  const [showLabelSelect, setShowLabelSelect] = useState(false);
   const [newLabelTitle, setNewLabelTitle] = useState('');
   const [newLabelColor, setNewLabelColor] = useState('#3B82F6');
   const [selectedColor, setSelectedColor] = useState(booking.color || '#3B82F6');
+  const [labels, setLabels] = useState<any[]>([]);
+  const [selectedLabelId, setSelectedLabelId] = useState<string | null>(booking.label_id || null);
+  const [loadingLabels, setLoadingLabels] = useState(false);
   const start = new Date(booking.start_time);
   const end = new Date(booking.end_time);
 
   const timeStr = (d: Date) => d.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' });
   const durationMin = booking.service?.duration_minutes || Math.round((end.getTime() - start.getTime()) / 60000);
 
-  const handleCreateLabel = () => {
-    if (!newLabelTitle.trim()) return;
-    if (onColorChange) {
-      onColorChange(booking.id, newLabelColor);
+  const fetchLabels = async () => {
+    setLoadingLabels(true);
+    try {
+      const res = await fetch('/api/booking-labels');
+      if (res.ok) {
+        const data = await res.json();
+        setLabels(data);
+      }
+    } catch (error) {
+      console.error('Error fetching labels:', error);
+    } finally {
+      setLoadingLabels(false);
     }
-    setSelectedColor(newLabelColor);
-    setShowLabelCreate(false);
-    setNewLabelTitle('');
+  };
+
+  const handleCreateLabel = async () => {
+    if (!newLabelTitle.trim()) return;
+    
+    try {
+      // Create label
+      const res = await fetch('/api/booking-labels', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newLabelTitle, color: newLabelColor }),
+      });
+      
+      if (res.ok) {
+        const newLabel = await res.json();
+        
+        // Assign label to booking
+        await fetch(`/api/bookings/${booking.id}/label`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ label_id: newLabel.id }),
+        });
+        
+        setSelectedLabelId(newLabel.id);
+        setLabels([...labels, newLabel]);
+        setShowLabelCreate(false);
+        setShowLabelSelect(false);
+        setNewLabelTitle('');
+      }
+    } catch (error) {
+      console.error('Error creating label:', error);
+    }
+  };
+
+  const handleSelectLabel = async (labelId: string | null) => {
+    try {
+      await fetch(`/api/bookings/${booking.id}/label`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ label_id: labelId }),
+      });
+      setSelectedLabelId(labelId);
+      setShowLabelSelect(false);
+    } catch (error) {
+      console.error('Error updating label:', error);
+    }
   };
 
   const handleMove = () => {
@@ -66,6 +121,12 @@ export function BookingDetailModal({
     onReschedule(booking.id, newDateTime);
     setShowMove(false);
   };
+
+  useEffect(() => {
+    fetchLabels();
+  }, []);
+
+  const selectedLabel = labels.find(l => l.id === selectedLabelId);
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" onClick={onClose}>
@@ -150,15 +211,57 @@ export function BookingDetailModal({
             {/* Label */}
             <div className="space-y-2 relative">
               <button
-                onClick={() => setShowLabelCreate(!showLabelCreate)}
+                onClick={() => setShowLabelSelect(!showLabelSelect)}
                 className="w-full flex items-center justify-between px-3 py-2 border border-gray-200 rounded-lg text-sm hover:bg-white transition-colors bg-white"
               >
                 <div className="flex items-center gap-2">
-                  <X className="w-4 h-4 text-gray-400" />
-                  <span className="text-gray-600">Geen label</span>
+                  {selectedLabel ? (
+                    <>
+                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: selectedLabel.color }} />
+                      <span className="text-gray-900">{selectedLabel.name}</span>
+                    </>
+                  ) : (
+                    <>
+                      <X className="w-4 h-4 text-gray-400" />
+                      <span className="text-gray-600">Geen label</span>
+                    </>
+                  )}
                 </div>
                 <ChevronDown className="w-4 h-4 text-gray-400" />
               </button>
+
+              {showLabelSelect && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20 max-h-60 overflow-y-auto">
+                  <button
+                    onClick={() => handleSelectLabel(null)}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-50 transition-colors text-left"
+                  >
+                    <X className="w-4 h-4 text-gray-400" />
+                    <span className="text-gray-600">Geen label</span>
+                  </button>
+                  {labels.map((label) => (
+                    <button
+                      key={label.id}
+                      onClick={() => handleSelectLabel(label.id)}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-50 transition-colors text-left"
+                    >
+                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: label.color }} />
+                      <span className="text-gray-900">{label.name}</span>
+                    </button>
+                  ))}
+                  <div className="border-t border-gray-200 mt-1 pt-1">
+                    <button
+                      onClick={() => {
+                        setShowLabelSelect(false);
+                        setShowLabelCreate(true);
+                      }}
+                      className="w-full px-3 py-2 text-sm text-blue-600 hover:bg-gray-50 transition-colors text-left font-medium"
+                    >
+                      + Maak nieuw label
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {showLabelCreate && (
                 <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 p-4 z-20 space-y-3">
@@ -212,13 +315,6 @@ export function BookingDetailModal({
                   </div>
                 </div>
               )}
-
-              <button
-                onClick={() => setShowLabelCreate(true)}
-                className="text-sm text-blue-600 hover:text-blue-700 font-medium"
-              >
-                Maak nieuw label
-              </button>
             </div>
 
             {/* Actions */}
