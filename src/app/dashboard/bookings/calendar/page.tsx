@@ -244,7 +244,7 @@ export default function BookingsCalendarPage() {
           /* Week view */
           <div className="overflow-x-auto">
             {/* Day headers */}
-            <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-light-gray sticky top-0 bg-white z-10">
+            <div className="grid grid-cols-[80px_repeat(7,1fr)] border-b border-light-gray sticky top-0 bg-white z-10">
               <div className="border-r border-light-gray" />
               {weekDays.map((day, i) => (
                 <div
@@ -268,13 +268,13 @@ export default function BookingsCalendarPage() {
             </div>
 
             {/* Time grid */}
-            <div className="grid grid-cols-[60px_repeat(7,1fr)] relative" style={{ minHeight: HOURS.length * 64 }}>
+            <div className="grid grid-cols-[80px_repeat(7,1fr)] relative" style={{ minHeight: HOURS.length * 64 }}>
               {/* Hour labels */}
               {HOURS.map((hour) => (
                 <div
                   key={hour}
-                  className="col-start-1 border-r border-light-gray text-right pr-2 text-xs text-gray-text"
-                  style={{ gridRow: `${hour - 7}`, height: 64, paddingTop: 2 }}
+                  className="col-start-1 border-r border-light-gray text-right pr-3 text-sm text-gray-text bg-white font-medium"
+                  style={{ gridRow: `${hour - 7}`, height: 64, paddingTop: 4 }}
                 >
                   {String(hour).padStart(2, '0')}:00
                 </div>
@@ -285,7 +285,7 @@ export default function BookingsCalendarPage() {
                 <div
                   key={`line-${hour}`}
                   className="col-span-7 col-start-2 border-t border-light-gray absolute w-full pointer-events-none"
-                  style={{ top: (hour - 8) * 64, left: 60 }}
+                  style={{ top: (hour - 8) * 64, left: 80 }}
                 />
               ))}
 
@@ -343,13 +343,13 @@ export default function BookingsCalendarPage() {
         ) : (
           /* Day view */
           <div className="overflow-x-auto">
-            <div className="grid grid-cols-[60px_1fr] relative" style={{ minHeight: HOURS.length * 64 }}>
+            <div className="grid grid-cols-[80px_1fr] relative" style={{ minHeight: HOURS.length * 64 }}>
               {/* Hour labels + lines */}
               {HOURS.map((hour, i) => (
                 <div key={hour} className="contents">
                   <div
-                    className="border-r border-light-gray text-right pr-2 text-xs text-gray-text border-t border-light-gray"
-                    style={{ height: 64, paddingTop: 2 }}
+                    className="border-r border-light-gray text-right pr-3 text-sm text-gray-text border-t border-light-gray bg-white font-medium"
+                    style={{ height: 64, paddingTop: 4 }}
                   >
                     {String(hour).padStart(2, '0')}:00
                   </div>
@@ -362,7 +362,7 @@ export default function BookingsCalendarPage() {
               {/* Bookings overlay */}
               <div
                 className="absolute col-start-2"
-                style={{ left: 60, right: 0, top: 0, bottom: 0 }}
+                style={{ left: 80, right: 0, top: 0, bottom: 0 }}
               >
                 {getBookingsForDay(currentDate).map((booking) => {
                   const { top, height } = getBookingPosition(booking);
