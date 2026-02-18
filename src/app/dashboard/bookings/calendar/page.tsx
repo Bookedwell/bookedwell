@@ -120,8 +120,6 @@ export default function BookingsCalendarPage() {
   }, [currentDate, view, weekStart, weekEnd]);
 
   const handleCancel = async (id: string) => {
-    if (!confirm('Weet je zeker dat je deze boeking wilt annuleren?')) return;
-    
     const res = await fetch(`/api/bookings/${id}/cancel`, { method: 'POST' });
     if (res.ok) {
       await fetchBookings();

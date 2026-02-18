@@ -48,6 +48,7 @@ export function CustomerDetailClient({
   const [loadingBookings, setLoadingBookings] = useState(false);
   const [loadingNotes, setLoadingNotes] = useState(false);
   const [addingNote, setAddingNote] = useState(false);
+  const [confirmDeleteNoteId, setConfirmDeleteNoteId] = useState<string | null>(null);
 
   useEffect(() => {
     if (activeTab === 'appointments' && bookings.length === 0) {
@@ -121,8 +122,6 @@ export function CustomerDetailClient({
   };
 
   const handleDeleteNote = async (noteId: string) => {
-    if (!confirm('Weet je zeker dat je deze opmerking wilt verwijderen?')) return;
-    
     try {
       const response = await fetch(`/api/customer-notes/${noteId}`, {
         method: 'DELETE',
@@ -130,6 +129,7 @@ export function CustomerDetailClient({
 
       if (response.ok) {
         setNotes(prev => prev.filter(n => n.id !== noteId));
+        setConfirmDeleteNoteId(null);
       } else {
         alert('Fout bij verwijderen opmerking');
       }
@@ -855,13 +855,30 @@ export function CustomerDetailClient({
                           })}
                         </p>
                       </div>
-                      <button
-                        onClick={() => handleDeleteNote(note.id)}
-                        className="p-1 text-red-500 hover:bg-red-50 rounded transition-colors"
-                        title="Verwijderen"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
+                      {confirmDeleteNoteId === note.id ? (
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleDeleteNote(note.id)}
+                            className="px-3 py-1 text-xs text-white bg-red-500 hover:bg-red-600 rounded transition-colors"
+                          >
+                            Ja
+                          </button>
+                          <button
+                            onClick={() => setConfirmDeleteNoteId(null)}
+                            className="px-3 py-1 text-xs border border-gray-200 rounded hover:bg-gray-50 transition-colors"
+                          >
+                            Nee
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => setConfirmDeleteNoteId(note.id)}
+                          className="p-1 text-red-500 hover:bg-red-50 rounded transition-colors"
+                          title="Verwijderen"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
                     </div>
                     <p className="text-sm text-gray-700 whitespace-pre-wrap">{note.note}</p>
                   </div>
