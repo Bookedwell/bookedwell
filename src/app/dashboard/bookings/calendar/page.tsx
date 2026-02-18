@@ -280,76 +280,78 @@ export default function BookingsCalendarPage() {
             </div>
 
             {/* Time grid */}
-            <div className="grid grid-cols-[80px_repeat(7,1fr)] relative" style={{ minHeight: HOURS.length * 64 }}>
-              {/* Hour labels */}
-              {HOURS.map((hour) => (
-                <div
-                  key={hour}
-                  className="col-start-1 border-r border-light-gray text-right pr-3 text-sm text-gray-text bg-white font-medium"
-                  style={{ gridRow: `${hour - 7}`, height: 64, paddingTop: 4 }}
-                >
-                  {String(hour).padStart(2, '0')}:00
-                </div>
-              ))}
-
-              {/* Hour lines */}
-              {HOURS.map((hour) => (
-                <div
-                  key={`line-${hour}`}
-                  className="col-span-7 col-start-2 border-t border-light-gray absolute w-full pointer-events-none"
-                  style={{ top: (hour - 8) * 64, left: 80 }}
-                />
-              ))}
-
-              {/* Day columns with bookings */}
-              {weekDays.map((day, dayIdx) => {
-                const dayBookings = getBookingsForDay(day);
-                return (
+            <div className="flex relative" style={{ minHeight: HOURS.length * 64 }}>
+              {/* Hour labels column */}
+              <div className="w-[80px] flex-shrink-0 border-r border-light-gray bg-white">
+                {HOURS.map((hour, idx) => (
                   <div
-                    key={dayIdx}
-                    className={`relative border-r border-light-gray last:border-r-0 ${
-                      isToday(day) ? '' : ''
-                    }`}
-                    style={{
-                      gridColumn: dayIdx + 2,
-                      gridRow: '1 / -1',
-                      minHeight: HOURS.length * 64,
-                      backgroundColor: isToday(day) ? primaryColor + '05' : undefined,
-                    }}
+                    key={hour}
+                    className="text-right pr-3 text-sm text-gray-text font-medium border-t border-light-gray"
+                    style={{ height: 64, paddingTop: 4 }}
                   >
-                    {dayBookings.map((booking) => {
-                      const { top, height } = getBookingPosition(booking);
-                      const statusColor = statusColors[booking.status] || primaryColor;
-                      return (
-                        <div
-                          key={booking.id}
-                          className="absolute left-1 right-1 rounded-md px-1.5 py-1 overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
-                          style={{
-                            top,
-                            height,
-                            backgroundColor: primaryColor + '15',
-                            borderLeft: `3px solid ${statusColor}`,
-                          }}
-                          title={`${booking.customer_name} - ${booking.service?.name || ''}`}
-                          onClick={() => setSelectedBooking(booking)}
-                        >
-                          <p className="text-[10px] font-semibold text-navy truncate">
-                            {formatTime(booking.start_time)}
-                          </p>
-                          <p className="text-[10px] text-navy truncate">
-                            {booking.customer_name}
-                          </p>
-                          {height > 40 && (
+                    {String(hour).padStart(2, '0')}:00
+                  </div>
+                ))}
+              </div>
+
+              {/* Days grid */}
+              <div className="flex-1 grid grid-cols-7 relative">
+                {/* Hour lines */}
+                {HOURS.map((hour, idx) => (
+                  <div
+                    key={`line-${hour}`}
+                    className="col-span-7 border-t border-light-gray absolute w-full pointer-events-none"
+                    style={{ top: idx * 64 }}
+                  />
+                ))}
+
+                {/* Day columns with bookings */}
+                {weekDays.map((day, dayIdx) => {
+                  const dayBookings = getBookingsForDay(day);
+                  return (
+                    <div
+                      key={dayIdx}
+                      className="relative border-r border-light-gray last:border-r-0"
+                      style={{
+                        minHeight: HOURS.length * 64,
+                        backgroundColor: isToday(day) ? primaryColor + '05' : undefined,
+                      }}
+                    >
+                      {dayBookings.map((booking, bookingIdx) => {
+                        const { top, height } = getBookingPosition(booking);
+                        const statusColor = statusColors[booking.status] || primaryColor;
+                        // Different colors based on booking index
+                        const colors = ['#10B981', '#F59E0B', '#3B82F6', '#EC4899', '#8B5CF6', '#06B6D4'];
+                        const bookingColor = colors[bookingIdx % colors.length];
+                        return (
+                          <div
+                            key={booking.id}
+                            className="absolute left-1 right-1 rounded-md px-1.5 py-1 overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
+                            style={{
+                              top,
+                              height,
+                              backgroundColor: bookingColor + '15',
+                              borderLeft: `3px solid ${bookingColor}`,
+                            }}
+                            title={`${booking.customer_name} - ${booking.service?.name || ''}`}
+                            onClick={() => setSelectedBooking(booking)}
+                          >
+                            <p className="text-[10px] font-semibold truncate" style={{ color: bookingColor }}>
+                              {formatTime(booking.start_time)}
+                            </p>
+                            <p className="text-[10px] text-navy truncate font-medium">
+                              {booking.customer_name}
+                            </p>
                             <p className="text-[10px] text-gray-text truncate">
                               {booking.service?.name}
                             </p>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                );
-              })}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
         ) : (

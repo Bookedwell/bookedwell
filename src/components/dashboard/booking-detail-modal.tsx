@@ -190,7 +190,8 @@ export function BookingDetailModal({
                       type="time"
                       value={newTime}
                       onChange={(e) => setNewTime(e.target.value)}
-                      className="px-3 py-2 border border-light-gray rounded-lg text-sm focus:outline-none focus:ring-2"
+                      step="900"
+                      className="px-3 py-2 border border-light-gray rounded-lg text-sm focus:outline-none focus:ring-2 [&::-webkit-calendar-picker-indicator]:hidden"
                       style={{ '--tw-ring-color': accentColor } as any}
                     />
                   </div>
