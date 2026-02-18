@@ -34,6 +34,10 @@ export function BookingDetailModal({
   accentColor = '#4285F4' 
 }: BookingDetailModalProps) {
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [confirmNoShow, setConfirmNoShow] = useState(false);
+  const [showMove, setShowMove] = useState(false);
+  const [moveDate, setMoveDate] = useState('');
+  const [moveTime, setMoveTime] = useState('');
   const [showLabelCreate, setShowLabelCreate] = useState(false);
   const [newLabelTitle, setNewLabelTitle] = useState('');
   const [newLabelColor, setNewLabelColor] = useState('#3B82F6');
@@ -54,6 +58,13 @@ export function BookingDetailModal({
     setNewLabelTitle('');
   };
 
+  const handleMove = () => {
+    if (!moveDate || !moveTime || !onReschedule) return;
+    const newDateTime = `${moveDate}T${moveTime}:00`;
+    onReschedule(booking.id, newDateTime);
+    setShowMove(false);
+  };
+
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div 
@@ -62,7 +73,7 @@ export function BookingDetailModal({
       >
         {/* Header */}
         <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900">Appointment</h2>
+          <h2 className="text-lg font-semibold text-gray-900">Afspraak</h2>
           <div className="flex items-center gap-2">
             <button className="p-2 hover:bg-gray-100 rounded transition-colors">
               <Maximize2 className="w-4 h-4 text-gray-500" />
@@ -80,7 +91,7 @@ export function BookingDetailModal({
             {/* Date & Time */}
             <div className="flex items-center gap-3 text-sm text-gray-600">
               <Calendar className="w-4 h-4" />
-              <span>{start.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</span>
+              <span>{start.toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</span>
               <Clock className="w-4 h-4 ml-2" />
               <span>{timeStr(start)} - {timeStr(end)}</span>
             </div>
@@ -99,13 +110,13 @@ export function BookingDetailModal({
 
             {/* History */}
             <div className="space-y-3">
-              <h3 className="text-sm font-semibold text-gray-900">History</h3>
+              <h3 className="text-sm font-semibold text-gray-900">Geschiedenis</h3>
               <div className="space-y-2 text-sm text-gray-600">
                 <div className="flex items-start gap-2">
                   <Calendar className="w-4 h-4 mt-0.5 text-gray-400" />
                   <div className="flex-1">
-                    <p>Appointment created for {start.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })} at {timeStr(start)}</p>
-                    <span className="text-xs text-gray-400">{new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })} - {new Date().toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })}</span>
+                    <p>Afspraak aangemaakt voor {start.toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit', year: 'numeric' })} om {timeStr(start)}</p>
+                    <span className="text-xs text-gray-400">{new Date().toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit', year: 'numeric' })} - {new Date().toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })}</span>
                   </div>
                   <button className="text-gray-400 hover:text-gray-600">
                     <User className="w-4 h-4" />
@@ -119,12 +130,12 @@ export function BookingDetailModal({
           <div className="w-80 p-6 space-y-6 bg-gray-50">
             {/* Customer */}
             <div className="space-y-2">
-              <div className="text-sm font-medium text-gray-500">No customer added</div>
+              <div className="text-sm font-medium text-gray-500">Geen klant toegevoegd</div>
               <div className="relative">
                 <User className="w-4 h-4 text-gray-400 absolute left-3 top-3" />
                 <input
                   type="text"
-                  placeholder="Search customer"
+                  placeholder="Zoek klant"
                   className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                   defaultValue={booking.customer_name || ''}
                 />
@@ -142,7 +153,7 @@ export function BookingDetailModal({
               >
                 <div className="flex items-center gap-2">
                   <X className="w-4 h-4 text-gray-400" />
-                  <span className="text-gray-600">No label</span>
+                  <span className="text-gray-600">Geen label</span>
                 </div>
                 <ChevronDown className="w-4 h-4 text-gray-400" />
               </button>
@@ -150,18 +161,18 @@ export function BookingDetailModal({
               {showLabelCreate && (
                 <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 p-4 z-20 space-y-3">
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-gray-500 uppercase">Title *</label>
+                    <label className="text-xs font-medium text-gray-500 uppercase">Titel *</label>
                     <input
                       type="text"
                       value={newLabelTitle}
                       onChange={(e) => setNewLabelTitle(e.target.value)}
                       className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Label name"
+                      placeholder="Label naam"
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-gray-500 uppercase">Colour</label>
+                    <label className="text-xs font-medium text-gray-500 uppercase">Kleur</label>
                     <div className="flex gap-2">
                       {COLOR_OPTIONS.slice(0, 5).map((color) => (
                         <button
@@ -186,7 +197,7 @@ export function BookingDetailModal({
                       }}
                       className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
                     >
-                      Cancel
+                      Annuleren
                     </button>
                     <button
                       onClick={handleCreateLabel}
@@ -194,7 +205,7 @@ export function BookingDetailModal({
                       className="flex-1 px-3 py-2 text-sm text-white rounded-lg transition-colors disabled:opacity-50"
                       style={{ backgroundColor: '#4F46E5' }}
                     >
-                      Save
+                      Opslaan
                     </button>
                   </div>
                 </div>
@@ -204,36 +215,101 @@ export function BookingDetailModal({
                 onClick={() => setShowLabelCreate(true)}
                 className="text-sm text-blue-600 hover:text-blue-700 font-medium"
               >
-                Create new label
+                Maak nieuw label
               </button>
             </div>
 
             {/* Actions */}
             <div className="space-y-1 pt-4">
-              <button className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-white rounded-lg transition-colors">
-                <ShoppingCart className="w-4 h-4" />
-                <span>Checkout</span>
-              </button>
-
-              {onReschedule && (
-                <button className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-white rounded-lg transition-colors">
+              {onReschedule && !showMove && (
+                <button 
+                  onClick={() => setShowMove(true)}
+                  className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-white rounded-lg transition-colors"
+                >
                   <Move className="w-4 h-4" />
-                  <span>Move</span>
+                  <span>Verplaatsen</span>
                 </button>
+              )}
+
+              {showMove && (
+                <div className="bg-white rounded-lg p-3 space-y-3">
+                  <p className="text-sm font-medium text-gray-700">Nieuwe datum & tijd</p>
+                  <div className="space-y-2">
+                    <input
+                      type="date"
+                      value={moveDate}
+                      onChange={(e) => setMoveDate(e.target.value)}
+                      min={new Date().toISOString().split('T')[0]}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <select
+                      value={moveTime}
+                      onChange={(e) => setMoveTime(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Selecteer tijd</option>
+                      {Array.from({ length: 13 }, (_, i) => i + 8).flatMap(hour => 
+                        [0, 15, 30, 45].map(min => {
+                          const val = `${String(hour).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
+                          return <option key={val} value={val}>{val}</option>;
+                        })
+                      )}
+                    </select>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setShowMove(false)}
+                      className="flex-1 px-3 py-1.5 text-sm border border-gray-200 rounded hover:bg-gray-50 transition-colors"
+                    >
+                      Annuleren
+                    </button>
+                    <button
+                      onClick={handleMove}
+                      disabled={!moveDate || !moveTime}
+                      className="flex-1 px-3 py-1.5 text-sm text-white rounded transition-colors disabled:opacity-50"
+                      style={{ backgroundColor: accentColor }}
+                    >
+                      Opslaan
+                    </button>
+                  </div>
+                </div>
               )}
 
               <button className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-white rounded-lg transition-colors">
                 <Copy className="w-4 h-4" />
-                <span>Copy</span>
+                <span>Kopiëren</span>
               </button>
 
-              <button 
-                onClick={() => onCancel(booking.id)}
-                className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-white rounded-lg transition-colors"
-              >
-                <XCircle className="w-4 h-4" />
-                <span>Mark as no show</span>
-              </button>
+              {!confirmNoShow ? (
+                <button 
+                  onClick={() => setConfirmNoShow(true)}
+                  className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-white rounded-lg transition-colors"
+                >
+                  <XCircle className="w-4 h-4" />
+                  <span>Markeer als no-show</span>
+                </button>
+              ) : (
+                <div className="bg-white rounded-lg p-3 space-y-2">
+                  <p className="text-sm text-gray-700">Deze afspraak markeren als no-show?</p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        onCancel(booking.id);
+                        setConfirmNoShow(false);
+                      }}
+                      className="flex-1 px-3 py-1.5 text-sm text-white bg-orange-500 hover:bg-orange-600 rounded transition-colors"
+                    >
+                      Ja
+                    </button>
+                    <button
+                      onClick={() => setConfirmNoShow(false)}
+                      className="flex-1 px-3 py-1.5 text-sm border border-gray-200 rounded hover:bg-gray-50 transition-colors"
+                    >
+                      Nee
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {!confirmDelete ? (
                 <button 
@@ -241,11 +317,11 @@ export function BookingDetailModal({
                   className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-white rounded-lg transition-colors"
                 >
                   <Trash2 className="w-4 h-4" />
-                  <span>Delete</span>
+                  <span>Verwijderen</span>
                 </button>
               ) : (
                 <div className="bg-white rounded-lg p-3 space-y-2">
-                  <p className="text-sm text-gray-700">Delete this appointment?</p>
+                  <p className="text-sm text-gray-700">Deze afspraak verwijderen?</p>
                   <div className="flex gap-2">
                     <button
                       onClick={() => {
@@ -254,13 +330,13 @@ export function BookingDetailModal({
                       }}
                       className="flex-1 px-3 py-1.5 text-sm text-white bg-red-500 hover:bg-red-600 rounded transition-colors"
                     >
-                      Yes
+                      Ja
                     </button>
                     <button
                       onClick={() => setConfirmDelete(false)}
                       className="flex-1 px-3 py-1.5 text-sm border border-gray-200 rounded hover:bg-gray-50 transition-colors"
                     >
-                      No
+                      Nee
                     </button>
                   </div>
                 </div>
