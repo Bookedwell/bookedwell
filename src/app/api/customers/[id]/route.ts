@@ -36,6 +36,7 @@ export async function PATCH(
         additional_customer_info: body.additionalCustomerInfo || null,
         additional_invoice_info: body.additionalInvoiceInfo || null,
         appointment_warning: body.appointmentWarning || null,
+        profile_picture_url: body.profilePictureUrl || null,
         updated_at: new Date().toISOString(),
       })
       .eq('id', id)

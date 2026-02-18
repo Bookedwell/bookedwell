@@ -1,37 +1,19 @@
 'use client';
 
-import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Users } from 'lucide-react';
-import { CustomerDetailModal } from '@/components/dashboard/customer-detail-modal';
 
 interface CustomersClientProps {
   customers: any[];
 }
 
 export function CustomersClient({ customers }: CustomersClientProps) {
-  const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
+  const router = useRouter();
 
   const scoreColors: Record<string, { bg: string; text: string; label: string }> = {
     green: { bg: 'bg-green-50', text: 'text-green-700', label: 'Betrouwbaar' },
     yellow: { bg: 'bg-yellow-50', text: 'text-yellow-700', label: 'Let op' },
     red: { bg: 'bg-red-50', text: 'text-red-700', label: 'Risico' },
-  };
-
-  const handleSaveCustomer = async (formData: any) => {
-    try {
-      const response = await fetch(`/api/customers/${selectedCustomer.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
-
-      if (response.ok) {
-        setSelectedCustomer(null);
-        window.location.reload();
-      }
-    } catch (error) {
-      console.error('Error saving customer:', error);
-    }
   };
 
   return (
@@ -47,7 +29,7 @@ export function CustomersClient({ customers }: CustomersClientProps) {
                   <div 
                     key={customer.id} 
                     className="p-4 cursor-pointer hover:bg-gray-50 transition-colors"
-                    onClick={() => setSelectedCustomer(customer)}
+                    onClick={() => router.push(`/dashboard/customers/${customer.id}`)}
                   >
                     <div className="flex items-start justify-between mb-2">
                       <div>
@@ -92,7 +74,7 @@ export function CustomersClient({ customers }: CustomersClientProps) {
                       <tr 
                         key={customer.id} 
                         className="hover:bg-bg-gray/30 transition-colors cursor-pointer"
-                        onClick={() => setSelectedCustomer(customer)}
+                        onClick={() => router.push(`/dashboard/customers/${customer.id}`)}
                       >
                         <td className="px-5 py-3">
                           <p className="font-medium text-navy">{customer.name}</p>
@@ -139,13 +121,6 @@ export function CustomersClient({ customers }: CustomersClientProps) {
         )}
       </div>
 
-      {selectedCustomer && (
-        <CustomerDetailModal
-          customer={selectedCustomer}
-          onClose={() => setSelectedCustomer(null)}
-          onSave={handleSaveCustomer}
-        />
-      )}
     </>
   );
 }
