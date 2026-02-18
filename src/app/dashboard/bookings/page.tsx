@@ -30,6 +30,14 @@ export default function BookingsPage() {
     }
   }
 
+  async function handleNoShow(id: string) {
+    const res = await fetch(`/api/bookings/${id}/no-show`, { method: 'POST' });
+    if (res.ok) {
+      await fetchBookings();
+      setSelectedBooking(null);
+    }
+  }
+
   async function handleDelete(id: string) {
     const res = await fetch(`/api/bookings/${id}`, { method: 'DELETE' });
     if (res.ok) {
@@ -181,6 +189,7 @@ export default function BookingsPage() {
           booking={selectedBooking}
           onClose={() => setSelectedBooking(null)}
           onCancel={handleCancel}
+          onNoShow={handleNoShow}
           onDelete={handleDelete}
           onReschedule={handleReschedule}
         />

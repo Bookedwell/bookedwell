@@ -6,7 +6,8 @@ import { Calendar, Clock, User, Check, Trash2, X, ShoppingCart, Move, Copy, XCir
 interface BookingDetailModalProps {
   booking: any;
   onClose: () => void;
-  onCancel: (id: string) => void;
+  onCancel?: (id: string) => void;
+  onNoShow?: (id: string) => void;
   onDelete: (id: string) => void;
   onReschedule?: (id: string, newDateTime: string) => void;
   onColorChange?: (id: string, color: string) => void;
@@ -27,7 +28,8 @@ const COLOR_OPTIONS = [
 export function BookingDetailModal({ 
   booking, 
   onClose, 
-  onCancel, 
+  onCancel,
+  onNoShow,
   onDelete,
   onReschedule,
   onColorChange,
@@ -280,7 +282,7 @@ export function BookingDetailModal({
                 <span>Kopiëren</span>
               </button>
 
-              {!confirmNoShow ? (
+              {onNoShow && !confirmNoShow ? (
                 <button 
                   onClick={() => setConfirmNoShow(true)}
                   className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-white rounded-lg transition-colors"
@@ -288,13 +290,13 @@ export function BookingDetailModal({
                   <XCircle className="w-4 h-4" />
                   <span>Markeer als no-show</span>
                 </button>
-              ) : (
+              ) : onNoShow && confirmNoShow ? (
                 <div className="bg-white rounded-lg p-3 space-y-2">
                   <p className="text-sm text-gray-700">Deze afspraak markeren als no-show?</p>
                   <div className="flex gap-2">
                     <button
                       onClick={() => {
-                        onCancel(booking.id);
+                        onNoShow(booking.id);
                         setConfirmNoShow(false);
                       }}
                       className="flex-1 px-3 py-1.5 text-sm text-white bg-orange-500 hover:bg-orange-600 rounded transition-colors"
@@ -309,7 +311,7 @@ export function BookingDetailModal({
                     </button>
                   </div>
                 </div>
-              )}
+              ) : null}
 
               {!confirmDelete ? (
                 <button 
