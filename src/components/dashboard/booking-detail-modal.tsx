@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Calendar, Clock, User, Phone, Check, CircleDot } from 'lucide-react';
+import { Calendar, Clock, User, Check, Trash2 } from 'lucide-react';
 
 interface BookingDetailModalProps {
   booking: any;
@@ -34,6 +34,7 @@ export function BookingDetailModal({
   accentColor = '#4285F4' 
 }: BookingDetailModalProps) {
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [confirmCancel, setConfirmCancel] = useState(false);
   const [showReschedule, setShowReschedule] = useState(false);
   const [newDate, setNewDate] = useState('');
   const [newTime, setNewTime] = useState('');
@@ -77,25 +78,19 @@ export function BookingDetailModal({
         className="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Title */}
-        <div className="px-8 pt-7 pb-4">
-          <h2 className="text-xl font-bold text-center text-gray-900">Booking details</h2>
+        {/* Header: Title left, Status badge right */}
+        <div className="px-8 pt-8 pb-6 flex items-center justify-between">
+          <h2 className="text-xl font-bold text-gray-900">Booking details</h2>
+          <span 
+            className="text-sm px-4 py-1.5 rounded-full font-medium"
+            style={{ backgroundColor: status.bg, color: status.text, border: `1px solid ${status.border}` }}
+          >
+            {status.label}
+          </span>
         </div>
-        <div className="mx-8 border-t border-gray-100" />
 
         {/* Content */}
-        <div className="px-8 py-5 space-y-5">
-          {/* Status badge */}
-          <div>
-            <span 
-              className="inline-flex items-center gap-1.5 text-sm px-4 py-1.5 rounded-full font-medium"
-              style={{ backgroundColor: status.bg, color: status.text, border: `1px solid ${status.border}` }}
-            >
-              <CircleDot className="w-3.5 h-3.5" />
-              {status.label}
-            </span>
-          </div>
-
+        <div className="px-8 pb-6 space-y-6">
           {/* Customer */}
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
@@ -139,8 +134,8 @@ export function BookingDetailModal({
             </p>
           </div>
 
-          {/* Color dots */}
-          <div className="flex items-center justify-center gap-2.5 pt-1">
+          {/* Color dots - left aligned */}
+          <div className="flex items-center gap-3 pt-2">
             {COLOR_OPTIONS.map((color) => (
               <button
                 key={color.value}
@@ -148,12 +143,12 @@ export function BookingDetailModal({
                   setSelectedColor(color.value);
                   if (onColorChange) onColorChange(booking.id, color.value);
                 }}
-                className="relative w-7 h-7 rounded-full transition-transform hover:scale-110"
+                className="relative w-8 h-8 rounded-full transition-transform hover:scale-110"
                 style={{ backgroundColor: color.value }}
                 title={color.name}
               >
                 {selectedColor === color.value && (
-                  <Check className="w-3.5 h-3.5 text-white absolute inset-0 m-auto" strokeWidth={3} />
+                  <Check className="w-4 h-4 text-white absolute inset-0 m-auto" strokeWidth={3} />
                 )}
               </button>
             ))}
@@ -206,41 +201,54 @@ export function BookingDetailModal({
         )}
 
         {/* Actions */}
-        <div className="px-8 pb-7 pt-2">
-          <div className="flex items-center justify-center gap-3">
-            {booking.status !== 'cancelled' && booking.status !== 'completed' && onReschedule && !showReschedule && (
-              <button
-                className="px-5 py-2.5 text-sm font-medium border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-gray-700"
-                onClick={() => setShowReschedule(true)}
-              >
-                Verplaatsen
-              </button>
-            )}
+        <div className="px-8 pb-8 pt-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              {booking.status !== 'cancelled' && booking.status !== 'completed' && onReschedule && !showReschedule && (
+                <button
+                  className="px-6 py-2.5 text-sm font-medium border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-gray-700"
+                  onClick={() => setShowReschedule(true)}
+                >
+                  Verplaatsen
+                </button>
+              )}
 
-            {booking.status !== 'cancelled' && booking.status !== 'completed' && booking.status === 'pending' && (
-              <button
-                className="px-5 py-2.5 text-sm font-medium text-white rounded-lg transition-colors"
-                style={{ backgroundColor: '#EF4444' }}
-                onClick={() => onCancel(booking.id)}
-              >
-                Bevestigen
-              </button>
-            )}
+              {booking.status !== 'cancelled' && booking.status !== 'completed' && !confirmCancel && (
+                <button
+                  className="px-6 py-2.5 text-sm font-medium border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-gray-700"
+                  onClick={() => setConfirmCancel(true)}
+                >
+                  Annuleren
+                </button>
+              )}
 
-            {booking.status !== 'cancelled' && booking.status !== 'completed' && booking.status !== 'pending' && (
-              <button
-                className="px-5 py-2.5 text-sm font-medium border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-gray-700"
-                onClick={() => onCancel(booking.id)}
-              >
-                Annuleren
-              </button>
-            )}
+              {confirmCancel && (
+                <div className="flex items-center gap-2">
+                  <button
+                    className="px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors bg-red-500 hover:bg-red-600"
+                    onClick={() => {
+                      onCancel(booking.id);
+                      setConfirmCancel(false);
+                    }}
+                  >
+                    Ja, annuleren
+                  </button>
+                  <button
+                    className="px-4 py-2 text-sm font-medium border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-gray-700"
+                    onClick={() => setConfirmCancel(false)}
+                  >
+                    Nee
+                  </button>
+                </div>
+              )}
+            </div>
 
             <button
-              className="px-5 py-2.5 text-sm font-medium text-red-500 hover:text-red-700 transition-colors"
+              className={`p-2.5 rounded-lg transition-colors ${confirmDelete ? 'bg-red-100' : 'hover:bg-gray-100'}`}
               onClick={handleDelete}
+              title={confirmDelete ? 'Klik nogmaals om te verwijderen' : 'Verwijderen'}
             >
-              {confirmDelete ? 'Bevestig verwijderen' : 'Verwijderen'}
+              <Trash2 className="w-5 h-5 text-red-500" />
             </button>
           </div>
         </div>
