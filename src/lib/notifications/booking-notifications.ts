@@ -1,4 +1,4 @@
-import { sendWhatsApp } from './send-whatsapp';
+import { sendWhatsApp, sendWhatsAppConfirmation, generateGoogleCalendarLink } from './send-whatsapp';
 import { sendEmail } from './send-email';
 import { format } from 'date-fns';
 import { nl } from 'date-fns/locale';
@@ -27,14 +27,23 @@ export async function sendBookingConfirmation(data: BookingNotificationData) {
   const dateStr = formatDateTime(startTime);
   const price = formatPrice(priceCents);
 
-  // WhatsApp
-  const whatsappBody = `Hoi ${customerName}! Je afspraak bij ${salonName} is bevestigd.\n\n` +
-    `📅 ${dateStr}\n` +
-    `✂️ ${serviceName}\n` +
-    `💰 ${price}\n\n` +
-    `Tot dan! - ${salonName}`;
+  // WhatsApp via template with calendar link
+  const calendarLink = generateGoogleCalendarLink({
+    title: `${serviceName} bij ${salonName}`,
+    startTime,
+    durationMinutes: 60,
+    location: salonName,
+  });
 
-  await sendWhatsApp(customerPhone, whatsappBody);
+  await sendWhatsAppConfirmation({
+    to: customerPhone,
+    customerName,
+    salonName,
+    dateStr,
+    serviceName,
+    price,
+    calendarLink,
+  });
 
   // Email
   if (customerEmail) {
