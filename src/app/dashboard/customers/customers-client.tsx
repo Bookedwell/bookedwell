@@ -77,10 +77,27 @@ export function CustomersClient({ customers }: CustomersClientProps) {
                         onClick={() => router.push(`/dashboard/customers/${customer.id}`)}
                       >
                         <td className="px-5 py-3">
-                          <p className="font-medium text-navy">{customer.name}</p>
-                          {customer.email && (
-                            <p className="text-xs text-gray-text">{customer.email}</p>
-                          )}
+                          <div className="flex items-center gap-3">
+                            {customer.profile_picture_url ? (
+                              <img
+                                src={customer.profile_picture_url}
+                                alt={customer.name}
+                                className="w-10 h-10 rounded-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                                <span className="text-gray-400 text-sm font-medium">
+                                  {customer.name?.charAt(0)?.toUpperCase() || '?'}
+                                </span>
+                              </div>
+                            )}
+                            <div>
+                              <p className="font-medium text-navy">{customer.name}</p>
+                              {customer.email && (
+                                <p className="text-xs text-gray-text">{customer.email}</p>
+                              )}
+                            </div>
+                          </div>
                         </td>
                         <td className="px-5 py-3 text-slate">{customer.phone}</td>
                         <td className="px-5 py-3 text-center text-slate">

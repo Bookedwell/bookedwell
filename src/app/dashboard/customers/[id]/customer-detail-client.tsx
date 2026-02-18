@@ -1,9 +1,11 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Upload, X } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+
+type TabType = 'details' | 'appointments' | 'notes';
 
 interface CustomerDetailClientProps {
   customer: any;
@@ -37,6 +39,76 @@ export function CustomerDetailClient({
   const [newLabelColor, setNewLabelColor] = useState('#3B82F6');
   const [selectedLabels, setSelectedLabels] = useState<string[]>(assignedLabelIds);
   const [uploading, setUploading] = useState(false);
+  const [activeTab, setActiveTab] = useState<TabType>('details');
+  const [bookings, setBookings] = useState<any[]>([]);
+  const [notes, setNotes] = useState<any[]>([]);
+  const [newNote, setNewNote] = useState('');
+  const [loadingBookings, setLoadingBookings] = useState(false);
+  const [loadingNotes, setLoadingNotes] = useState(false);
+
+  useEffect(() => {
+    if (activeTab === 'appointments' && bookings.length === 0) {
+      fetchBookings();
+    } else if (activeTab === 'notes' && notes.length === 0) {
+      fetchNotes();
+    }
+  }, [activeTab]);
+
+  const fetchBookings = async () => {
+    setLoadingBookings(true);
+    try {
+      const supabase = createClient();
+      const { data } = await supabase
+        .from('bookings')
+        .select('*, service:services(name)')
+        .eq('customer_id', customer.id)
+        .order('start_time', { ascending: false });
+      setBookings(data || []);
+    } catch (error) {
+      console.error('Error fetching bookings:', error);
+    } finally {
+      setLoadingBookings(false);
+    }
+  };
+
+  const fetchNotes = async () => {
+    setLoadingNotes(true);
+    try {
+      const supabase = createClient();
+      const { data } = await supabase
+        .from('customer_notes')
+        .select('*, staff:staff(user:users(full_name))')
+        .eq('customer_id', customer.id)
+        .order('created_at', { ascending: false });
+      setNotes(data || []);
+    } catch (error) {
+      console.error('Error fetching notes:', error);
+    } finally {
+      setLoadingNotes(false);
+    }
+  };
+
+  const handleAddNote = async () => {
+    if (!newNote.trim()) return;
+    
+    try {
+      const response = await fetch('/api/customer-notes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          customerId: customer.id,
+          note: newNote,
+        }),
+      });
+
+      if (response.ok) {
+        setNewNote('');
+        fetchNotes();
+      }
+    } catch (error) {
+      console.error('Error adding note:', error);
+    }
+  };
   
   const [formData, setFormData] = useState({
     firstName: customer?.name?.split(' ')[0] || '',
@@ -228,11 +300,16 @@ export function CustomerDetailClient({
       });
 
       if (response.ok) {
+        alert('Klantgegevens opgeslagen!');
         router.push('/dashboard/customers');
         router.refresh();
+      } else {
+        const data = await response.json();
+        alert(`Fout bij opslaan: ${data.error || 'Onbekende fout'}`);
       }
     } catch (error) {
       console.error('Error saving customer:', error);
+      alert('Fout bij opslaan van klantgegevens');
     } finally {
       setSaving(false);
     }
@@ -274,8 +351,46 @@ export function CustomerDetailClient({
         </div>
       </div>
 
+      {/* Tabs */}
+      <div className="bg-white rounded-t-xl border border-light-gray border-b-0">
+        <div className="flex border-b border-light-gray">
+          <button
+            onClick={() => setActiveTab('details')}
+            className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === 'details'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            Details
+          </button>
+          <button
+            onClick={() => setActiveTab('appointments')}
+            className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === 'appointments'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            Afspraken
+          </button>
+          <button
+            onClick={() => setActiveTab('notes')}
+            className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === 'notes'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            Opmerkingen
+          </button>
+        </div>
+      </div>
+
       {/* Content */}
-      <div className="bg-white rounded-xl border border-light-gray p-6 space-y-8">
+      <div className="bg-white rounded-b-xl border border-light-gray p-6">
+        {activeTab === 'details' && (
+          <div className="space-y-8">
         {/* Persoonlijke informatie */}
         <div className="space-y-4">
           <h3 className="text-base font-semibold text-gray-900">Persoonlijke informatie</h3>
@@ -596,6 +711,117 @@ export function CustomerDetailClient({
           </button>
           <p className="text-xs text-gray-500">Maximaal 5MB, alleen afbeeldingen</p>
         </div>
+          </div>
+        )}
+
+        {/* Appointments Tab */}
+        {activeTab === 'appointments' && (
+          <div className="space-y-4">
+            {loadingBookings ? (
+              <p className="text-center text-gray-500 py-8">Laden...</p>
+            ) : bookings.length === 0 ? (
+              <p className="text-center text-gray-500 py-8">Nog geen afspraken</p>
+            ) : (
+              <div className="divide-y divide-gray-200">
+                {bookings.map((booking) => (
+                  <div key={booking.id} className="py-4 flex items-center justify-between">
+                    <div>
+                      <p className="font-medium text-gray-900">
+                        {booking.service?.name || 'Dienst'}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {new Date(booking.start_time).toLocaleDateString('nl-NL', {
+                          day: 'numeric',
+                          month: 'long',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </p>
+                    </div>
+                    <span
+                      className={`text-xs px-3 py-1 rounded-full font-medium ${
+                        booking.status === 'completed'
+                          ? 'bg-blue-50 text-blue-700'
+                          : booking.status === 'cancelled'
+                          ? 'bg-red-50 text-red-700'
+                          : booking.status === 'confirmed'
+                          ? 'bg-green-50 text-green-700'
+                          : 'bg-yellow-50 text-yellow-700'
+                      }`}
+                    >
+                      {booking.status === 'completed'
+                        ? 'Voltooid'
+                        : booking.status === 'cancelled'
+                        ? 'Geannuleerd'
+                        : booking.status === 'confirmed'
+                        ? 'Bevestigd'
+                        : 'In afwachting'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Notes Tab */}
+        {activeTab === 'notes' && (
+          <div className="space-y-4">
+            {/* Add new note */}
+            <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+              <label className="text-sm font-medium text-gray-700">
+                Nieuwe opmerking toevoegen
+              </label>
+              <textarea
+                value={newNote}
+                onChange={(e) => setNewNote(e.target.value)}
+                rows={3}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                placeholder="Typ hier je opmerking..."
+              />
+              <button
+                onClick={handleAddNote}
+                disabled={!newNote.trim()}
+                className="px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors disabled:opacity-50"
+                style={{ backgroundColor: '#4F46E5' }}
+              >
+                Opmerking toevoegen
+              </button>
+            </div>
+
+            {/* Notes list */}
+            {loadingNotes ? (
+              <p className="text-center text-gray-500 py-8">Laden...</p>
+            ) : notes.length === 0 ? (
+              <p className="text-center text-gray-500 py-8">Nog geen opmerkingen</p>
+            ) : (
+              <div className="space-y-4">
+                {notes.map((note) => (
+                  <div key={note.id} className="bg-white border border-gray-200 rounded-lg p-4">
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">
+                          {note.staff?.user?.full_name || 'Onbekend'}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {new Date(note.created_at).toLocaleDateString('nl-NL', {
+                            day: 'numeric',
+                            month: 'long',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                    <p className="text-sm text-gray-700 whitespace-pre-wrap">{note.note}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
