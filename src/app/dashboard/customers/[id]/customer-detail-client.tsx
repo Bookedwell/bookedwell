@@ -108,6 +108,64 @@ export function CustomerDetailClient({
     }
   };
 
+  const compressImage = (file: File): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          
+          // Max dimensions for profile pictures
+          const maxWidth = 800;
+          const maxHeight = 800;
+          
+          let width = img.width;
+          let height = img.height;
+          
+          // Calculate new dimensions while maintaining aspect ratio
+          if (width > height) {
+            if (width > maxWidth) {
+              height = height * (maxWidth / width);
+              width = maxWidth;
+            }
+          } else {
+            if (height > maxHeight) {
+              width = width * (maxHeight / height);
+              height = maxHeight;
+            }
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          
+          // Draw image with high quality settings
+          ctx!.imageSmoothingEnabled = true;
+          ctx!.imageSmoothingQuality = 'high';
+          ctx!.drawImage(img, 0, 0, width, height);
+          
+          // Convert to blob with compression (0.9 = 90% quality)
+          canvas.toBlob(
+            (blob) => {
+              if (blob) {
+                resolve(blob);
+              } else {
+                reject(new Error('Failed to compress image'));
+              }
+            },
+            'image/jpeg',
+            0.9
+          );
+        };
+        img.onerror = reject;
+      };
+      reader.onerror = reject;
+    });
+  };
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -118,22 +176,29 @@ export function CustomerDetailClient({
       return;
     }
 
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      alert('Afbeelding mag maximaal 5MB zijn');
+    // Validate file size (max 10MB before compression)
+    if (file.size > 10 * 1024 * 1024) {
+      alert('Afbeelding mag maximaal 10MB zijn');
       return;
     }
 
     setUploading(true);
 
     try {
+      // Compress image
+      const compressedBlob = await compressImage(file);
+      
+      // Create File from Blob
+      const compressedFile = new File([compressedBlob], `profile.jpg`, {
+        type: 'image/jpeg',
+      });
+
       const supabase = createClient();
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${salonId}/${customer.id}-${Date.now()}.${fileExt}`;
+      const fileName = `${salonId}/${customer.id}-${Date.now()}.jpg`;
 
       const { data, error } = await supabase.storage
         .from('salon-assets')
-        .upload(fileName, file, {
+        .upload(fileName, compressedFile, {
           cacheControl: '3600',
           upsert: false,
         });
