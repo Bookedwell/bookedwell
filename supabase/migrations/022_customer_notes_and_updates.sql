@@ -1,14 +1,13 @@
--- Add missing columns to customers table if not exists
-alter table customers 
-add column if not exists mobile_phone text,
-add column if not exists gender text,
-add column if not exists date_of_birth date,
-add column if not exists address text,
-add column if not exists postal_code text,
-add column if not exists city text,
-add column if not exists additional_customer_info text,
-add column if not exists additional_invoice_info text,
-add column if not exists appointment_warning text;
+-- Add missing columns to customers table
+alter table customers add column if not exists mobile_phone text;
+alter table customers add column if not exists gender text;
+alter table customers add column if not exists date_of_birth date;
+alter table customers add column if not exists address text;
+alter table customers add column if not exists postal_code text;
+alter table customers add column if not exists city text;
+alter table customers add column if not exists additional_customer_info text;
+alter table customers add column if not exists additional_invoice_info text;
+alter table customers add column if not exists appointment_warning text;
 
 -- Customer notes table for colleagues to add notes about customers
 create table if not exists customer_notes (
