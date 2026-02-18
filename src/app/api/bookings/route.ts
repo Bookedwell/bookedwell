@@ -267,39 +267,48 @@ export async function POST(request: Request) {
         // Platform fee in cents (15 cent per booking)
         const platformFeeCents = 15;
         
-        // Create Mollie payment via REST API with application fee
+        // Check if salon is using platform's own Mollie account (skip fee for own account)
+        const isPlatformAccount = accessToken === process.env.MOLLIE_API_KEY;
+        
+        // Build payment request body
+        const paymentBody: Record<string, any> = {
+          profileId: profileId,
+          amount: {
+            currency: 'EUR',
+            value: (paymentAmount / 100).toFixed(2),
+          },
+          description: isDeposit 
+            ? `Aanbetaling: ${service.name} bij ${salon.name}`
+            : `${service.name} bij ${salon.name}`,
+          redirectUrl: `${process.env.NEXT_PUBLIC_APP_URL}/salon/${salon.slug}/success?booking_id=${booking.id}`,
+          webhookUrl: `${process.env.NEXT_PUBLIC_APP_URL}/api/mollie/webhook`,
+          metadata: JSON.stringify({
+            booking_id: booking.id,
+            salon_id: salon.id,
+            type: 'booking_payment',
+            platform_fee: isPlatformAccount ? 0 : platformFeeCents,
+          }),
+        };
+        
+        // Only add application fee for connected salon accounts (not platform's own account)
+        if (!isPlatformAccount) {
+          paymentBody.applicationFee = {
+            amount: {
+              currency: 'EUR',
+              value: (platformFeeCents / 100).toFixed(2),
+            },
+            description: 'BookedWell platform fee',
+          };
+        }
+        
+        // Create Mollie payment via REST API
         const paymentRes = await fetch('https://api.mollie.com/v2/payments', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${accessToken}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            profileId: profileId,
-            amount: {
-              currency: 'EUR',
-              value: (paymentAmount / 100).toFixed(2),
-            },
-            description: isDeposit 
-              ? `Aanbetaling: ${service.name} bij ${salon.name}`
-              : `${service.name} bij ${salon.name}`,
-            redirectUrl: `${process.env.NEXT_PUBLIC_APP_URL}/salon/${salon.slug}/success?booking_id=${booking.id}`,
-            webhookUrl: `${process.env.NEXT_PUBLIC_APP_URL}/api/mollie/webhook`,
-            metadata: JSON.stringify({
-              booking_id: booking.id,
-              salon_id: salon.id,
-              type: 'booking_payment',
-              platform_fee: platformFeeCents,
-            }),
-            // Application fee - goes to BookedWell platform account
-            applicationFee: {
-              amount: {
-                currency: 'EUR',
-                value: (platformFeeCents / 100).toFixed(2),
-              },
-              description: 'BookedWell platform fee',
-            },
-          }),
+          body: JSON.stringify(paymentBody),
         });
 
         if (!paymentRes.ok) {
