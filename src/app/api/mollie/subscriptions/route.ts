@@ -141,6 +141,23 @@ export async function POST(request: Request) {
 
     // Create or get Mollie customer
     let customerId = salon?.mollie_customer_id;
+    
+    // If customer ID exists, check if it's in the correct mode
+    if (customerId) {
+      try {
+        // Try to fetch customer to verify it exists in current mode
+        await mollieClient.customers.get({ customerId } as any);
+      } catch (err: any) {
+        // If 404 with mode mismatch, customer exists in wrong mode
+        if (err.statusCode === 404 && err.message?.includes('wrong mode')) {
+          console.log('Customer exists in wrong mode, creating new customer for current mode');
+          customerId = null; // Force creation of new customer
+        } else {
+          throw err; // Re-throw other errors
+        }
+      }
+    }
+    
     if (!customerId) {
       const customer = await mollieClient.customers.create({
         customerRequest: {
