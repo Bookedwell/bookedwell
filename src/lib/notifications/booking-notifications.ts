@@ -1,4 +1,4 @@
-import { sendSMS } from './send-sms';
+import { sendWhatsApp } from './send-whatsapp';
 import { sendEmail } from './send-email';
 import { format } from 'date-fns';
 import { nl } from 'date-fns/locale';
@@ -27,14 +27,14 @@ export async function sendBookingConfirmation(data: BookingNotificationData) {
   const dateStr = formatDateTime(startTime);
   const price = formatPrice(priceCents);
 
-  // SMS
-  const smsBody = `Hoi ${customerName}! Je afspraak bij ${salonName} is bevestigd.\n\n` +
+  // WhatsApp
+  const whatsappBody = `Hoi ${customerName}! Je afspraak bij ${salonName} is bevestigd.\n\n` +
     `📅 ${dateStr}\n` +
     `✂️ ${serviceName}\n` +
     `💰 ${price}\n\n` +
     `Tot dan! - ${salonName}`;
 
-  await sendSMS(customerPhone, smsBody);
+  await sendWhatsApp(customerPhone, whatsappBody);
 
   // Email
   if (customerEmail) {
@@ -78,13 +78,13 @@ export async function sendBookingReminder(data: BookingNotificationData) {
   const { customerName, customerPhone, customerEmail, salonName, serviceName, startTime } = data;
   const dateStr = formatDateTime(startTime);
 
-  // SMS
-  const smsBody = `Herinnering: je hebt morgen een afspraak bij ${salonName}.\n\n` +
+  // WhatsApp
+  const whatsappBody = `Herinnering: je hebt vandaag een afspraak bij ${salonName}.\n\n` +
     `📅 ${dateStr}\n` +
     `✂️ ${serviceName}\n\n` +
-    `Tot morgen! - ${salonName}`;
+    `Tot zo! - ${salonName}`;
 
-  await sendSMS(customerPhone, smsBody);
+  await sendWhatsApp(customerPhone, whatsappBody);
 
   // Email
   if (customerEmail) {

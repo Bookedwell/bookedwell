@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/server';
 import { sendBookingReminder } from '@/lib/notifications/booking-notifications';
 
-// Called by Vercel Cron every hour to send 24h reminders
+// Called by Vercel Cron every hour to send 12h reminders
 export async function GET(request: Request) {
   // Verify cron secret to prevent unauthorized access
   const authHeader = request.headers.get('authorization');
@@ -12,10 +12,10 @@ export async function GET(request: Request) {
 
   const supabase = createServiceClient();
 
-  // Find bookings starting between 23-25 hours from now (1 hour window to catch all)
+  // Find bookings starting between 11-13 hours from now (2 hour window to catch all)
   const now = new Date();
-  const from = new Date(now.getTime() + 23 * 60 * 60 * 1000);
-  const to = new Date(now.getTime() + 25 * 60 * 60 * 1000);
+  const from = new Date(now.getTime() + 11 * 60 * 60 * 1000);
+  const to = new Date(now.getTime() + 13 * 60 * 60 * 1000);
 
   const { data: bookings, error } = await supabase
     .from('bookings')
