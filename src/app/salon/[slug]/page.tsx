@@ -216,8 +216,15 @@ export default function SalonBookingPage() {
       }
 
       if (result.requires_payment && result.checkout_url) {
-        // Redirect to Stripe Checkout
-        window.location.href = result.checkout_url;
+        // Open Mollie checkout - in new tab if embedded (Mollie blocks iframes)
+        if (isEmbed) {
+          window.open(result.checkout_url, '_blank');
+          setBookingId(result.booking_id);
+          setLoading(false);
+          setStep('confirmed');
+        } else {
+          window.location.href = result.checkout_url;
+        }
       } else {
         // No payment required - show confirmation
         setBookingId(result.booking_id);
