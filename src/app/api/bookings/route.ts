@@ -1,9 +1,32 @@
 import { NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/server';
+import { getUserSalon } from '@/lib/supabase/get-session';
 import Stripe from 'stripe';
 import { sendBookingConfirmation } from '@/lib/notifications/booking-notifications';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+
+export async function GET() {
+  try {
+    const { salon } = await getUserSalon();
+    if (!salon) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const supabase = createServiceClient();
+    const { data: bookings } = await supabase
+      .from('bookings')
+      .select('*, service:services(name, duration_minutes, price_cents)')
+      .eq('salon_id', salon.id)
+      .order('start_time', { ascending: false })
+      .limit(100);
+
+    return NextResponse.json({ bookings: bookings || [] });
+  } catch (error: any) {
+    console.error('Fetch bookings error:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
 
 // Fee calculation:
 // - Stripe fees: 1.9% + €0.30 (passed through)

@@ -1,17 +1,44 @@
-import { getUserSalon } from '@/lib/supabase/get-session';
-import { createServiceClient } from '@/lib/supabase/server';
+'use client';
+
+import { useState, useEffect } from 'react';
 import { Calendar } from 'lucide-react';
+import { BookingDetailModal } from '@/components/dashboard/booking-detail-modal';
 
-export default async function BookingsPage() {
-  const { salon } = await getUserSalon();
-  const supabase = createServiceClient();
+export default function BookingsPage() {
+  const [bookings, setBookings] = useState<any[]>([]);
+  const [selectedBooking, setSelectedBooking] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  const { data: bookings } = await supabase
-    .from('bookings')
-    .select('*, service:services(name, duration_minutes, price_cents)')
-    .eq('salon_id', salon?.id)
-    .order('start_time', { ascending: false })
-    .limit(50);
+  useEffect(() => {
+    fetchBookings();
+  }, []);
+
+  async function fetchBookings() {
+    const res = await fetch('/api/bookings');
+    if (res.ok) {
+      const data = await res.json();
+      setBookings(data.bookings || []);
+    }
+    setLoading(false);
+  }
+
+  async function handleCancel(id: string) {
+    if (!confirm('Weet je zeker dat je deze boeking wilt annuleren?')) return;
+    
+    const res = await fetch(`/api/bookings/${id}/cancel`, { method: 'POST' });
+    if (res.ok) {
+      await fetchBookings();
+      setSelectedBooking(null);
+    }
+  }
+
+  async function handleDelete(id: string) {
+    const res = await fetch(`/api/bookings/${id}`, { method: 'DELETE' });
+    if (res.ok) {
+      await fetchBookings();
+      setSelectedBooking(null);
+    }
+  }
 
   const statusLabels: Record<string, { label: string; className: string }> = {
     pending: { label: 'In afwachting', className: 'bg-yellow-50 text-yellow-700' },
@@ -39,7 +66,11 @@ export default async function BookingsPage() {
                 const start = new Date(booking.start_time);
                 const status = statusLabels[booking.status] || statusLabels.pending;
                 return (
-                  <div key={booking.id} className="p-4">
+                  <div 
+                    key={booking.id} 
+                    className="p-4 cursor-pointer hover:bg-gray-50 transition-colors"
+                    onClick={() => setSelectedBooking(booking)}
+                  >
                     <div className="flex items-start justify-between mb-2">
                       <div>
                         <p className="font-medium text-navy">{booking.customer_name}</p>
@@ -83,7 +114,11 @@ export default async function BookingsPage() {
                     const start = new Date(booking.start_time);
                     const status = statusLabels[booking.status] || statusLabels.pending;
                     return (
-                      <tr key={booking.id} className="hover:bg-bg-gray/30 transition-colors">
+                      <tr 
+                        key={booking.id} 
+                        className="hover:bg-bg-gray/30 transition-colors cursor-pointer"
+                        onClick={() => setSelectedBooking(booking)}
+                      >
                         <td className="px-5 py-3">
                           <p className="font-medium text-navy">{booking.customer_name}</p>
                           <p className="text-xs text-gray-text">{booking.customer_phone}</p>
@@ -129,6 +164,16 @@ export default async function BookingsPage() {
           </div>
         )}
       </div>
+
+      {/* Booking Detail Modal */}
+      {selectedBooking && (
+        <BookingDetailModal
+          booking={selectedBooking}
+          onClose={() => setSelectedBooking(null)}
+          onCancel={handleCancel}
+          onDelete={handleDelete}
+        />
+      )}
     </div>
   );
 }
