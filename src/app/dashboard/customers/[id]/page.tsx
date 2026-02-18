@@ -45,6 +45,7 @@ export default async function CustomerDetailPage({
       labels={labels || []}
       assignedLabelIds={assignedLabelIds}
       salonId={salon?.id || ''}
+      accentColor={salon?.accent_color || '#4F46E5'}
     />
   );
 }

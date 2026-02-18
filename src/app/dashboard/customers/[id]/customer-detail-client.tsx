@@ -12,6 +12,7 @@ interface CustomerDetailClientProps {
   labels: any[];
   assignedLabelIds: string[];
   salonId: string;
+  accentColor?: string;
 }
 
 const COLOR_OPTIONS = [
@@ -29,7 +30,8 @@ export function CustomerDetailClient({
   customer, 
   labels, 
   assignedLabelIds,
-  salonId 
+  salonId,
+  accentColor = '#4F46E5'
 }: CustomerDetailClientProps) {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -45,6 +47,7 @@ export function CustomerDetailClient({
   const [newNote, setNewNote] = useState('');
   const [loadingBookings, setLoadingBookings] = useState(false);
   const [loadingNotes, setLoadingNotes] = useState(false);
+  const [addingNote, setAddingNote] = useState(false);
 
   useEffect(() => {
     if (activeTab === 'appointments' && bookings.length === 0) {
@@ -89,8 +92,9 @@ export function CustomerDetailClient({
   };
 
   const handleAddNote = async () => {
-    if (!newNote.trim()) return;
+    if (!newNote.trim() || addingNote) return;
     
+    setAddingNote(true);
     try {
       const response = await fetch('/api/customer-notes', {
         method: 'POST',
@@ -102,11 +106,36 @@ export function CustomerDetailClient({
       });
 
       if (response.ok) {
+        const { note: newNoteData } = await response.json();
+        setNotes(prev => [newNoteData, ...prev]);
         setNewNote('');
-        fetchNotes();
+      } else {
+        alert('Fout bij toevoegen opmerking');
       }
     } catch (error) {
       console.error('Error adding note:', error);
+      alert('Fout bij toevoegen opmerking');
+    } finally {
+      setAddingNote(false);
+    }
+  };
+
+  const handleDeleteNote = async (noteId: string) => {
+    if (!confirm('Weet je zeker dat je deze opmerking wilt verwijderen?')) return;
+    
+    try {
+      const response = await fetch(`/api/customer-notes/${noteId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        setNotes(prev => prev.filter(n => n.id !== noteId));
+      } else {
+        alert('Fout bij verwijderen opmerking');
+      }
+    } catch (error) {
+      console.error('Error deleting note:', error);
+      alert('Fout bij verwijderen opmerking');
     }
   };
   
@@ -301,7 +330,6 @@ export function CustomerDetailClient({
 
       if (response.ok) {
         alert('Klantgegevens opgeslagen!');
-        router.push('/dashboard/customers');
         router.refresh();
       } else {
         const data = await response.json();
@@ -357,7 +385,7 @@ export function CustomerDetailClient({
             onClick={handleSubmit}
             disabled={saving}
             className="px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors disabled:opacity-50"
-            style={{ backgroundColor: '#4F46E5' }}
+            style={{ backgroundColor: accentColor }}
           >
             {saving ? 'Opslaan...' : 'Opslaan'}
           </button>
@@ -633,7 +661,7 @@ export function CustomerDetailClient({
                   onClick={handleCreateLabel}
                   disabled={!newLabelName.trim()}
                   className="flex-1 px-3 py-2 text-sm text-white rounded-lg transition-colors disabled:opacity-50"
-                  style={{ backgroundColor: '#4F46E5' }}
+                  style={{ backgroundColor: accentColor }}
                 >
                   Aanmaken
                 </button>
@@ -699,7 +727,7 @@ export function CustomerDetailClient({
               />
               <button
                 onClick={() => handleChange('profilePictureUrl', '')}
-                className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors z-10 shadow-lg"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -795,11 +823,11 @@ export function CustomerDetailClient({
               />
               <button
                 onClick={handleAddNote}
-                disabled={!newNote.trim()}
+                disabled={!newNote.trim() || addingNote}
                 className="px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors disabled:opacity-50"
-                style={{ backgroundColor: '#4F46E5' }}
+                style={{ backgroundColor: accentColor }}
               >
-                Opmerking toevoegen
+                {addingNote ? 'Toevoegen...' : 'Opmerking toevoegen'}
               </button>
             </div>
 
@@ -827,6 +855,13 @@ export function CustomerDetailClient({
                           })}
                         </p>
                       </div>
+                      <button
+                        onClick={() => handleDeleteNote(note.id)}
+                        className="p-1 text-red-500 hover:bg-red-50 rounded transition-colors"
+                        title="Verwijderen"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
                     </div>
                     <p className="text-sm text-gray-700 whitespace-pre-wrap">{note.note}</p>
                   </div>
