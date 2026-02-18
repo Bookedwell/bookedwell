@@ -48,14 +48,20 @@ export default async function DashboardPage() {
 
   const { data: paidBookings } = await supabase
     .from('bookings')
-    .select('deposit_amount_cents, service_fee_cents')
+    .select('deposit_amount_cents')
     .eq('salon_id', salon?.id)
     .eq('deposit_paid', true)
     .gte('start_time', monthStart.toISOString());
 
+  // Omzet = totaal ontvangen door salon in Mollie
   const totalRevenue = (paidBookings || []).reduce((sum: number, b: any) => sum + (b.deposit_amount_cents || 0), 0);
-  const totalFees = (paidBookings || []).reduce((sum: number, b: any) => sum + (b.service_fee_cents || 0), 0);
-  const netRevenue = totalRevenue - totalFees;
+  
+  // Servicekosten = 15 cent per transactie
+  const transactionCount = paidBookings?.length || 0;
+  const totalServiceFees = transactionCount * 15; // 15 cents per transaction
+  
+  // Netto omzet = wat salon overhoudt na servicekosten aan BookedWell
+  const netRevenue = totalRevenue - totalServiceFees;
 
   // Fetch upcoming bookings
   const { data: upcomingBookings } = await supabase
@@ -104,23 +110,17 @@ export default async function DashboardPage() {
       </div>
 
       {/* Revenue stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-2 gap-4 mb-8">
         <StatsCard
           title="Omzet deze maand"
           value={`€${(totalRevenue / 100).toFixed(2).replace('.', ',')}`}
-          subtitle="bruto ontvangen"
+          subtitle={`${transactionCount} betaalde ${transactionCount === 1 ? 'transactie' : 'transacties'}`}
           icon={Euro}
         />
         <StatsCard
-          title="Netto ontvangen"
+          title="Netto omzet"
           value={`€${(netRevenue / 100).toFixed(2).replace('.', ',')}`}
-          subtitle="na servicekosten"
-          icon={Receipt}
-        />
-        <StatsCard
-          title="Servicekosten"
-          value={`€${(totalFees / 100).toFixed(2).replace('.', ',')}`}
-          subtitle="deze maand"
+          subtitle={`na €${(totalServiceFees / 100).toFixed(2).replace('.', ',')} servicekosten`}
           icon={Receipt}
         />
       </div>
