@@ -174,7 +174,7 @@ export function BookingDetailModal({
                   <div className="space-y-2">
                     <label className="text-xs font-medium text-gray-500 uppercase">Kleur</label>
                     <div className="flex gap-2">
-                      {COLOR_OPTIONS.slice(0, 5).map((color) => (
+                      {COLOR_OPTIONS.slice(0, 6).map((color) => (
                         <button
                           key={color.value}
                           onClick={() => setNewLabelColor(color.value)}
