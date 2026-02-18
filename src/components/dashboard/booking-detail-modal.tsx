@@ -1,8 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Calendar, Clock, User, Phone, Mail, CreditCard, Trash2, Ban, CalendarClock } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Calendar, Clock, User, Phone, Check, CircleDot } from 'lucide-react';
 
 interface BookingDetailModalProps {
   booking: any;
@@ -41,6 +40,7 @@ export function BookingDetailModal({
   const [rescheduling, setRescheduling] = useState(false);
   const [selectedColor, setSelectedColor] = useState(booking.color || '#3B82F6');
   const start = new Date(booking.start_time);
+  const end = new Date(booking.end_time);
 
   const handleReschedule = async () => {
     if (!newDate || !newTime || !onReschedule) return;
@@ -50,12 +50,12 @@ export function BookingDetailModal({
     setRescheduling(false);
   };
   
-  const statusLabels: Record<string, { label: string; className: string }> = {
-    pending: { label: 'In afwachting', className: 'bg-yellow-50 text-yellow-700' },
-    confirmed: { label: 'Bevestigd', className: 'bg-green-50 text-green-700' },
-    completed: { label: 'Voltooid', className: 'bg-blue-50 text-blue-700' },
-    cancelled: { label: 'Geannuleerd', className: 'bg-red-50 text-red-700' },
-    no_show: { label: 'No-show', className: 'bg-red-50 text-red-700' },
+  const statusLabels: Record<string, { label: string; bg: string; text: string; border: string }> = {
+    pending: { label: 'In afwachting', bg: '#FEF3C7', text: '#92400E', border: '#F59E0B' },
+    confirmed: { label: 'Bevestigd', bg: '#D1FAE5', text: '#065F46', border: '#10B981' },
+    completed: { label: 'Voltooid', bg: '#DBEAFE', text: '#1E40AF', border: '#3B82F6' },
+    cancelled: { label: 'Geannuleerd', bg: '#FEE2E2', text: '#991B1B', border: '#EF4444' },
+    no_show: { label: 'No-show', bg: '#FEE2E2', text: '#991B1B', border: '#EF4444' },
   };
 
   const status = statusLabels[booking.status] || statusLabels.pending;
@@ -68,225 +68,181 @@ export function BookingDetailModal({
     onDelete(booking.id);
   };
 
+  const timeStr = (d: Date) => d.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' });
+  const durationMin = booking.service?.duration_minutes || Math.round((end.getTime() - start.getTime()) / 60000);
+
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div 
-        className="bg-white rounded-xl max-w-lg w-full max-h-[90vh] overflow-y-auto"
+        className="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="sticky top-0 bg-white border-b border-light-gray px-6 py-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-navy">Boeking details</h2>
-          <button 
-            onClick={onClose}
-            className="text-gray-400 hover:text-navy transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
+        {/* Title */}
+        <div className="px-8 pt-7 pb-4">
+          <h2 className="text-xl font-bold text-center text-gray-900">Booking details</h2>
         </div>
+        <div className="mx-8 border-t border-gray-100" />
 
         {/* Content */}
-        <div className="p-6 space-y-6">
-          {/* Status */}
-          <div className="flex items-center justify-between">
-            <span className={`text-sm px-3 py-1.5 rounded-full font-medium ${status.className}`}>
+        <div className="px-8 py-5 space-y-5">
+          {/* Status badge */}
+          <div>
+            <span 
+              className="inline-flex items-center gap-1.5 text-sm px-4 py-1.5 rounded-full font-medium"
+              style={{ backgroundColor: status.bg, color: status.text, border: `1px solid ${status.border}` }}
+            >
+              <CircleDot className="w-3.5 h-3.5" />
               {status.label}
             </span>
-            <span className="text-sm text-gray-text">#{booking.id.slice(0, 8)}</span>
           </div>
 
-          {/* Customer Info */}
-          <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-navy">Klant</h3>
-            <div className="space-y-2">
-              <div className="flex items-center gap-3 text-sm">
-                <User className="w-4 h-4 text-gray-400" />
-                <span className="text-slate">{booking.customer_name}</span>
-              </div>
-              <div className="flex items-center gap-3 text-sm">
-                <Phone className="w-4 h-4 text-gray-400" />
-                <span className="text-slate">{booking.customer_phone}</span>
-              </div>
-              {booking.customer_email && (
-                <div className="flex items-center gap-3 text-sm">
-                  <Mail className="w-4 h-4 text-gray-400" />
-                  <span className="text-slate">{booking.customer_email}</span>
-                </div>
-              )}
+          {/* Customer */}
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+              <User className="w-6 h-6 text-gray-400" />
+            </div>
+            <div>
+              <p className="font-semibold text-gray-900">{booking.customer_name}</p>
+              <p className="text-sm text-gray-500">{booking.customer_phone}</p>
             </div>
           </div>
 
-          {/* Appointment Info */}
-          <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-navy">Afspraak</h3>
-            <div className="space-y-2">
-              <div className="flex items-center gap-3 text-sm">
-                <Calendar className="w-4 h-4 text-gray-400" />
-                <span className="text-slate">
-                  {start.toLocaleDateString('nl-NL', { 
-                    weekday: 'long',
-                    day: 'numeric', 
-                    month: 'long', 
-                    year: 'numeric' 
-                  })}
-                </span>
-              </div>
-              <div className="flex items-center gap-3 text-sm">
-                <Clock className="w-4 h-4 text-gray-400" />
-                <span className="text-slate">
-                  {start.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })}
-                  {booking.service?.duration_minutes && ` (${booking.service.duration_minutes} min)`}
-                </span>
-              </div>
+          <div className="border-t border-gray-100" />
+
+          {/* Date & Time */}
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-xl bg-gray-50 flex items-center justify-center flex-shrink-0">
+              <Calendar className="w-5 h-5 text-gray-400" />
+            </div>
+            <div>
+              <p className="font-medium text-gray-900">
+                {start.toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+              </p>
+              <p className="text-sm text-gray-500">
+                {timeStr(start)} – {timeStr(end)} ({durationMin} min)
+              </p>
             </div>
           </div>
 
-          {/* Service & Payment */}
-          <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-navy">Dienst & Betaling</h3>
-            <div className="bg-gray-50 rounded-lg p-4 space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-text">Dienst</span>
-                <span className="font-medium text-navy">{booking.service?.name || '-'}</span>
+          <div className="border-t border-gray-100" />
+
+          {/* Service & Price */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-gray-50 flex items-center justify-center flex-shrink-0">
+                <Clock className="w-5 h-5 text-gray-400" />
               </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-text">Prijs</span>
-                <span className="font-medium text-navy">
-                  {booking.service?.price_cents ? `€${(booking.service.price_cents / 100).toFixed(2)}` : '-'}
-                </span>
-              </div>
-              {booking.payment_status && (
-                <div className="flex items-center justify-between text-sm pt-2 border-t border-light-gray">
-                  <span className="text-gray-text">Betaalstatus</span>
-                  <span className="font-medium text-navy capitalize">{booking.payment_status}</span>
-                </div>
-              )}
+              <p className="font-medium text-gray-900">{booking.service?.name || 'Dienst'}</p>
             </div>
+            <p className="font-semibold text-gray-900 text-lg">
+              {booking.service?.price_cents ? `€ ${(booking.service.price_cents / 100).toFixed(2).replace('.', ',')}` : '-'}
+            </p>
           </div>
 
-          {/* Notes */}
-          {booking.notes && (
-            <div className="space-y-2">
-              <h3 className="text-sm font-semibold text-navy">Opmerkingen</h3>
-              <p className="text-sm text-slate bg-gray-50 rounded-lg p-3">{booking.notes}</p>
-            </div>
-          )}
-
-          {/* Color picker */}
-          <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-navy">Kleur aanpassen</h3>
-            <div className="flex flex-wrap gap-2">
-              {COLOR_OPTIONS.map((color) => (
-                <button
-                  key={color.value}
-                  onClick={() => {
-                    setSelectedColor(color.value);
-                    if (onColorChange) {
-                      onColorChange(booking.id, color.value);
-                    }
-                  }}
-                  className={`w-8 h-8 rounded-full border-2 transition-all ${
-                    selectedColor === color.value ? 'scale-110 border-navy' : 'border-transparent hover:scale-105'
-                  }`}
-                  style={{ backgroundColor: color.value }}
-                  title={color.name}
-                />
-              ))}
-            </div>
+          {/* Color dots */}
+          <div className="flex items-center justify-center gap-2.5 pt-1">
+            {COLOR_OPTIONS.map((color) => (
+              <button
+                key={color.value}
+                onClick={() => {
+                  setSelectedColor(color.value);
+                  if (onColorChange) onColorChange(booking.id, color.value);
+                }}
+                className="relative w-7 h-7 rounded-full transition-transform hover:scale-110"
+                style={{ backgroundColor: color.value }}
+                title={color.name}
+              >
+                {selectedColor === color.value && (
+                  <Check className="w-3.5 h-3.5 text-white absolute inset-0 m-auto" strokeWidth={3} />
+                )}
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* Actions */}
-        <div className="border-t border-light-gray px-6 py-4 space-y-3">
-          {/* Reschedule section */}
-          {booking.status !== 'cancelled' && booking.status !== 'completed' && onReschedule && (
-            <>
-              {!showReschedule ? (
-                <Button
-                  variant="outline"
-                  className="w-full justify-center"
-                  style={{ borderColor: accentColor, color: accentColor }}
-                  onClick={() => setShowReschedule(true)}
-                >
-                  <CalendarClock className="w-4 h-4 mr-2" />
-                  Verplaatsen
-                </Button>
-              ) : (
-                <div className="bg-gray-50 rounded-lg p-4 space-y-3">
-                  <p className="text-sm font-medium text-navy">Nieuwe datum & tijd</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    <input
-                      type="date"
-                      value={newDate}
-                      onChange={(e) => setNewDate(e.target.value)}
-                      min={new Date().toISOString().split('T')[0]}
-                      className="px-3 py-2 border border-light-gray rounded-lg text-sm focus:outline-none focus:ring-2"
-                      style={{ '--tw-ring-color': accentColor } as any}
-                    />
-                    <select
-                      value={newTime}
-                      onChange={(e) => setNewTime(e.target.value)}
-                      className="px-3 py-2 border border-light-gray rounded-lg text-sm focus:outline-none focus:ring-2 bg-white"
-                      style={{ '--tw-ring-color': accentColor } as any}
-                    >
-                      <option value="">Tijd</option>
-                      {Array.from({ length: 13 }, (_, i) => i + 8).flatMap(hour => 
-                        [0, 15, 30, 45].map(min => {
-                          const val = `${String(hour).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
-                          return <option key={val} value={val}>{val}</option>;
-                        })
-                      )}
-                    </select>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1"
-                      onClick={() => setShowReschedule(false)}
-                    >
-                      Annuleren
-                    </Button>
-                    <Button
-                      size="sm"
-                      className="flex-1 text-white"
-                      style={{ backgroundColor: accentColor }}
-                      onClick={handleReschedule}
-                      disabled={!newDate || !newTime || rescheduling}
-                    >
-                      {rescheduling ? 'Bezig...' : 'Opslaan'}
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </>
-          )}
+        {/* Reschedule expand */}
+        {showReschedule && (
+          <div className="mx-8 mb-4 bg-gray-50 rounded-xl p-4 space-y-3">
+            <p className="text-sm font-semibold text-gray-900">Nieuwe datum & tijd</p>
+            <div className="grid grid-cols-2 gap-2">
+              <input
+                type="date"
+                value={newDate}
+                onChange={(e) => setNewDate(e.target.value)}
+                min={new Date().toISOString().split('T')[0]}
+                className="px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              />
+              <select
+                value={newTime}
+                onChange={(e) => setNewTime(e.target.value)}
+                className="px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              >
+                <option value="">Tijd</option>
+                {Array.from({ length: 13 }, (_, i) => i + 8).flatMap(hour => 
+                  [0, 15, 30, 45].map(min => {
+                    const val = `${String(hour).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
+                    return <option key={val} value={val}>{val}</option>;
+                  })
+                )}
+              </select>
+            </div>
+            <div className="flex gap-2">
+              <button
+                className="flex-1 px-4 py-2 text-sm font-medium border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors"
+                onClick={() => setShowReschedule(false)}
+              >
+                Annuleren
+              </button>
+              <button
+                className="flex-1 px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors disabled:opacity-50"
+                style={{ backgroundColor: accentColor }}
+                onClick={handleReschedule}
+                disabled={!newDate || !newTime || rescheduling}
+              >
+                {rescheduling ? 'Bezig...' : 'Opslaan'}
+              </button>
+            </div>
+          </div>
+        )}
 
-          {booking.status !== 'cancelled' && booking.status !== 'completed' && (
-            <Button
-              variant="outline"
-              className="w-full justify-center"
-              onClick={() => onCancel(booking.id)}
+        {/* Actions */}
+        <div className="px-8 pb-7 pt-2">
+          <div className="flex items-center justify-center gap-3">
+            {booking.status !== 'cancelled' && booking.status !== 'completed' && onReschedule && !showReschedule && (
+              <button
+                className="px-5 py-2.5 text-sm font-medium border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-gray-700"
+                onClick={() => setShowReschedule(true)}
+              >
+                Verplaatsen
+              </button>
+            )}
+
+            {booking.status !== 'cancelled' && booking.status !== 'completed' && booking.status === 'pending' && (
+              <button
+                className="px-5 py-2.5 text-sm font-medium text-white rounded-lg transition-colors"
+                style={{ backgroundColor: '#EF4444' }}
+                onClick={() => onCancel(booking.id)}
+              >
+                Bevestigen
+              </button>
+            )}
+
+            {booking.status !== 'cancelled' && booking.status !== 'completed' && booking.status !== 'pending' && (
+              <button
+                className="px-5 py-2.5 text-sm font-medium border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-gray-700"
+                onClick={() => onCancel(booking.id)}
+              >
+                Annuleren
+              </button>
+            )}
+
+            <button
+              className="px-5 py-2.5 text-sm font-medium text-red-500 hover:text-red-700 transition-colors"
+              onClick={handleDelete}
             >
-              <Ban className="w-4 h-4 mr-2" />
-              Annuleren
-            </Button>
-          )}
-          
-          <Button
-            variant="outline"
-            className="w-full justify-center text-red-600 border-red-200 hover:bg-red-50"
-            onClick={handleDelete}
-          >
-            <Trash2 className="w-4 h-4 mr-2" />
-            {confirmDelete ? 'Klik nogmaals om te verwijderen' : 'Verwijderen'}
-          </Button>
-          
-          {confirmDelete && (
-            <p className="text-xs text-gray-500 text-center">
-              Klantgegevens blijven bewaard
-            </p>
-          )}
+              {confirmDelete ? 'Bevestig verwijderen' : 'Verwijderen'}
+            </button>
+          </div>
         </div>
       </div>
     </div>
