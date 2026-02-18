@@ -170,6 +170,42 @@ export async function POST(request: Request) {
     const bookingColors = ['#10B981', '#F59E0B', '#3B82F6', '#EC4899', '#8B5CF6', '#EF4444', '#14B8A6', '#6366F1'];
     const randomColor = bookingColors[Math.floor(Math.random() * bookingColors.length)];
 
+    // Smart customer creation/linking
+    let customerId: string | null = null;
+    
+    if (customer_email) {
+      // Try to find existing customer by email
+      const { data: existingCustomer } = await supabase
+        .from('customers')
+        .select('id')
+        .eq('salon_id', salon_id)
+        .eq('email', customer_email.toLowerCase().trim())
+        .single();
+      
+      if (existingCustomer) {
+        customerId = existingCustomer.id;
+        console.log(`Found existing customer ${customerId} for email ${customer_email}`);
+      } else {
+        // Create new customer
+        const { data: newCustomer, error: customerError } = await supabase
+          .from('customers')
+          .insert({
+            salon_id,
+            name: customer_name,
+            email: customer_email.toLowerCase().trim(),
+            phone: customer_phone,
+            created_at: new Date().toISOString(),
+          })
+          .select('id')
+          .single();
+        
+        if (!customerError && newCustomer) {
+          customerId = newCustomer.id;
+          console.log(`Created new customer ${customerId} for email ${customer_email}`);
+        }
+      }
+    }
+
     // Always create booking first (status: pending)
     const { data: booking, error: bookingError } = await supabase
       .from('bookings')
@@ -177,6 +213,7 @@ export async function POST(request: Request) {
         salon_id,
         service_id,
         staff_id: staff_id || null,
+        customer_id: customerId,
         start_time: startDate.toISOString(),
         end_time: endDate.toISOString(),
         customer_name,
