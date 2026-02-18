@@ -240,7 +240,7 @@ export default function BookingSuccessPage() {
           )}
 
           <p className="text-center text-sm text-gray-500 pt-4">
-            Je ontvangt een bevestiging via SMS en/of e-mail.
+            Je ontvangt een bevestiging via WhatsApp en/of e-mail.
           </p>
 
           <Link
@@ -255,7 +255,7 @@ export default function BookingSuccessPage() {
         {/* Footer */}
         <div className="px-6 py-4 bg-gray-50 text-center">
           <p className="text-xs text-gray-400">
-            Powered by <a href="https://bookedwell.app" className="hover:underline" style={{ color: accentColor }}>BookedWell</a>
+            Powered by BookedWell
           </p>
         </div>
       </div>
