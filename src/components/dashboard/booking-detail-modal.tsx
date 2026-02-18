@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Calendar, Clock, User, Check, Trash2 } from 'lucide-react';
+import { Calendar, Clock, User, Check, Trash2, X } from 'lucide-react';
 
 interface BookingDetailModalProps {
   booking: any;
@@ -75,9 +75,18 @@ export function BookingDetailModal({
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div 
-        className="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden"
+        className="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden relative"
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Close button */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 left-4 p-1.5 rounded-full hover:bg-gray-100 transition-colors z-10"
+          aria-label="Sluiten"
+        >
+          <X className="w-5 h-5 text-gray-400" />
+        </button>
+
         {/* Header: Title left, Status badge right */}
         <div className="px-8 pt-8 pb-6 flex items-center justify-between">
           <h2 className="text-xl font-bold text-gray-900">Booking details</h2>
