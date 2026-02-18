@@ -420,11 +420,22 @@ export default function BookingsCalendarPage() {
       {/* Calendar grid */}
       <div className="bg-white rounded-xl border border-light-gray overflow-hidden">
         {loading ? (
-          <div className="flex items-center justify-center py-20">
+          <div className="flex flex-col items-center justify-center py-20">
             <div
-              className="w-6 h-6 border-2 border-t-transparent rounded-full animate-spin"
+              className="w-8 h-8 border-3 border-t-transparent rounded-full animate-spin mb-3"
               style={{ borderColor: primaryColor, borderTopColor: 'transparent' }}
             />
+            <p className="text-sm text-gray-text">Boekingen laden...</p>
+          </div>
+        ) : bookings.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20">
+            <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+              <User className="w-8 h-8 text-gray-400" />
+            </div>
+            <p className="text-sm font-medium text-navy">Nog geen boekingen</p>
+            <p className="text-xs text-gray-text mt-1">
+              Deel je boekingslink om afspraken te ontvangen
+            </p>
           </div>
         ) : view === 'week' ? (
           /* Week view */
