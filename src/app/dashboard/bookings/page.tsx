@@ -40,6 +40,18 @@ export default function BookingsPage() {
     }
   }
 
+  async function handleReschedule(id: string, newDateTime: string) {
+    const res = await fetch(`/api/bookings/${id}/reschedule`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ new_start_time: newDateTime }),
+    });
+    if (res.ok) {
+      await fetchBookings();
+      setSelectedBooking(null);
+    }
+  }
+
   const statusLabels: Record<string, { label: string; className: string }> = {
     pending: { label: 'In afwachting', className: 'bg-yellow-50 text-yellow-700' },
     confirmed: { label: 'Bevestigd', className: 'bg-green-50 text-green-700' },
@@ -172,6 +184,7 @@ export default function BookingsPage() {
           onClose={() => setSelectedBooking(null)}
           onCancel={handleCancel}
           onDelete={handleDelete}
+          onReschedule={handleReschedule}
         />
       )}
     </div>

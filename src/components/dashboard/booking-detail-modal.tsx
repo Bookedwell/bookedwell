@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Calendar, Clock, User, Phone, Mail, CreditCard, Trash2, Ban, Edit } from 'lucide-react';
+import { X, Calendar, Clock, User, Phone, Mail, CreditCard, Trash2, Ban, CalendarClock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface BookingDetailModalProps {
@@ -9,6 +9,7 @@ interface BookingDetailModalProps {
   onClose: () => void;
   onCancel: (id: string) => void;
   onDelete: (id: string) => void;
+  onReschedule?: (id: string, newDateTime: string) => void;
   accentColor?: string;
 }
 
@@ -17,10 +18,23 @@ export function BookingDetailModal({
   onClose, 
   onCancel, 
   onDelete,
+  onReschedule,
   accentColor = '#4285F4' 
 }: BookingDetailModalProps) {
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [showReschedule, setShowReschedule] = useState(false);
+  const [newDate, setNewDate] = useState('');
+  const [newTime, setNewTime] = useState('');
+  const [rescheduling, setRescheduling] = useState(false);
   const start = new Date(booking.start_time);
+
+  const handleReschedule = async () => {
+    if (!newDate || !newTime || !onReschedule) return;
+    setRescheduling(true);
+    const newDateTime = `${newDate}T${newTime}:00`;
+    await onReschedule(booking.id, newDateTime);
+    setRescheduling(false);
+  };
   
   const statusLabels: Record<string, { label: string; className: string }> = {
     pending: { label: 'In afwachting', className: 'bg-yellow-50 text-yellow-700' },
@@ -147,6 +161,63 @@ export function BookingDetailModal({
 
         {/* Actions */}
         <div className="border-t border-light-gray px-6 py-4 space-y-3">
+          {/* Reschedule section */}
+          {booking.status !== 'cancelled' && booking.status !== 'completed' && onReschedule && (
+            <>
+              {!showReschedule ? (
+                <Button
+                  variant="outline"
+                  className="w-full justify-center"
+                  style={{ borderColor: accentColor, color: accentColor }}
+                  onClick={() => setShowReschedule(true)}
+                >
+                  <CalendarClock className="w-4 h-4 mr-2" />
+                  Verplaatsen
+                </Button>
+              ) : (
+                <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+                  <p className="text-sm font-medium text-navy">Nieuwe datum & tijd</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <input
+                      type="date"
+                      value={newDate}
+                      onChange={(e) => setNewDate(e.target.value)}
+                      min={new Date().toISOString().split('T')[0]}
+                      className="px-3 py-2 border border-light-gray rounded-lg text-sm focus:outline-none focus:ring-2"
+                      style={{ '--tw-ring-color': accentColor } as any}
+                    />
+                    <input
+                      type="time"
+                      value={newTime}
+                      onChange={(e) => setNewTime(e.target.value)}
+                      className="px-3 py-2 border border-light-gray rounded-lg text-sm focus:outline-none focus:ring-2"
+                      style={{ '--tw-ring-color': accentColor } as any}
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => setShowReschedule(false)}
+                    >
+                      Annuleren
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="flex-1 text-white"
+                      style={{ backgroundColor: accentColor }}
+                      onClick={handleReschedule}
+                      disabled={!newDate || !newTime || rescheduling}
+                    >
+                      {rescheduling ? 'Bezig...' : 'Opslaan'}
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+
           {booking.status !== 'cancelled' && booking.status !== 'completed' && (
             <Button
               variant="outline"

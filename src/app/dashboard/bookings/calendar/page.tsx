@@ -113,6 +113,18 @@ export default function BookingsCalendarPage() {
     }
   };
 
+  const handleReschedule = async (id: string, newDateTime: string) => {
+    const res = await fetch(`/api/bookings/${id}/reschedule`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ new_start_time: newDateTime }),
+    });
+    if (res.ok) {
+      await fetchBookings();
+      setSelectedBooking(null);
+    }
+  };
+
   const navigateWeek = (dir: number) => {
     const d = new Date(currentDate);
     if (view === 'week') {
@@ -416,6 +428,7 @@ export default function BookingsCalendarPage() {
           onClose={() => setSelectedBooking(null)}
           onCancel={handleCancel}
           onDelete={handleDelete}
+          onReschedule={handleReschedule}
           accentColor={primaryColor}
         />
       )}
