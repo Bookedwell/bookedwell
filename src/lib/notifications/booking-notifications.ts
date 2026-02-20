@@ -29,7 +29,9 @@ export async function sendBookingConfirmation(data: BookingNotificationData) {
   const price = formatPrice(priceCents);
 
   // Universal calendar link - works with Apple Calendar, Google, Outlook, etc.
-  const calendarLink = `${process.env.NEXT_PUBLIC_APP_URL || 'https://bookedwell.app'}/api/calendar/${bookingId}`;
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://bookedwell.app';
+  const calendarLink = `${baseUrl}/api/calendar/${bookingId}`;
+  const manageLink = `${baseUrl}/booking/${bookingId}/manage`;
 
   await sendWhatsAppConfirmation({
     to: customerPhone,
@@ -39,6 +41,7 @@ export async function sendBookingConfirmation(data: BookingNotificationData) {
     serviceName,
     price,
     calendarLink,
+    manageLink,
   });
 
   // Email

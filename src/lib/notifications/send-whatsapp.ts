@@ -57,6 +57,7 @@ export async function sendWhatsAppConfirmation({
   serviceName,
   price,
   calendarLink,
+  manageLink,
 }: {
   to: string;
   customerName: string;
@@ -65,6 +66,7 @@ export async function sendWhatsAppConfirmation({
   serviceName: string;
   price: string;
   calendarLink: string;
+  manageLink: string;
 }) {
   if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_WHATSAPP_FROM) {
     console.log('[WhatsApp] Skipped (Twilio not configured)');
@@ -73,7 +75,7 @@ export async function sendWhatsAppConfirmation({
 
   const formattedTo = formatPhone(to);
 
-  // Template has 6 variables: {{1}} t/m {{6}}
+  // Template has 7 variables: {{1}} t/m {{7}}
   const vars = {
     '1': sanitizeVar(customerName, 'Klant'),
     '2': sanitizeVar(salonName, 'Salon'),
@@ -81,6 +83,7 @@ export async function sendWhatsAppConfirmation({
     '4': sanitizeVar(serviceName, 'Afspraak'),
     '5': sanitizeVar(price, 'Gratis'),
     '6': sanitizeVar(calendarLink, 'https://calendar.google.com'),
+    '7': sanitizeVar(manageLink, 'https://bookedwell.app'),
   };
 
   // Debug: check for apostrophes and empty vars
