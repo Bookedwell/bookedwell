@@ -38,12 +38,13 @@ export function generateGoogleCalendarLink({
   return `https://calendar.google.com/calendar/r/eventedit?${params.toString()}`;
 }
 
-// Sanitize variable for Twilio Content API: no newlines, tabs, or empty values
+// Sanitize variable for Twilio Content API: no newlines, tabs, empty values, or apostrophes
 function sanitizeVar(val: string | undefined | null, fallback: string = '-'): string {
   if (!val || val.trim() === '') return fallback;
   return val
     .replace(/[\n\r\t]/g, ' ')
     .replace(/\s{5,}/g, '    ')
+    .replace(/'/g, "'")           // Fix apostrophe bug that triggers error 21656
     .trim()
     .substring(0, 250);
 }
@@ -72,14 +73,21 @@ export async function sendWhatsAppConfirmation({
 
   const formattedTo = formatPhone(to);
 
-  // Only send variables 1-5 (template may not have variable 6)
+  // Template has 6 variables: {{1}} t/m {{6}}
   const vars = {
     '1': sanitizeVar(customerName, 'Klant'),
     '2': sanitizeVar(salonName, 'Salon'),
     '3': sanitizeVar(dateStr, 'Binnenkort'),
     '4': sanitizeVar(serviceName, 'Afspraak'),
     '5': sanitizeVar(price, 'Gratis'),
+    '6': sanitizeVar(calendarLink, 'https://calendar.google.com'),
   };
+
+  // Debug: check for apostrophes and empty vars
+  for (const [k, v] of Object.entries(vars)) {
+    if (v.includes("'")) console.log('[WhatsApp] APOSTROF IN VAR', k, v);
+    if (!v || v.trim() === '') console.log('[WhatsApp] EMPTY VAR', k);
+  }
 
   console.log(`[WhatsApp] Sending to ${formattedTo} with vars:`, JSON.stringify(vars));
 
