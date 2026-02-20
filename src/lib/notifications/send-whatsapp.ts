@@ -5,7 +5,7 @@ const client = twilio(
   process.env.TWILIO_AUTH_TOKEN!
 );
 
-const BOOKING_CONFIRMATION_SID = 'HX25c561d5a0702552f22f2fa091122ede';
+const BOOKING_CONFIRMATION_SID = 'HX25c361d5a0702552f22f2fa091122ede';
 
 function formatPhone(to: string): string {
   let formatted = to.replace(/\s+/g, '').replace(/^00/, '+');
@@ -72,13 +72,13 @@ export async function sendWhatsAppConfirmation({
 
   const formattedTo = formatPhone(to);
 
+  // Only send variables 1-5 (template may not have variable 6)
   const vars = {
     '1': sanitizeVar(customerName, 'Klant'),
     '2': sanitizeVar(salonName, 'Salon'),
     '3': sanitizeVar(dateStr, 'Binnenkort'),
     '4': sanitizeVar(serviceName, 'Afspraak'),
-    '5': sanitizeVar(price, '-'),
-    '6': sanitizeVar(calendarLink, 'https://calendar.google.com'),
+    '5': sanitizeVar(price, 'Gratis'),
   };
 
   console.log(`[WhatsApp] Sending to ${formattedTo} with vars:`, JSON.stringify(vars));
