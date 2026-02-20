@@ -226,10 +226,23 @@ export default function SalonBookingPage() {
           window.location.href = result.checkout_url;
         }
       } else {
-        // No payment required - show confirmation
-        setBookingId(result.booking_id);
-        setLoading(false);
-        setStep('confirmed');
+        // No payment required - redirect or show confirmation
+        if (result.redirect_url) {
+          // Salon has custom redirect URL
+          if (isEmbed) {
+            window.open(result.redirect_url, '_blank');
+            setBookingId(result.booking_id);
+            setLoading(false);
+            setStep('confirmed');
+          } else {
+            window.location.href = result.redirect_url;
+          }
+        } else {
+          // Show default confirmation
+          setBookingId(result.booking_id);
+          setLoading(false);
+          setStep('confirmed');
+        }
       }
     } catch (error) {
       console.error('Booking error:', error);

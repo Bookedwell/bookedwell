@@ -278,6 +278,7 @@ export async function POST(request: Request) {
         success: true,
         booking_id: booking.id,
         requires_payment: false,
+        redirect_url: bookingRedirectUrl || null,
       });
     }
 
