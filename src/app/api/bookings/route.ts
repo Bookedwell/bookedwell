@@ -261,6 +261,7 @@ export async function POST(request: Request) {
       // Send confirmation SMS + email
       try {
         await sendBookingConfirmation({
+          bookingId: booking.id,
           customerName: customer_name,
           customerPhone: customer_phone,
           customerEmail: customer_email || null,
@@ -455,6 +456,7 @@ export async function POST(request: Request) {
 
       try {
         await sendBookingConfirmation({
+          bookingId: booking.id,
           customerName: customer_name,
           customerPhone: customer_phone,
           customerEmail: customer_email || null,
@@ -489,6 +491,7 @@ export async function POST(request: Request) {
 
         try {
           await sendBookingConfirmation({
+            bookingId: booking.id,
             customerName: customer_name,
             customerPhone: customer_phone,
             customerEmail: customer_email || null,
@@ -517,6 +520,7 @@ export async function POST(request: Request) {
 
       try {
         await sendBookingConfirmation({
+          bookingId: booking.id,
           customerName: customer_name,
           customerPhone: customer_phone,
           customerEmail: customer_email || null,

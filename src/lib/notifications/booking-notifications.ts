@@ -4,6 +4,7 @@ import { format } from 'date-fns';
 import { nl } from 'date-fns/locale';
 
 interface BookingNotificationData {
+  bookingId: string;
   customerName: string;
   customerPhone: string;
   customerEmail: string | null;
@@ -23,17 +24,12 @@ function formatDateTime(iso: string): string {
 }
 
 export async function sendBookingConfirmation(data: BookingNotificationData) {
-  const { customerName, customerPhone, customerEmail, salonName, serviceName, startTime, priceCents } = data;
+  const { bookingId, customerName, customerPhone, customerEmail, salonName, serviceName, startTime, priceCents } = data;
   const dateStr = formatDateTime(startTime);
   const price = formatPrice(priceCents);
 
-  // WhatsApp via template with calendar link
-  const calendarLink = generateGoogleCalendarLink({
-    title: `${serviceName} bij ${salonName}`,
-    startTime,
-    durationMinutes: 60,
-    location: salonName,
-  });
+  // Universal calendar link - works with Apple Calendar, Google, Outlook, etc.
+  const calendarLink = `${process.env.NEXT_PUBLIC_APP_URL || 'https://bookedwell.app'}/api/calendar/${bookingId}`;
 
   await sendWhatsAppConfirmation({
     to: customerPhone,
