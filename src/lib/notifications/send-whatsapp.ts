@@ -38,6 +38,16 @@ export function generateGoogleCalendarLink({
   return `https://calendar.google.com/calendar/r/eventedit?${params.toString()}`;
 }
 
+// Sanitize variable for Twilio Content API: no newlines, tabs, or empty values
+function sanitizeVar(val: string | undefined | null, fallback: string = '-'): string {
+  if (!val || val.trim() === '') return fallback;
+  return val
+    .replace(/[\n\r\t]/g, ' ')
+    .replace(/\s{5,}/g, '    ')
+    .trim()
+    .substring(0, 250);
+}
+
 export async function sendWhatsAppConfirmation({
   to,
   customerName,
@@ -62,23 +72,28 @@ export async function sendWhatsAppConfirmation({
 
   const formattedTo = formatPhone(to);
 
+  const vars = {
+    '1': sanitizeVar(customerName, 'Klant'),
+    '2': sanitizeVar(salonName, 'Salon'),
+    '3': sanitizeVar(dateStr, 'Binnenkort'),
+    '4': sanitizeVar(serviceName, 'Afspraak'),
+    '5': sanitizeVar(price, '-'),
+    '6': sanitizeVar(calendarLink, 'https://calendar.google.com'),
+  };
+
+  console.log(`[WhatsApp] Sending to ${formattedTo} with vars:`, JSON.stringify(vars));
+
   try {
     await client.messages.create({
       to: `whatsapp:${formattedTo}`,
       from: process.env.TWILIO_WHATSAPP_FROM!,
       contentSid: BOOKING_CONFIRMATION_SID,
-      contentVariables: JSON.stringify({
-        '1': customerName,
-        '2': salonName,
-        '3': dateStr,
-        '4': serviceName,
-        '5': price,
-        '6': calendarLink,
-      }),
+      contentVariables: JSON.stringify(vars),
     });
     console.log(`[WhatsApp] Confirmation sent to ${formattedTo}`);
   } catch (error: any) {
     console.error(`[WhatsApp] Failed to ${formattedTo}:`, error.message);
+    console.error(`[WhatsApp] ContentVariables were:`, JSON.stringify(vars));
   }
 }
 
