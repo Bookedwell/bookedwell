@@ -47,6 +47,7 @@ export async function GET(request: Request) {
 
     try {
       await sendBookingReminder({
+        bookingId: booking.id,
         customerName: customer.name,
         customerPhone: customer.phone,
         customerEmail: customer.email,
