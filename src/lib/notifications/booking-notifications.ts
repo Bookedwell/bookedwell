@@ -59,7 +59,7 @@ export async function sendBookingConfirmation(data: BookingNotificationData) {
               <td style="padding: 12px 0; border-bottom: 1px solid #e2e8f0; color: #0f172a; font-size: 14px; font-weight: 600; text-align: right;">${salonName}</td>
             </tr>
             <tr>
-              <td style="padding: 12px 0; border-bottom: 1px solid #e2e8f0; color: #64748b; font-size: 14px;">Dienst</td>
+              <td style="padding: 12px 0; border-bottom: 1px solid #e2e8f0; color: #64748b; font-size: 14px;">Behandeling</td>
               <td style="padding: 12px 0; border-bottom: 1px solid #e2e8f0; color: #0f172a; font-size: 14px; font-weight: 600; text-align: right;">${serviceName}</td>
             </tr>
             <tr>
@@ -67,10 +67,21 @@ export async function sendBookingConfirmation(data: BookingNotificationData) {
               <td style="padding: 12px 0; border-bottom: 1px solid #e2e8f0; color: #0f172a; font-size: 14px; font-weight: 600; text-align: right;">${dateStr}</td>
             </tr>
             <tr>
-              <td style="padding: 12px 0; color: #64748b; font-size: 14px;">Prijs</td>
-              <td style="padding: 12px 0; color: #0f172a; font-size: 14px; font-weight: 600; text-align: right;">${price}</td>
+              <td style="padding: 12px 0; border-bottom: 1px solid #e2e8f0; color: #64748b; font-size: 14px;">Prijs</td>
+              <td style="padding: 12px 0; border-bottom: 1px solid #e2e8f0; color: #0f172a; font-size: 14px; font-weight: 600; text-align: right;">${price}</td>
             </tr>
           </table>
+        </div>
+        <div style="padding: 0 0 24px 0; text-align: center;">
+          <a href="${calendarLink}" style="display: inline-block; background: #4285F4; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-size: 14px; font-weight: 600; margin-bottom: 12px;">📅 Zet in je agenda</a>
+        </div>
+        <div style="background: #f8fafc; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
+          <p style="color: #64748b; font-size: 12px; margin: 0 0 8px 0; text-align: center;">
+            Wil je je afspraak verplaatsen of annuleren?
+          </p>
+          <p style="margin: 0; text-align: center;">
+            <a href="${manageLink}" style="color: #4285F4; font-size: 14px; text-decoration: none; font-weight: 500;">Beheer je afspraak →</a>
+          </p>
         </div>
         <p style="color: #94a3b8; font-size: 12px; text-align: center;">
           Powered by <a href="https://bookedwell.app" style="color: #4285F4; text-decoration: none;">BookedWell</a>
