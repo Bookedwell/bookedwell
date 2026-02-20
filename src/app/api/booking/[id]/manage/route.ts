@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/server';
+import { sendEmail } from '@/lib/notifications/send-email';
+import { format } from 'date-fns';
+import { nl } from 'date-fns/locale';
 
 // Public API - no auth required, uses booking ID as token
 export async function GET(
@@ -148,10 +151,15 @@ export async function PATCH(
 
     const supabase = createServiceClient();
 
-    // Get booking with service duration
+    // Get booking with service duration and customer info
     const { data: booking } = await supabase
       .from('bookings')
-      .select('id, start_time, status, salon_id, service_id, staff_id, service:services(duration_minutes)')
+      .select(`
+        id, start_time, status, salon_id, service_id, staff_id,
+        customer_name, customer_email,
+        service:services(name, duration_minutes),
+        salon:salons(name)
+      `)
       .eq('id', id)
       .single();
 
@@ -189,6 +197,49 @@ export async function PATCH(
       .eq('id', id);
 
     if (error) throw error;
+
+    // Send reschedule notification email
+    const customerEmail = booking.customer_email;
+    const salonName = (booking.salon as any)?.name || 'de salon';
+    const serviceName = (booking.service as any)?.name || 'je afspraak';
+    const customerName = booking.customer_name || 'Klant';
+
+    if (customerEmail) {
+      const dateStr = format(newStart, "EEEE d MMMM yyyy 'om' HH:mm", { locale: nl });
+      const html = `
+        <div style="font-family: Inter, -apple-system, sans-serif; max-width: 500px; margin: 0 auto;">
+          <div style="background: #3B82F6; border-radius: 12px; padding: 32px; text-align: center;">
+            <h1 style="color: white; font-size: 24px; margin: 0 0 8px;">Afspraak verplaatst 📅</h1>
+            <p style="color: rgba(255,255,255,0.8); margin: 0;">Hoi ${customerName}, je afspraak is verplaatst!</p>
+          </div>
+          <div style="padding: 24px 0;">
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 12px 0; border-bottom: 1px solid #e2e8f0; color: #64748b; font-size: 14px;">Salon</td>
+                <td style="padding: 12px 0; border-bottom: 1px solid #e2e8f0; color: #0f172a; font-size: 14px; font-weight: 600; text-align: right;">${salonName}</td>
+              </tr>
+              <tr>
+                <td style="padding: 12px 0; border-bottom: 1px solid #e2e8f0; color: #64748b; font-size: 14px;">Behandeling</td>
+                <td style="padding: 12px 0; border-bottom: 1px solid #e2e8f0; color: #0f172a; font-size: 14px; font-weight: 600; text-align: right;">${serviceName}</td>
+              </tr>
+              <tr>
+                <td style="padding: 12px 0; color: #64748b; font-size: 14px;">Nieuwe datum</td>
+                <td style="padding: 12px 0; color: #0f172a; font-size: 14px; font-weight: 600; text-align: right;">${dateStr}</td>
+              </tr>
+            </table>
+          </div>
+          <p style="color: #94a3b8; font-size: 12px; text-align: center;">
+            Powered by BookedWell
+          </p>
+        </div>
+      `;
+      
+      try {
+        await sendEmail(customerEmail, `Afspraak verplaatst bij ${salonName}`, html);
+      } catch (emailError) {
+        console.error('Reschedule email error:', emailError);
+      }
+    }
 
     return NextResponse.json({ 
       success: true,
