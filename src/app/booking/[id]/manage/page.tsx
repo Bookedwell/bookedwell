@@ -27,6 +27,8 @@ interface BookingData {
     email: string | null;
     address: string | null;
     city: string | null;
+    blocked_dates: string[];
+    opening_hours: Record<string, { open: string; close: string } | null>;
   };
 }
 
@@ -147,6 +149,27 @@ export default function ManageBookingPage() {
   };
 
   const accentColor = booking?.salon?.primary_color || '#4285F4';
+
+  // Check if a date is blocked
+  const isDateBlocked = (date: Date) => {
+    if (!booking?.salon?.blocked_dates) return false;
+    const dateStr = format(date, 'yyyy-MM-dd');
+    return booking.salon.blocked_dates.includes(dateStr);
+  };
+
+  // Check if salon is closed on a specific day (0 = Sunday, 6 = Saturday)
+  const isDayClosed = (date: Date) => {
+    if (!booking?.salon?.opening_hours) return false;
+    const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    const dayName = dayNames[date.getDay()];
+    const hours = booking.salon.opening_hours[dayName];
+    return !hours || hours === null;
+  };
+
+  // Check if date is unavailable (blocked or closed)
+  const isDateUnavailable = (date: Date) => {
+    return isDateBlocked(date) || isDayClosed(date);
+  };
 
   // Generate week days
   const getWeekDays = () => {
@@ -276,25 +299,32 @@ export default function ManageBookingPage() {
               </div>
 
               <div className="grid grid-cols-7 gap-1">
-                {weekDays.map((day) => (
-                  <button
-                    key={day.toISOString()}
-                    onClick={() => setSelectedDate(day)}
-                    className={`flex flex-col items-center py-2 px-1 rounded-lg text-xs transition-colors ${
-                      selectedDate && isSameDay(day, selectedDate)
-                        ? 'text-white'
-                        : 'hover:bg-gray-50 text-gray-700'
-                    }`}
-                    style={
-                      selectedDate && isSameDay(day, selectedDate)
-                        ? { backgroundColor: accentColor }
-                        : undefined
-                    }
-                  >
-                    <span className="font-medium">{format(day, 'EEEEEE', { locale: nl })}</span>
-                    <span className="text-lg font-bold mt-0.5">{format(day, 'd')}</span>
-                  </button>
-                ))}
+                {weekDays.map((day) => {
+                  const unavailable = isDateUnavailable(day);
+                  const isSelected = selectedDate && isSameDay(day, selectedDate);
+                  return (
+                    <button
+                      key={day.toISOString()}
+                      onClick={() => !unavailable && setSelectedDate(day)}
+                      disabled={unavailable}
+                      className={`flex flex-col items-center py-2 px-1 rounded-lg text-xs transition-colors ${
+                        unavailable
+                          ? 'text-gray-300 cursor-not-allowed line-through'
+                          : isSelected
+                          ? 'text-white'
+                          : 'hover:bg-gray-50 text-gray-700'
+                      }`}
+                      style={
+                        isSelected && !unavailable
+                          ? { backgroundColor: accentColor }
+                          : undefined
+                      }
+                    >
+                      <span className="font-medium">{format(day, 'EEEEEE', { locale: nl })}</span>
+                      <span className="text-lg font-bold mt-0.5">{format(day, 'd')}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 

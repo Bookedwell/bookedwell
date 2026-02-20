@@ -24,7 +24,7 @@ export async function GET(
         service_id,
         salon_id,
         service:services(id, name, price_cents, duration_minutes),
-        salon:salons(id, name, slug, logo_url, primary_color, phone, email, address, city)
+        salon:salons(id, name, slug, logo_url, primary_color, phone, email, address, city, blocked_dates, opening_hours)
       `)
       .eq('id', id)
       .single();
@@ -65,6 +65,8 @@ export async function GET(
           email: (booking.salon as any)?.email,
           address: (booking.salon as any)?.address,
           city: (booking.salon as any)?.city,
+          blocked_dates: (booking.salon as any)?.blocked_dates || [],
+          opening_hours: (booking.salon as any)?.opening_hours || {},
         },
       },
       canCancel,
