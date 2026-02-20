@@ -201,6 +201,7 @@ export async function POST(request: Request) {
 
             if (salon && service && customer_name && customer_phone) {
               await sendBookingConfirmation({
+                bookingId: booking_id,
                 customerName: customer_name,
                 customerPhone: customer_phone,
                 customerEmail: session.customer_email || null,
