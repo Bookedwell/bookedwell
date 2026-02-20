@@ -5,7 +5,7 @@ const client = twilio(
   process.env.TWILIO_AUTH_TOKEN!
 );
 
-const BOOKING_CONFIRMATION_SID = 'HX25c361d5a0702552f22f2fa091122ede';
+const BOOKING_CONFIRMATION_SID = 'HX25c561d5a0702552f22f2fa091122ede';
 
 function formatPhone(to: string): string {
   let formatted = to.replace(/\s+/g, '').replace(/^00/, '+');
