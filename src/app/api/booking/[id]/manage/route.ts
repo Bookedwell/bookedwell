@@ -10,6 +10,8 @@ export async function GET(
     const { id } = await params;
     const supabase = createServiceClient();
 
+    console.log('[Manage] Looking up booking:', id);
+    
     const { data: booking, error } = await supabase
       .from('bookings')
       .select(`
@@ -19,15 +21,25 @@ export async function GET(
         status,
         customer_name,
         customer_phone,
+        service_id,
+        salon_id,
         service:services(id, name, price_cents, duration_minutes),
         salon:salons(id, name, slug, accent_color, logo_url, opening_hours, booking_buffer_minutes, min_booking_notice_hours)
       `)
       .eq('id', id)
       .single();
 
-    if (error || !booking) {
+    if (error) {
+      console.error('[Manage] Booking lookup error:', error);
       return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
     }
+    
+    if (!booking) {
+      console.log('[Manage] No booking found for ID:', id);
+      return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
+    }
+    
+    console.log('[Manage] Found booking:', booking.id, 'status:', booking.status);
 
     // Check if cancellation is still allowed (24h before start)
     const startTime = new Date(booking.start_time);
