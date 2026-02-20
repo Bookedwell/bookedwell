@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/server';
 import { sendEmail } from '@/lib/notifications/send-email';
+import { createBookingNotification } from '@/lib/notifications/create-notification';
 import { format } from 'date-fns';
 import { nl } from 'date-fns/locale';
 
@@ -91,10 +92,13 @@ export async function DELETE(
     const { id } = await params;
     const supabase = createServiceClient();
 
-    // Get booking
+    // Get booking with customer and service info
     const { data: booking } = await supabase
       .from('bookings')
-      .select('id, start_time, status')
+      .select(`
+        id, start_time, status, salon_id, customer_name,
+        service:services(name)
+      `)
       .eq('id', id)
       .single();
 
@@ -127,6 +131,19 @@ export async function DELETE(
       .eq('id', id);
 
     if (error) throw error;
+
+    // Create dashboard notification
+    try {
+      await createBookingNotification(
+        booking.salon_id,
+        booking.id,
+        booking.customer_name || 'Klant',
+        (booking.service as any)?.name || 'Afspraak',
+        'booking_cancelled'
+      );
+    } catch (notifError) {
+      console.error('Dashboard notification error:', notifError);
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -239,6 +256,19 @@ export async function PATCH(
       } catch (emailError) {
         console.error('Reschedule email error:', emailError);
       }
+    }
+
+    // Create dashboard notification
+    try {
+      await createBookingNotification(
+        booking.salon_id,
+        booking.id,
+        customerName,
+        serviceName,
+        'booking_changed'
+      );
+    } catch (notifError) {
+      console.error('Dashboard notification error:', notifError);
     }
 
     return NextResponse.json({ 

@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import type { Salon } from '@/types';
 import { BookingUsageBanner } from './booking-usage-banner';
+import NotificationBell from './notification-bell';
 
 interface DashboardShellProps {
   salon: Salon;
@@ -263,6 +264,7 @@ export function DashboardShell({ salon, staff, user, children }: DashboardShellP
 
           <div className="ml-auto flex items-center gap-3">
             {headerActions}
+            <NotificationBell />
             <Link
               href={`/salon/${salon.slug}`}
               target="_blank"

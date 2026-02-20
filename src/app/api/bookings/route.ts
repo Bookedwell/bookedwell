@@ -3,6 +3,7 @@ import { createServiceClient } from '@/lib/supabase/server';
 import { getUserSalon } from '@/lib/supabase/get-session';
 import Stripe from 'stripe';
 import { sendBookingConfirmation } from '@/lib/notifications/booking-notifications';
+import { createBookingNotification } from '@/lib/notifications/create-notification';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -272,6 +273,19 @@ export async function POST(request: Request) {
         });
       } catch (notifError) {
         console.error('Notification error:', notifError);
+      }
+
+      // Create dashboard notification
+      try {
+        await createBookingNotification(
+          salon.id,
+          booking.id,
+          customer_name,
+          service.name,
+          'new_booking'
+        );
+      } catch (notifError) {
+        console.error('Dashboard notification error:', notifError);
       }
 
       return NextResponse.json({
