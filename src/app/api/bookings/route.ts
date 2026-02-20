@@ -346,7 +346,9 @@ export async function POST(request: Request) {
           description: isDeposit 
             ? `Aanbetaling: ${service.name} bij ${salon.name}`
             : `${service.name} bij ${salon.name}`,
-          redirectUrl: `${process.env.NEXT_PUBLIC_APP_URL}/salon/${salon.slug}/success?booking_id=${booking.id}`,
+          redirectUrl: bookingRedirectUrl 
+            ? bookingRedirectUrl 
+            : `${process.env.NEXT_PUBLIC_APP_URL}/salon/${salon.slug}/success?booking_id=${booking.id}`,
           webhookUrl: `${process.env.NEXT_PUBLIC_APP_URL}/api/mollie/webhook`,
           metadata: JSON.stringify({
             booking_id: booking.id,
