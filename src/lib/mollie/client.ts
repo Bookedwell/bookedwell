@@ -17,25 +17,22 @@ export function createMollieClient() {
     throw new Error('MOLLIE_API_KEY is not configured');
   }
 
-  const testmode = isTestMode();
-  console.log(`Mollie client created with testmode: ${testmode}`);
-
+  // Note: Don't pass testmode - API key prefix (test_ vs live_) determines the mode
+  // Passing testmode causes errors on certain API calls like customers.get
   return new Client({
     security: {
       apiKey,
     },
-    testmode,
   });
 }
 
 // Create Mollie client with OAuth token (for connected account operations)
 export function createMollieClientWithToken(accessToken: string) {
-  const testmode = isTestMode();
+  // Note: Don't pass testmode - causes errors on certain API calls
   return new Client({
     security: {
       oAuth: accessToken,
     },
-    testmode,
   });
 }
 
