@@ -24,7 +24,7 @@ export async function GET(
         service_id,
         salon_id,
         service:services(id, name, price_cents, duration_minutes),
-        salon:salons(id, name, slug, accent_color, logo_url, opening_hours, booking_buffer_minutes, min_booking_notice_hours)
+        salon:salons(id, name, slug, logo_url)
       `)
       .eq('id', id)
       .single();
@@ -59,7 +59,6 @@ export async function GET(
         salon: {
           name: (booking.salon as any)?.name,
           slug: (booking.salon as any)?.slug,
-          accent_color: (booking.salon as any)?.accent_color,
           logo_url: (booking.salon as any)?.logo_url,
         },
       },
