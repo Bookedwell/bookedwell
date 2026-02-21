@@ -151,44 +151,38 @@ export default function LandingPage() {
                 icon: Calendar,
                 title: 'Online boeken 24/7',
                 desc: 'Klanten boeken wanneer het hen uitkomt. Via jouw eigen professionele boekingspagina.',
-                color: 'bg-blue-50 text-blue-600',
               },
               {
                 icon: MessageSquare,
                 title: 'WhatsApp reminders',
                 desc: 'Automatische herinneringen via WhatsApp. Geen extra kosten per bericht.',
-                color: 'bg-green-50 text-green-600',
               },
               {
                 icon: Shield,
                 title: 'No-show bescherming',
                 desc: 'Optionele aanbetaling bij het boeken. Bescherm je omzet tegen no-shows.',
-                color: 'bg-red-50 text-red-600',
               },
               {
                 icon: BarChart3,
                 title: 'Inzichten & analytics',
                 desc: 'Real-time dashboard met no-show rate, populaire diensten en piekuren.',
-                color: 'bg-purple-50 text-purple-600',
               },
               {
                 icon: Clock,
                 title: 'Slimme planning',
                 desc: 'Automatische beschikbaarheid op basis van werktijden en bestaande afspraken.',
-                color: 'bg-orange-50 text-orange-600',
               },
               {
                 icon: Users,
                 title: 'Klantbeheer',
                 desc: 'Complete klanthistorie, notities en labels. Weet precies wie er komt.',
-                color: 'bg-cyan-50 text-cyan-600',
               },
             ].map((feature) => (
               <div
                 key={feature.title}
                 className="group p-6 rounded-2xl bg-white border border-light-gray/70 hover:border-primary/30 hover:shadow-lg transition-all duration-300"
               >
-                <div className={`w-12 h-12 ${feature.color} rounded-xl flex items-center justify-center mb-5`}>
+                <div className="w-12 h-12 bg-primary/10 text-primary rounded-xl flex items-center justify-center mb-5">
                   <feature.icon className="w-6 h-6" />
                 </div>
                 <h3 className="text-lg font-semibold text-navy mb-2">{feature.title}</h3>
