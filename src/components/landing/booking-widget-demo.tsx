@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { Scissors, ChevronLeft, ChevronRight, Check, Clock, Calendar, User, Mail, Phone } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Scissors, ChevronLeft, ChevronRight, Check, Clock, User, Mail, Phone, X } from 'lucide-react';
 
 const SERVICES = [
   { name: 'Knippen', duration: 30, price: 25 },
@@ -10,41 +10,51 @@ const SERVICES = [
   { name: 'Keratine Behandeling', duration: 120, price: 120 },
 ];
 
-const TIME_SLOTS = ['09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00'];
+const TIME_SLOTS = ['10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00'];
 
-type Step = 'services' | 'date' | 'time' | 'info' | 'confirmed';
+type Step = 'services' | 'datetime' | 'info' | 'confirmed';
 
-function getDaysInMonth(year: number, month: number) {
-  return new Date(year, month + 1, 0).getDate();
+const SHORT_DAY_NAMES = ['Zo', 'Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za'];
+const SHORT_MONTH_NAMES = ['JAN', 'FEB', 'MRT', 'APR', 'MEI', 'JUN', 'JUL', 'AUG', 'SEP', 'OKT', 'NOV', 'DEC'];
+
+function generateDays(startDate: Date, count: number): Date[] {
+  const days: Date[] = [];
+  for (let i = 0; i < count; i++) {
+    const d = new Date(startDate);
+    d.setDate(startDate.getDate() + i);
+    days.push(d);
+  }
+  return days;
 }
-
-function getFirstDayOfMonth(year: number, month: number) {
-  const day = new Date(year, month, 1).getDay();
-  return day === 0 ? 6 : day - 1; // Monday = 0
-}
-
-const MONTH_NAMES = ['januari', 'februari', 'maart', 'april', 'mei', 'juni', 'juli', 'augustus', 'september', 'oktober', 'november', 'december'];
-const DAY_NAMES = ['Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za', 'Zo'];
 
 export default function BookingWidgetDemo() {
   const [step, setStep] = useState<Step>('services');
   const [selectedService, setSelectedService] = useState<typeof SERVICES[0] | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
-  const [calMonth, setCalMonth] = useState(new Date().getMonth());
-  const [calYear, setCalYear] = useState(new Date().getFullYear());
+  const [weekOffset, setWeekOffset] = useState(0);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = useMemo(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }, []);
+
+  const visibleDays = useMemo(() => {
+    const start = new Date(today);
+    start.setDate(today.getDate() + weekOffset * 7);
+    return generateDays(start, 7);
+  }, [today, weekOffset]);
 
   const reset = () => {
     setStep('services');
     setSelectedService(null);
     setSelectedDate(null);
     setSelectedTime(null);
+    setWeekOffset(0);
     setName('');
     setEmail('');
     setPhone('');
@@ -52,14 +62,9 @@ export default function BookingWidgetDemo() {
 
   const handleSelectService = (service: typeof SERVICES[0]) => {
     setSelectedService(service);
-    setStep('date');
-  };
-
-  const handleSelectDate = (day: number) => {
-    const date = new Date(calYear, calMonth, day);
-    if (date < today) return;
-    setSelectedDate(date);
-    setStep('time');
+    setSelectedDate(today);
+    setSelectedTime(null);
+    setStep('datetime');
   };
 
   const handleSelectTime = (time: string) => {
@@ -72,27 +77,9 @@ export default function BookingWidgetDemo() {
     setStep('confirmed');
   };
 
-  const daysInMonth = getDaysInMonth(calYear, calMonth);
-  const firstDay = getFirstDayOfMonth(calYear, calMonth);
+  const isSunday = (date: Date) => date.getDay() === 0;
 
-  const canGoPrev = calYear > today.getFullYear() || (calYear === today.getFullYear() && calMonth > today.getMonth());
-
-  const prevMonth = () => {
-    if (!canGoPrev) return;
-    if (calMonth === 0) { setCalMonth(11); setCalYear(calYear - 1); }
-    else setCalMonth(calMonth - 1);
-  };
-
-  const nextMonth = () => {
-    if (calMonth === 11) { setCalMonth(0); setCalYear(calYear + 1); }
-    else setCalMonth(calMonth + 1);
-  };
-
-  // Randomly disable some weekend days to simulate blocked dates
-  const isBlocked = (day: number) => {
-    const date = new Date(calYear, calMonth, day);
-    return date.getDay() === 0; // Sundays blocked
-  };
+  const isToday = (date: Date) => date.getTime() === today.getTime();
 
   return (
     <div className="bg-white rounded-2xl shadow-xl border border-light-gray/50 overflow-hidden">
@@ -102,9 +89,8 @@ export default function BookingWidgetDemo() {
           {step !== 'services' && step !== 'confirmed' && (
             <button
               onClick={() => {
-                if (step === 'date') setStep('services');
-                else if (step === 'time') setStep('date');
-                else if (step === 'info') setStep('time');
+                if (step === 'datetime') { setStep('services'); setSelectedDate(null); setSelectedTime(null); }
+                else if (step === 'info') { setStep('datetime'); setSelectedTime(null); }
               }}
               className="p-1 hover:bg-bg-gray rounded-lg transition-colors"
             >
@@ -114,10 +100,15 @@ export default function BookingWidgetDemo() {
           <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
             <Scissors className="w-5 h-5 text-primary" />
           </div>
-          <div>
+          <div className="flex-1 min-w-0">
             <p className="font-semibold text-navy text-sm">Beauty Salon Amsterdam</p>
             <p className="text-xs text-gray-text">beautysalon.bookedwell.app</p>
           </div>
+          {step !== 'services' && step !== 'confirmed' && (
+            <button onClick={reset} className="p-1 hover:bg-bg-gray rounded-lg transition-colors">
+              <X className="w-4 h-4 text-gray-text" />
+            </button>
+          )}
         </div>
       </div>
 
@@ -148,88 +139,98 @@ export default function BookingWidgetDemo() {
           </div>
         )}
 
-        {/* Step: Date */}
-        {step === 'date' && (
+        {/* Step: Date & Time combined */}
+        {step === 'datetime' && (
           <div>
-            <p className="text-xs font-medium text-gray-text uppercase tracking-wider mb-1">Kies een datum</p>
-            <p className="text-sm text-navy font-medium mb-4">{selectedService?.name} &middot; {selectedService?.duration} min</p>
+            <p className="text-sm font-semibold text-navy text-center mb-4">Kies datum en tijd</p>
 
-            {/* Calendar */}
-            <div className="select-none">
-              <div className="flex items-center justify-between mb-3">
-                <button onClick={prevMonth} className={`p-1 rounded-lg transition-colors ${canGoPrev ? 'hover:bg-bg-gray text-gray-text' : 'text-light-gray cursor-not-allowed'}`} disabled={!canGoPrev}>
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                <p className="text-sm font-semibold text-navy capitalize">{MONTH_NAMES[calMonth]} {calYear}</p>
-                <button onClick={nextMonth} className="p-1 hover:bg-bg-gray rounded-lg transition-colors text-gray-text">
-                  <ChevronRight className="w-4 h-4" />
-                </button>
+            {/* Medewerker selector (dummy) */}
+            <div className="flex items-center gap-3 p-3 rounded-xl border border-light-gray/50 mb-5">
+              <div className="w-9 h-9 bg-bg-gray rounded-full flex items-center justify-center">
+                <User className="w-4 h-4 text-gray-text" />
               </div>
-              <div className="grid grid-cols-7 gap-1 mb-1">
-                {DAY_NAMES.map((d) => (
-                  <div key={d} className="text-center text-[10px] font-medium text-gray-text py-1">{d}</div>
-                ))}
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-navy">Geen medewerkervoorkeur</p>
+                <p className="text-[11px] text-gray-text">Maximale beschikbaarheid</p>
               </div>
-              <div className="grid grid-cols-7 gap-1">
-                {Array.from({ length: firstDay }).map((_, i) => (
-                  <div key={`empty-${i}`} />
-                ))}
-                {Array.from({ length: daysInMonth }).map((_, i) => {
-                  const day = i + 1;
-                  const date = new Date(calYear, calMonth, day);
-                  const isPast = date < today;
-                  const blocked = isBlocked(day);
-                  const isToday = date.getTime() === today.getTime();
-                  const isSelected = selectedDate && date.getTime() === selectedDate.getTime();
-                  const disabled = isPast || blocked;
+              <ChevronRight className="w-4 h-4 text-gray-text flex-shrink-0" />
+            </div>
+
+            {/* Horizontal day strip */}
+            <div className="flex items-center gap-1 mb-5">
+              <button
+                onClick={() => weekOffset > 0 && setWeekOffset(weekOffset - 1)}
+                className={`p-0.5 flex-shrink-0 rounded transition-colors ${weekOffset > 0 ? 'text-gray-text hover:bg-bg-gray' : 'text-light-gray cursor-not-allowed'}`}
+                disabled={weekOffset === 0}
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <div className="flex-1 grid grid-cols-7 gap-1">
+                {visibleDays.map((date) => {
+                  const sunday = isSunday(date);
+                  const todayDate = isToday(date);
+                  const selected = selectedDate && date.getTime() === selectedDate.getTime();
 
                   return (
                     <button
-                      key={day}
-                      onClick={() => !disabled && handleSelectDate(day)}
-                      disabled={disabled}
-                      className={`aspect-square flex items-center justify-center rounded-lg text-xs font-medium transition-all ${
-                        isSelected
+                      key={date.toISOString()}
+                      onClick={() => { if (!sunday) { setSelectedDate(date); setSelectedTime(null); } }}
+                      disabled={sunday}
+                      className={`flex flex-col items-center py-2 rounded-xl text-center transition-all ${
+                        selected
                           ? 'bg-primary text-white'
-                          : disabled
+                          : sunday
                             ? 'text-light-gray cursor-not-allowed'
-                            : isToday
-                              ? 'bg-primary/10 text-primary hover:bg-primary/20'
-                              : 'text-navy hover:bg-bg-gray'
+                            : 'hover:bg-bg-gray text-navy'
                       }`}
                     >
-                      {day}
+                      <span className={`text-[10px] font-medium leading-none ${selected ? 'text-white/80' : sunday ? 'text-light-gray' : todayDate ? 'text-primary font-semibold' : 'text-gray-text'}`}>
+                        {todayDate ? 'Vandaag' : SHORT_DAY_NAMES[date.getDay()]}
+                      </span>
+                      <span className={`text-lg font-bold leading-tight mt-0.5 ${selected ? 'text-white' : ''}`}>
+                        {date.getDate()}
+                      </span>
+                      <span className={`text-[9px] font-medium uppercase leading-none ${selected ? 'text-white/70' : 'text-gray-text'}`}>
+                        {SHORT_MONTH_NAMES[date.getMonth()]}
+                      </span>
                     </button>
                   );
                 })}
               </div>
+              <button
+                onClick={() => setWeekOffset(weekOffset + 1)}
+                className="p-0.5 flex-shrink-0 text-gray-text hover:bg-bg-gray rounded transition-colors"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
             </div>
-          </div>
-        )}
 
-        {/* Step: Time */}
-        {step === 'time' && (
-          <div>
-            <p className="text-xs font-medium text-gray-text uppercase tracking-wider mb-1">Kies een tijd</p>
-            <p className="text-sm text-navy font-medium mb-4">
-              {selectedService?.name} &middot;{' '}
-              {selectedDate?.toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long' })}
-            </p>
-            <div className="grid grid-cols-3 gap-2">
-              {TIME_SLOTS.map((time) => (
-                <button
-                  key={time}
-                  onClick={() => handleSelectTime(time)}
-                  className={`py-2.5 rounded-xl text-sm font-medium border transition-all ${
-                    selectedTime === time
-                      ? 'bg-primary text-white border-primary'
-                      : 'border-light-gray/50 bg-bg-gray text-navy hover:border-primary/40 hover:bg-primary/5'
-                  }`}
-                >
-                  {time}
-                </button>
-              ))}
-            </div>
+            {/* Available times */}
+            {selectedDate && (
+              <div>
+                <p className="text-xs text-gray-text mb-3">
+                  Beschikbare tijden op{' '}
+                  <span className="font-medium text-navy">
+                    {selectedDate.toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'short' })}
+                  </span>
+                </p>
+                <div className="grid grid-cols-4 gap-2">
+                  {TIME_SLOTS.map((time) => (
+                    <button
+                      key={time}
+                      onClick={() => handleSelectTime(time)}
+                      className={`py-2 rounded-xl text-sm font-medium border transition-all ${
+                        selectedTime === time
+                          ? 'bg-primary text-white border-primary'
+                          : 'border-light-gray/50 text-primary hover:border-primary/40 hover:bg-primary/5'
+                      }`}
+                    >
+                      {time}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
