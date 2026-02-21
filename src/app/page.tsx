@@ -43,14 +43,14 @@ export default function LandingPage() {
         <div className="max-w-container mx-auto px-4 sm:px-6 relative">
           <div className="max-w-3xl mx-auto text-center">
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-navy leading-tight tracking-tight">
-              Jouw persoonlijke assistent voor{' '}
-              <span className="text-primary">volledige controle</span>{' '}
-              over je salon
+              Minder no-shows,{' '}
+              <span className="text-primary">vollere agenda</span>,{' '}
+              meer omzet
             </h1>
             <p className="mt-6 text-lg sm:text-xl text-gray-text max-w-2xl mx-auto leading-relaxed">
-              Altijd en overal inzicht in jouw agenda en administratie.
-              Voorkom no-shows dankzij automatische WhatsApp herinneringen.
-              Bespaar direct op onnodige kosten en houd waardevolle tijd over.
+              De enige boekingssoftware met automatische WhatsApp herinneringen
+              inbegrepen. Geen SMS-kosten, geen extra fees per teamlid.
+              Gewoon meer klanten die komen opdagen.
             </p>
             <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
               <Link
