@@ -128,32 +128,34 @@ export function DashboardShell({ salon, staff, user, children }: DashboardShellP
       >
         <div className="flex flex-col h-full">
           {/* Salon branding */}
-          <div className="h-16 flex items-center px-4 border-b border-light-gray">
-            <Link href="/dashboard" className="flex items-center gap-2.5 min-w-0">
-              {currentLogoUrl ? (
-                <img
-                  src={currentLogoUrl}
-                  alt={currentName}
-                  className="h-8 w-auto flex-shrink-0"
-                />
-              ) : (
-                <Image
-                  src="/logo.png"
-                  alt="BookedWell"
-                  width={140}
-                  height={35}
-                  className="h-7 w-auto flex-shrink-0"
-                  style={{ filter: getLogoFilter() }}
-                />
-              )}
-            </Link>
-            <span className="ml-2 text-[10px] text-gray-400 font-mono">{salon.id.slice(0, 8)}</span>
-            <button
-              onClick={() => setSidebarOpen(false)}
-              className="ml-auto p-1 lg:hidden"
-            >
-              <X className="w-5 h-5" />
-            </button>
+          <div className="px-4 py-3 border-b border-light-gray">
+            <div className="flex items-center justify-between">
+              <Link href="/dashboard" className="flex items-center min-w-0">
+                {currentLogoUrl ? (
+                  <img
+                    src={currentLogoUrl}
+                    alt={currentName}
+                    className="h-8 w-auto max-w-[160px] object-contain"
+                  />
+                ) : (
+                  <Image
+                    src="/logo.png"
+                    alt="BookedWell"
+                    width={140}
+                    height={35}
+                    className="h-7 w-auto"
+                    style={{ filter: getLogoFilter() }}
+                  />
+                )}
+              </Link>
+              <button
+                onClick={() => setSidebarOpen(false)}
+                className="p-1 lg:hidden"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <span className="text-[10px] text-gray-400 font-mono mt-1 block">{salon.id.slice(0, 8)}</span>
           </div>
 
           {/* Salon info + booking link */}
