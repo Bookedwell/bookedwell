@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Header } from '@/components/shared/header';
 import { Footer } from '@/components/shared/footer';
 import { PWARegister } from '@/components/shared/pwa-register';
+import BookingWidgetDemo from '@/components/landing/booking-widget-demo';
 import {
   Calendar,
   MessageSquare,
@@ -234,31 +235,7 @@ export default function LandingPage() {
                 <ChevronRight className="w-4 h-4" />
               </Link>
             </div>
-            <div className="bg-white rounded-2xl shadow-xl border border-light-gray/50 p-6 sm:p-8">
-              <div className="space-y-4">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
-                    <Scissors className="w-5 h-5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="font-semibold text-navy">Beauty Salon Amsterdam</p>
-                    <p className="text-xs text-gray-text">beautysalon.bookedwell.app</p>
-                  </div>
-                </div>
-                {['Knippen', 'Knippen + Föhnen', 'Highlights', 'Keratine Behandeling'].map((service, i) => (
-                  <div key={service} className="flex items-center justify-between p-4 rounded-xl bg-bg-gray border border-light-gray/50">
-                    <div>
-                      <p className="text-sm font-medium text-navy">{service}</p>
-                      <p className="text-xs text-gray-text">{[30, 45, 90, 120][i]} min</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-bold text-navy">&euro;{[25, 45, 85, 120][i]}</p>
-                      <button className="text-xs text-primary font-medium">Boek nu</button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <BookingWidgetDemo />
           </div>
         </div>
       </section>
