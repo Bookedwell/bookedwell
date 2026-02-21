@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Bell, X, Check, Calendar, RefreshCw, XCircle, Clock } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { nl } from 'date-fns/locale';
@@ -17,6 +18,7 @@ interface Notification {
 }
 
 export default function NotificationBell() {
+  const router = useRouter();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
@@ -131,9 +133,13 @@ export default function NotificationBell() {
                 </div>
               ) : (
                 notifications.map((notification) => (
-                  <div
+                  <button
                     key={notification.id}
-                    className={`px-4 py-3 border-b border-gray-50 hover:bg-gray-50 transition-colors ${
+                    onClick={() => {
+                      setIsOpen(false);
+                      router.push('/dashboard/bookings/calendar');
+                    }}
+                    className={`w-full text-left px-4 py-3 border-b border-gray-50 hover:bg-gray-50 transition-colors cursor-pointer ${
                       !notification.read ? 'bg-blue-50/50' : ''
                     }`}
                   >
@@ -161,7 +167,7 @@ export default function NotificationBell() {
                         </div>
                       )}
                     </div>
-                  </div>
+                  </button>
                 ))
               )}
             </div>
