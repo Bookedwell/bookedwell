@@ -481,6 +481,7 @@ export default function SettingsPage() {
                 )}
               </div>
               <p className="text-[11px] text-gray-text text-center">PNG, JPG, SVG of WebP • Max 2MB</p>
+              <p className="text-[11px] text-gray-text text-center">Aanbevolen: horizontaal logo, ±256 x 60 px</p>
             </div>
           </div>
 
